@@ -1,0 +1,110 @@
+@model List<School_CRM.Models.CommCircular>
+@{
+    ViewData["Title"] = "Circulars / Notice Board";
+    string? targetType = ViewBag.TargetType as string;
+    DateOnly? fromDate = ViewBag.FromDate as DateOnly?;
+    DateOnly? toDate   = ViewBag.ToDate   as DateOnly?;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-file-pdf text-danger me-2"></i>Circulars / Notice Board</h2>
+            <small class="text-muted">@Model.Count circular(s)</small>
+        </div>
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-upload me-1"></i>Upload Circular</a>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Target Audience</label>
+                    <select name="targetType" class="form-select">
+                        <option value="">All</option>
+                        @if (targetType == "All") { <option value="All" selected>All</option> } else { <option value="All">All</option> }
+                        @if (targetType == "AllStudents") { <option value="AllStudents" selected>All Students</option> } else { <option value="AllStudents">All Students</option> }
+                        @if (targetType == "AllTeachers") { <option value="AllTeachers" selected>All Teachers</option> } else { <option value="AllTeachers">All Teachers</option> }
+                        @if (targetType == "ClassWise") { <option value="ClassWise" selected>Class-wise</option> } else { <option value="ClassWise">Class-wise</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">From Date</label>
+                    <input type="date" name="fromDate" class="form-control"
+                           value="@(fromDate?.ToString("yyyy-MM-dd") ?? "")" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">To Date</label>
+                    <input type="date" name="toDate" class="form-control"
+                           value="@(toDate?.ToString("yyyy-MM-dd") ?? "")" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Filter</button>
+                </div>
+                <div class="col-md-1">
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-file-pdf fa-3x mb-3 opacity-25"></i>
+            <p>No circulars found.</p>
+        </div>
+    }
+
+    <div class="row g-3">
+        @foreach (var c in Model)
+        {
+            <div class="col-xl-4 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded bg-danger bg-opacity-10 p-3 flex-shrink-0">
+                                <i class="fas fa-file-pdf text-danger fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="badge bg-secondary small mb-1">@c.CircularNo</span>
+                                        <h6 class="fw-bold mb-1 text-truncate">@c.Title</h6>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(c.Description))
+                                {
+                                    <p class="text-muted small mb-2">@c.Description.Substring(0, Math.Min(80, c.Description.Length))@(c.Description.Length > 80 ? "..." : "")</p>
+                                }
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted"><i class="fas fa-calendar me-1"></i>@c.CircularDate.ToString("dd MMM yyyy")</small>
+                                        <span class="badge bg-light text-dark border ms-2 small">@c.TargetType</span>
+                                        @if (c.FileSizeKb.HasValue) { <small class="text-muted ms-2">@c.FileSizeKb KB</small> }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2">
+                        <a asp-action="Download" asp-route-id="@c.CircularId"
+                           class="btn btn-sm btn-outline-danger" target="_blank">
+                            <i class="fas fa-download me-1"></i>Download PDF
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@c.CircularId" method="post"
+                              onsubmit="return confirm('Deactivate this circular?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

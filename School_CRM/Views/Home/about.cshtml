@@ -1,0 +1,1022 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="zxx">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Links of CSS files -->
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/aos.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/boxicons.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/flaticon.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/magnific-popup.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/style.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/header.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <title>About Us - Krishak Inter College</title>
+    <link rel="icon" type="image/png" href="~/kic_logo.png">
+
+    <style>
+        /* Shared Header Logo styling to match index/contacts page */
+        .kic-logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+
+        .kic-logo-text span {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+
+        .logo-light .kic-logo-text {
+            color: #fff;
+        }
+
+        .logo-dark .kic-logo-text {
+            color: #1a1a2e;
+        }
+
+        .navbar-brand .logo-light, .navbar-brand .logo-dark {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .kic-logo-img {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            border-radius: 12px;
+            flex-shrink: 0;
+            background: var(--whiteColor);
+            padding: 4px;
+            box-shadow: 0 4px 15px rgba(46, 202, 127, 0.35);
+            border: 2px solid var(--mainColor);
+            transition: all 0.3s ease;
+        }
+        .kic-logo-img:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(46, 202, 127, 0.5);
+            border-color: var(--blackColor);
+        }
+        
+        /* Fix dual logo display bug */
+        .navbar-area.style-2 .navbar-brand .logo-dark {
+            display: none !important;
+        }
+        .navbar-area.style-2.sticky .navbar-brand .logo-light {
+            display: none !important;
+        }
+        .navbar-area.style-2.sticky .navbar-brand .logo-dark {
+            display: flex !important;
+        }
+
+        /* Make navbar solid dark navy by default on inner pages */
+        .navbar-area.style-2 {
+            background: #120f2d !important;
+            position: relative !important;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 99;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+
+        /* Premium About Us Styles */
+        .about-hero-section {
+            background: linear-gradient(135deg, #0b0920 0%, #151b3d 100%);
+            padding: 100px 0;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .about-hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(46, 202, 127, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .hero-image-frame {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(46, 202, 127, 0.3);
+            transition: all 0.4s ease;
+        }
+        .hero-image-frame:hover {
+            transform: translateY(-5px);
+            border-color: var(--mainColor);
+            box-shadow: 0 25px 50px rgba(46, 202, 127, 0.25);
+        }
+        .hero-image-frame img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Section Title Styling */
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 50px auto;
+        }
+        .section-header .sub {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(46, 202, 127, 0.1);
+            color: var(--mainColor);
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(46, 202, 127, 0.2);
+        }
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--blackColor);
+            margin-bottom: 15px;
+        }
+        .section-header.text-white h2 {
+            color: #fff;
+        }
+
+        /* Mission Values Cards */
+        .mission-section {
+            padding: 100px 0;
+            background-color: var(--whiteColor);
+        }
+        .mission-intro {
+            font-size: 18px;
+            line-height: 1.8;
+            color: var(--paragraphColor);
+            max-width: 900px;
+            margin: 0 auto 40px auto;
+            text-align: center;
+        }
+        .value-card {
+            background: var(--whiteColor);
+            border-radius: 16px;
+            padding: 30px 25px;
+            border: 1px solid rgba(46, 202, 127, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.03);
+            text-align: center;
+            height: 100%;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .value-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--mainColor), var(--blackColor));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+        .value-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(46, 202, 127, 0.12);
+            border-color: var(--mainColor);
+        }
+        .value-card:hover::after {
+            transform: scaleX(1);
+        }
+        .value-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(46, 202, 127, 0.1);
+            color: var(--mainColor);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px auto;
+            transition: all 0.4s ease;
+        }
+        .value-card:hover .value-icon {
+            background: var(--mainColor);
+            color: #fff;
+            transform: rotateY(180deg);
+        }
+        .value-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blackColor);
+            margin-bottom: 12px;
+        }
+        .value-card p {
+            font-size: 15px;
+            color: var(--paragraphColor);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        /* Learning Approach Section */
+        .learning-section {
+            padding: 100px 0;
+            background-color: var(--secounderyColor);
+        }
+        .quote-box {
+            background: var(--whiteColor);
+            border-left: 5px solid var(--mainColor);
+            padding: 30px;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin-bottom: 35px;
+            position: relative;
+        }
+        .quote-box i.quote-icon {
+            font-size: 40px;
+            color: rgba(46, 202, 127, 0.2);
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+        .quote-box blockquote {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--blackColor);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .quote-box span {
+            font-size: 14px;
+            color: var(--paragraphColor);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .approach-img-frame {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 8px solid var(--whiteColor);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        .approach-img-frame img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .approach-img-frame:hover img {
+            transform: scale(1.05);
+        }
+        .approach-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 25px;
+        }
+        .approach-list li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--blackColor);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        .approach-list li i {
+            position: absolute;
+            left: 0;
+            top: 3px;
+            color: var(--mainColor);
+            font-size: 20px;
+        }
+
+        /* Vision & Philosophy */
+        .vision-section {
+            padding: 100px 0;
+            background-color: var(--whiteColor);
+        }
+        .philosophy-grid {
+            margin-top: 40px;
+        }
+        .philosophy-card {
+            background: var(--secounderyColor);
+            border-radius: 12px;
+            padding: 25px;
+            height: 100%;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .philosophy-card:hover {
+            background: var(--whiteColor);
+            border-color: rgba(46, 202, 127, 0.3);
+            box-shadow: 0 10px 25px rgba(46, 202, 127, 0.08);
+            transform: translateY(-3px);
+        }
+        .philo-num {
+            font-size: 32px;
+            font-weight: 800;
+            color: rgba(46, 202, 127, 0.25);
+            line-height: 1;
+            margin-bottom: 15px;
+        }
+        .philosophy-card:hover .philo-num {
+            color: var(--mainColor);
+        }
+        .philosophy-card h5 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blackColor);
+            margin-bottom: 10px;
+        }
+        .philosophy-card p {
+            font-size: 14px;
+            color: var(--paragraphColor);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        /* Leadership Messages Sections */
+        .leader-desk-section {
+            padding: 100px 0;
+            background-color: var(--secounderyColor);
+            position: relative;
+        }
+        .leader-desk-section.alt-bg {
+            background-color: var(--whiteColor);
+        }
+        .leader-card-premium {
+            background: var(--whiteColor);
+            border-radius: 24px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
+            padding: 50px;
+            border: 1px solid rgba(46, 202, 127, 0.15);
+            overflow: hidden;
+            position: relative;
+        }
+        .leader-desk-section.alt-bg .leader-card-premium {
+            background: var(--secounderyColor);
+            border-color: rgba(0, 33, 71, 0.08);
+        }
+        .leader-photo-wrapper {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 4px solid var(--whiteColor);
+        }
+        .leader-photo-wrapper img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            display: block;
+        }
+        .leader-badge-desk {
+            display: inline-block;
+            background: var(--blackColor);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 15px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        .leader-text-content blockquote {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--paragraphColor);
+            position: relative;
+            padding-left: 20px;
+            border-left: 3px solid var(--mainColor);
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+        .leader-text-content p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--paragraphColor);
+            margin-bottom: 20px;
+        }
+        .leader-signature-block {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(0, 33, 71, 0.1);
+        }
+        .leader-sig-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blackColor);
+            margin-bottom: 4px;
+        }
+        .leader-sig-title {
+            font-size: 14px;
+            color: var(--mainColor);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Image gallery grid on about page */
+        .about-gallery-section {
+            padding: 80px 0;
+            background: #fff;
+        }
+        .about-img-grid {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+            height: 250px;
+        }
+        .about-img-grid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .about-img-grid:hover img {
+            transform: scale(1.08);
+        }
+        .about-img-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,33,71,0.8), transparent);
+            opacity: 0;
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+            transition: opacity 0.4s ease;
+        }
+        .about-img-grid:hover .about-img-overlay {
+            opacity: 1;
+        }
+        .about-img-overlay span {
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+  
+    <div class="navbar-area style-2" id="navbar">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg">
+                <a class='navbar-brand' asp-controller="Home" asp-action="Index">
+                    <div class="logo-light d-flex align-items-center gap-2" style="text-decoration:none;">
+                        <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                        <div class="kic-logo-text" style="color:#fff;">Krishak<span>Inter College</span></div>
+                    </div>
+                    <div class="logo-dark d-flex align-items-center gap-2" style="text-decoration:none;">
+                        <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                        <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                    </div>
+                </a>
+               @*  <div class="other-option d-lg-none">
+                    <div class="option-item">
+                        <button type="button" class="search-btn" data-bs-toggle="offcanvas" data-bs-target="#staticBackdrop">
+                            <i class='bx bx-search'></i>
+                        </button>
+                    </div>
+                </div> *@
+                <a class="navbar-toggler" data-bs-toggle="offcanvas" href="#navbarOffcanvas" role="button" aria-controls="navbarOffcanvas">
+                    <i class='bx bx-menu'></i>
+                </a>
+                <div class="collapse navbar-collapse justify-content-between">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a href="javascript:void(0)" class="dropdown-toggle nav-link">
+                                Home
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item"><a class='nav-link' asp-controller="Home" asp-action="Index">Home </a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="javascript:void(0)" class="dropdown-toggle nav-link active">
+                                About & Gallery
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item"><a class='nav-link active' asp-controller="Home" asp-action="about">About Us</a></li>
+                                <li class="nav-item"><a class='nav-link' asp-controller="Home" asp-action="Gallery">Gallery</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Home" asp-action="contacts">
+                                Contact
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Account" asp-action="Login">Login</a>
+                        </li>
+                    </ul>
+                    <div class="others-option d-flex align-items-center">
+                        <div class="option-item">
+                            <div class="nav-btn">
+                                <a class='default-btn' asp-controller="Home" asp-action="contacts">Contact Us</a>
+                            </div>
+                        </div>
+                       @*  <div class="option-item">
+                            <div class="nav-search">
+                                <a href="#" data-bs-toggle="offcanvas" data-bs-target="#staticBackdrop" aria-controls="staticBackdrop" class="search-button"><i class='bx bx-search'></i></a>
+                            </div>
+                        </div> *@
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- End Navbar Area Start -->
+
+    <!-- Start Responsive Navbar Area -->
+    <div class="responsive-navbar offcanvas offcanvas-end" data-bs-backdrop="static" tabindex="-1" id="navbarOffcanvas">
+        <div class="offcanvas-header">
+            <a class='logo d-inline-block' asp-controller="Home" asp-action="Index">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                    <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                </div>
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="accordion" id="navbarAccordion">
+                <div class="accordion-item">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        Home
+                    </button>
+                    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#navbarAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><a asp-controller="Home" asp-action="Index">Home </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button collapsed active" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        About & Gallery
+                    </button>
+                    <div id="collapseTwo" class="accordion-collapse collapse show" data-bs-parent="#navbarAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><a class="active" asp-controller="Home" asp-action="about">About Us</a></li>
+                                <li><a asp-controller="Home" asp-action="Gallery">Gallery</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <a class='accordion-button no-after' asp-controller="Home" asp-action="contacts">
+                        Contact
+                    </a>
+                </div>
+                <div class="accordion-item">
+                    <a class='accordion-button no-after' asp-controller="Account" asp-action="Login">
+                        Login
+                    </a>
+                </div>
+            </div>
+            <div class="others-option">
+                <div class="option-item">
+                    <a class='default-btn' asp-controller="Home" asp-action="contacts">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Responsive Navbar Area -->
+
+    <!-- Start Search Modal / Offcanvas -->
+    <div class="clgun offcanvas offcanvas-start" data-bs-backdrop="static" tabindex="-1" id="staticBackdrop">
+        <div class="offcanvas-header">
+            <a class='logo' asp-controller="Home" asp-action="Index">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                    <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                </div>
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="search-box">
+                <div class="searchwrapper"> 
+                    <div class="searchbox"> 
+                        <div class="row align-items-center"> 
+                            <div class="col-md-9"><input type="text" class="form-control" placeholder="Search school portal..."></div> 
+                            <div class="col-lg-3"> 
+                                <a class="btn" href="#">Search</a> 
+                            </div> 
+                        </div> 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Search Modal -->
+
+    <!-- Start About Hero Section -->
+    <div class="about-hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6" data-aos="fade-right" data-aos-delay="100">
+                    <div class="hero-text-content">
+                        <span class="section-header-sub" style="color: var(--mainColor); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 10px;">About Krishak Inter College</span>
+                        <h1 style="font-size: 48px; font-weight: 800; line-height: 1.2; margin-bottom: 20px;">Nurturing Conscience &amp; Shaping Excellence</h1>
+                        <p style="font-size: 18px; line-height: 1.8; opacity: 0.9; margin-bottom: 30px;">At Krishak Inter College, we embrace the individuality of each learner. Through an interdisciplinary, art-integrated curriculum and enriching extra-curricular activities, we focus relentlessly on each child's ability to amaze, learn, and lead.</p>
+                        <a class="default-btn" asp-controller="Home" asp-action="contacts" style="background: var(--mainColor); border-color: var(--mainColor); color:#fff;">Get in Touch</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0" data-aos="fade-left" data-aos-delay="200">
+                    <div class="hero-image-frame">
+                        <img src="~/Gprp/image/c1.jpeg" alt="Krishak Inter College Building" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End About Hero Section -->
+
+    <!-- Start Mission & Values Section -->
+    <div class="mission-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="sub"><i class='bx bxs-graduation'></i> Our Purpose</span>
+                <h2>OUR MISSION &amp; VALUES</h2>
+            </div>
+            
+            <p class="mission-intro" data-aos="fade-up" data-aos-delay="100">
+                The mission of the school is underpinned by the core values of: <strong>Commitment, Acceptance, Respect, Excellence, and Strength (C.A.R.E.S)</strong>. We aim to provide an encouraging environment for the children where they can bring out the best in themselves without fearing failures. The school is committed to developing self-confidence, flexibility, adaptability, and problem-solving skills in each student so that they can grow up as strong individuals with positive self-esteem, ready to face the dynamic challenges of the 21st-century world.
+            </p>
+
+            <div class="row justify-content-center mt-5 g-4">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="value-card">
+                        <div class="value-icon"><i class='bx bxs-award'></i></div>
+                        <h4>Commitment</h4>
+                        <p>We are dedicated to personal growth, academic excellence, and encouraging students to persist through hurdles to reach their highest potential.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="value-card">
+                        <div class="value-icon"><i class='bx bxs-user-check'></i></div>
+                        <h4>Acceptance</h4>
+                        <p>Embracing the unique qualities, backgrounds, and talents of every child, creating an inclusive community where everyone feels valued.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="value-card">
+                        <div class="value-icon"><i class='bx bxs-heart'></i></div>
+                        <h4>Respect</h4>
+                        <p>Fostering mutual appreciation, understanding, and integrity among students, teachers, parents, and the wider community.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="value-card">
+                        <div class="value-icon"><i class='bx bxs-star'></i></div>
+                        <h4>Excellence</h4>
+                        <p>Striving for greatness in academics, sports, creative arts, and personal conduct, setting standards that challenge and inspire growth.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                    <div class="value-card">
+                        <div class="value-icon"><i class='bx bxs-shield'></i></div>
+                        <h4>Strength</h4>
+                        <p>Building resilience, adaptability, and self-confidence to combat failures and remain humble and grounded when successful.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Mission & Values Section -->
+
+    <!-- Start Learning Approach Section -->
+    <div class="learning-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6" data-aos="fade-right" data-aos-delay="100">
+                    <div class="section-header text-start mb-4">
+                        <span class="sub"><i class='bx bxs-graduation'></i> Learning Model</span>
+                        <h2>Our Learning Approach</h2>
+                    </div>
+                    
+                    <div class="quote-box">
+                        <i class='bx bxs-quote-right quote-icon'></i>
+                        <blockquote>
+                            "Learning is about getting better, academically, socially and emotionally. Amazing learning happens when students surprise themselves by getting better to a level beyond which they thought was possible."
+                        </blockquote>
+                        <span>Krishak Inter College Philosophy</span>
+                    </div>
+
+                    <p style="color: var(--paragraphColor); line-height: 1.8; margin-bottom: 20px;">
+                        The Krishak Inter College embraces the individuality of each learner. We support student learning through a robust, student-focused curriculum and enriching extra-curricular activities, and focus relentlessly on each child’s ability to amaze.
+                    </p>
+                    <p style="color: var(--paragraphColor); line-height: 1.8; margin-bottom: 25px;">
+                        The Krishak Inter College recognizes and nurtures the inherent talent of each student in order to make a meaningful difference in the journey of their lives and create a lasting impact on their future. Our focus lies in making the child happy, compassionate, competent, and a well-informed individual.
+                    </p>
+
+                    <h4 style="font-weight: 700; color: var(--blackColor); margin-bottom: 15px;">For this, we lay emphasis on providing:</h4>
+                    <ul class="approach-list">
+                        <li><i class='bx bxs-check-circle'></i> A safe, secure environment where every child is uniquely valued.</li>
+                        <li><i class='bx bxs-check-circle'></i> An all-encompassing, caring, and rigorous learning experience that challenges students to grow emotionally, academically, and socially.</li>
+                        <li><i class='bx bxs-check-circle'></i> A launchpad for preparing inspiring, confident thinkers poised to contribute meaningfully to their family and society.</li>
+                    </ul>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0" data-aos="fade-left" data-aos-delay="200">
+                    <div class="approach-img-frame">
+                        <img src="~/Gprp/image/c3.jpg" alt="Students Learning at Krishak Inter College" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Learning Approach Section -->
+
+    <!-- Start Vision & Philosophy Section -->
+    <div class="vision-section">
+        <div class="container">
+            <div class="row align-items-center flex-column-reverse flex-lg-row">
+                <div class="col-lg-6 mt-5 mt-lg-0" data-aos="fade-right" data-aos-delay="100">
+                    <div class="approach-img-frame">
+                        <img src="~/Gprp/image/c5.jpg" alt="Teaching Philosophy" />
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left" data-aos-delay="200">
+                    <div class="section-header text-start mb-4">
+                        <span class="sub"><i class='bx bxs-book-open'></i> Core Vision</span>
+                        <h2>Vision Statement &amp; Philosophy</h2>
+                    </div>
+
+                    <p style="color: var(--paragraphColor); line-height: 1.8; font-size: 16px; margin-bottom: 25px;">
+                        The Krishak Inter College ideates the concept of nurturing responsible and conscientious citizens through a challenging, interdisciplinary, art-integrated curriculum fulfilling the diverse needs of students in a caring and stimulating environment. 
+                        <strong>Our vision is to nurture the intellect and conscience of every student in a warm, encouraging framework.</strong>
+                    </p>
+
+                    <h4 style="font-weight: 700; color: var(--blackColor); margin-bottom: 20px;">Our teaching philosophy understands that all students:</h4>
+                    
+                    <div class="row g-3 philosophy-grid">
+                        <div class="col-sm-6">
+                            <div class="philosophy-card">
+                                <div class="philo-num">01</div>
+                                <h5>Inquire &amp; Discover</h5>
+                                <p>Students possess a natural love to ask questions, explore boundaries, and discover the world around them.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="philosophy-card">
+                                <div class="philo-num">02</div>
+                                <h5>Fearless Environment</h5>
+                                <p>They thrive and excel when provided absolute encouragement and the complete absence of the fear of failure.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="philosophy-card">
+                                <div class="philo-num">03</div>
+                                <h5>Active Practice</h5>
+                                <p>Information is absorbed best when it comes as a natural bi-product of active skill practice.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="philosophy-card">
+                                <div class="philo-num">04</div>
+                                <h5>Interactive Contexts</h5>
+                                <p>Learning is highly effective when experiences are interactive and challenging, both inside and outside classrooms.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Vision & Philosophy Section -->
+
+    <!-- Start Director's Desk Section -->
+    <div class="leader-desk-section">
+        <div class="container">
+            <div class="leader-card-premium" data-aos="fade-up">
+                <div class="row align-items-center">
+                    <div class="col-lg-4 text-center">
+                        <div class="leader-photo-wrapper mb-4 mb-lg-0">
+                            <!-- Director image is c2.jpg -->
+                            <img src="~/Gprp/image/c2.jpg" alt="Mr. Praveen Sachan" style="max-height: 400px; object-position: top;" />
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="leader-text-content ps-lg-4">
+                            <span class="leader-badge-desk">From the Director's Desk</span>
+                            <blockquote>
+                                "Few decisions are more important than the choice of the right school for your child..."
+                            </blockquote>
+                            <p>
+                                Thank you for showing interest in admitting your child to Krishak Inter College. The website provides you with a glimpse of what our school has to offer. We believe that Krishak Inter College offers an educational experience like no other to our children and will give them the qualifications and confidence they will need to play a leading role in tomorrow’s society.
+                            </p>
+                            <p>
+                                We constantly endeavor to provide our students with a learning environment in which they have as many opportunities as possible in which to excel and also distinguish themselves in academics and a range of co-curricular and extracurricular activities.
+                            </p>
+                            <p>
+                                I am sure that every child admitted to the school will find the staff and general environment warm, friendly, and supportive, as well as an atmosphere which breeds co-operation and trust. We look forward to welcoming your child to Krishak Inter College Kids Wing.
+                            </p>
+                            <div class="leader-signature-block">
+                                <div class="leader-sig-name">Mr. Praveen Sachan</div>
+                                <div class="leader-sig-title">Director / Manager</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Director's Desk Section -->
+
+    <!-- Start Administrator's Desk Section -->
+    <div class="leader-desk-section alt-bg">
+        <div class="container">
+            <div class="leader-card-premium" data-aos="fade-up">
+                <div class="row align-items-center">
+                    <div class="col-lg-8 order-2 order-lg-1">
+                        <div class="leader-text-content pe-lg-4">
+                            <span class="leader-badge-desk" style="background-color: var(--mainColor);">From the Administrator's Desk</span>
+                            <blockquote>
+                                "Education is a shared commitment between dedicated teachers, motivated students and enthusiastic parents with high expectations."
+                            </blockquote>
+                            <p>
+                                Today the role of school is not only to pursue academic excellence but also to motivate and empower its students to be lifelong learners, critical thinkers, and productive members of an ever-changing global society. More than a decade back Krishak Inter College pledged to transform education. 
+                            </p>
+                            <p>
+                                At Krishak Inter College we provide an atmosphere to our students for multifaceted development, where children are encouraged to channelize their potential in the pursuit of excellence. This can only be possible in a holistic, student-centric environment. The talent, skills, and abilities of each student need to be identified, nurtured, and encouraged.
+                            </p>
+                            <p>
+                                The parents are the most strengthening power in moulding the future of children. Their consistent support empowers us to do more and more. I pay my gratitude to them for their faith in us. I am confident that the Krishak Inter College will make themselves stronger day by day, adding a new leaf to the grandeur of the school.
+                            </p>
+                            <div class="leader-signature-block">
+                                <div class="leader-sig-name">School Administration</div>
+                                <div class="leader-sig-title">Krishak Inter College</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-center order-1 order-lg-2 mb-4 mb-lg-0">
+                        <div class="leader-photo-wrapper">
+                            <!-- c4.jpeg is used as a beautiful contextual school asset in admin section -->
+                            <img src="~/Gprp/image/c4.jpeg" alt="School Administration Desk" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Administrator's Desk Section -->
+
+    <!-- Start About Gallery Grid Section -->
+    <div class="about-gallery-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="sub"><i class='bx bxs-image'></i> Campus Gallery</span>
+                <h2>Glimpses of Our Campus</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-4 col-sm-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="about-img-grid">
+                        <img src="~/Gprp/image/c1.jpeg" alt="School Front" />
+                        <div class="about-img-overlay">
+                            <span>Main Entrance</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="about-img-grid">
+                        <img src="~/Gprp/image/c6.jpg" alt="School Life" />
+                        <div class="about-img-overlay">
+                            <span>Student Activities</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="about-img-grid">
+                        <img src="~/Gprp/image/c3.jpg" alt="Academics" />
+                        <div class="about-img-overlay">
+                            <span>Academic Classes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End About Gallery Grid Section -->
+
+    <!-- Start Footer Area -->
+    <div class="footer-area">
+        <div class="footer-widget-info ptb-100">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Quick Links</h4>
+                            <ul>
+                                <li><a asp-controller="Home" asp-action="Index"><i class='bx bx-chevron-right'></i> Home</a></li>
+                                <li><a asp-controller="Home" asp-action="about"><i class='bx bx-chevron-right'></i> About Us</a></li>
+                                <li><a asp-controller="Home" asp-action="Gallery"><i class='bx bx-chevron-right'></i> Gallery</a></li>
+                                <li><a asp-controller="Home" asp-action="contacts"><i class='bx bx-chevron-right'></i> Contact Us</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Account</h4>
+                            <ul>
+                                <li><a asp-controller="Account" asp-action="Login"><i class='bx bx-chevron-right'></i> Login</a></li>
+                              @*   <li><a asp-controller="Account" asp-action="Register"><i class='bx bx-chevron-right'></i> Register</a></li> *@
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Contact Info</h4>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 10px;"><i class="bx bxs-map me-2" style="color: var(--mainColor);"></i> Krishak Inter College, India</p>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 10px;"><i class="bx bxs-envelope me-2" style="color: var(--mainColor);"></i> <a href="mailto:info@kic.in" style="color: var(--paragraphColorSecond);">info@kic.in</a></p>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 0;"><i class="bx bxs-time me-2" style="color: var(--mainColor);"></i> Mon - Sat: 8:00 - 17:00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="copy-right-area style-2">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-4">
+                        <div class="cpr-left">
+                            <p>Copyright© <a href="https://kic.in">Krishak Inter College</a>. All rights reserved.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="cpr-right">
+                            <ul>
+                                <li><a href="#">Privacy Policy</a></li>
+                                <li><a href="#">Cookie Policy</a></li>
+                            </ul>
+                            <ul class="social-list">
+                                <li><a href="#"><i class='bx bxl-facebook'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-instagram-alt'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-twitter'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-linkedin-square'></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="copy-logo">
+                    <img src="/kic_logo.png" alt="Krishak Inter College" style="height: 60px; width: auto; background: var(--whiteColor); padding: 5px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Footer Area -->
+
+    <div class="go-top active">
+        <i class="bx bx-up-arrow-alt"></i>
+    </div>
+
+    <!-- Links of JS files -->
+    <script src="~/collage/collage_project/assets/js/jquery.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/aos.js"></script>
+    <script src="~/collage/collage_project/assets/js/bootstrap.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/magnific-popup.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/owl.carousel.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+</body>
+</html>

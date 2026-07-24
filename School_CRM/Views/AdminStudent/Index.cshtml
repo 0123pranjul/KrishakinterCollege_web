@@ -1,0 +1,552 @@
+﻿@{
+    ViewData["Title"] = "Admin — Student Management";
+}
+
+<div class="container-fluid px-3">
+
+    <!-- ── PAGE HEADER ───────────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0 fw-bold"><i class="fas fa-user-shield me-2 text-primary"></i>Student Information Panel</h4>
+            <small class="text-muted">Admin View — Complete student details, fees & dues</small>
+        </div>
+        <span class="badge bg-danger px-3 py-2 fs-6">
+            <i class="fas fa-lock me-1"></i> Admin Only
+        </span>
+    </div>
+
+    <!-- ── FILTER BAR ────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Session</label>
+                    <select id="filterSession" class="form-select form-select-sm">
+                        <option value="">All Sessions</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Class</label>
+                    <select id="filterClass" class="form-select form-select-sm">
+                        <option value="">All Classes</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Section</label>
+                    <select id="filterSection" class="form-select form-select-sm">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Status</label>
+                    <select id="filterStatus" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Search Student</label>
+                    <input type="text" id="searchStudent" class="form-control form-control-sm"
+                           placeholder="Name or Roll No..." />
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SUMMARY CARDS ─────────────────────────────────────────────────── -->
+    <div class="row g-2 mb-3" id="summaryCards">
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-primary" id="scTotal">0</h4>
+                    <small class="text-muted">Total Students</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-success" id="scActive">0</h4>
+                    <small class="text-muted">Active</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-secondary" id="scInactive">0</h4>
+                    <small class="text-muted">Inactive</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-info" id="scClasses">0</h4>
+                    <small class="text-muted">Classes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-warning" id="scSections">0</h4>
+                    <small class="text-muted">Sections</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center py-2">
+                <div class="card-body py-1">
+                    <h4 class="mb-0 text-danger" id="scShowing">0</h4>
+                    <small class="text-muted">Showing</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── STUDENT GRID ───────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">
+                <i class="fas fa-users me-2 text-primary"></i>All Students
+            </h6>
+            <span class="badge bg-primary" id="gridCount">0 records</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="studentGrid" class="table table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="4%">#</th>
+                            <th width="20%">Student Name</th>
+                            <th width="8%">Roll No</th>
+                            <th width="12%">Session</th>
+                            <th width="10%">Class</th>
+                            <th width="8%">Section</th>
+                            <th width="8%">Status</th>
+                            <th width="10%">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── STUDENT DETAIL OFFCANVAS ──────────────────────────────────────────── -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="studentDetailCanvas"
+     style="width: 75% !important">
+    <div class="offcanvas-header bg-primary text-white">
+        <h5 class="offcanvas-title" id="canvasTitle">
+            <i class="fas fa-user-graduate me-2"></i>Student Profile
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0" id="canvasBody">
+        <div class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+            <p class="mt-2 text-muted">Loading student details...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+        let allData = [];
+
+        $(document).ready(function () {
+        loadDropdowns();
+        loadGrid();
+        });
+
+        // ── Load Dropdowns ────────────────────────────────────────────────────
+        function loadDropdowns() {
+        $.get('@Url.Action("GetDropdowns", "AdminStudent")', function (res) {
+        res.sessions.forEach(s => $('#filterSession').append(`<option value="${s.sessionId}">${s.sessionName}</option>`));
+        res.classes .forEach(c => $('#filterClass')  .append(`<option value="${c.classId}">${c.className}</option>`));
+        res.sections.forEach(s => $('#filterSection').append(`<option value="${s.sectionId}">${s.sectionName}</option>`));
+        });
+        }
+
+        // ── Load Grid ─────────────────────────────────────────────────────────
+        function loadGrid() {
+        if (table) { table.destroy(); }
+
+        var params = {
+        sessionId : $('#filterSession').val() || 0,
+        classId   : $('#filterClass')  .val() || 0,
+        sectionId : $('#filterSection').val() || 0,
+        status    : $('#filterStatus') .val()
+        };
+
+        table = $('#studentGrid').DataTable({
+        ajax: {
+        url : '@Url.Action("GetAllStudents", "AdminStudent")',
+        type: 'GET',
+        data: params,
+        dataSrc: function (json) {
+        allData = json.data;
+        updateSummaryCards(json.data);
+        return json.data;
+        }
+        },
+        columns: [
+        { data: 'studentId',   width: '4%',  className: 'text-center' },
+        {
+        data: 'studentName', width: '20%',
+        render: function (data, type, row) {
+        return `<div class="fw-semibold">${data}</div>
+        <small class="text-muted">ID: ${row.studentId}</small>`;
+        }
+        },
+        { data: 'rollNo',      width: '8%',  className: 'text-center fw-semibold' },
+        { data: 'sessionName', width: '12%', className: 'text-center' },
+        {
+        data: 'className', width: '10%', className: 'text-center',
+        render: d => `<span class="badge bg-info text-dark">${d}</span>`
+        },
+        {
+        data: 'sectionName', width: '8%', className: 'text-center',
+        render: d => `<span class="badge bg-secondary">${d}</span>`
+        },
+        {
+        data: 'isActive', width: '8%', className: 'text-center',
+        render: d => d === 'Active'
+        ? '<span class="badge bg-success">Active</span>'
+        : '<span class="badge bg-danger">Inactive</span>'
+        },
+        {
+        data: 'studentId', width: '10%', className: 'text-center',
+        render: function (data, type, row) {
+        return `<button class="btn btn-sm btn-primary view-btn" data-id="${data}"
+        data-name="${row.studentName}" title="View Full Profile">
+        <i class="fas fa-eye me-1"></i>View
+        </button>`;
+        }
+        }
+        ],
+        language  : { emptyTable: "No students found" },
+        order     : [[1, 'asc']],
+        pageLength: 25,
+        drawCallback: function () {
+        if (typeof table !== 'undefined' && table) {
+        var vis = table.rows({ filter: 'applied' }).data().toArray();
+        $('#scShowing').text(vis.length);
+        $('#gridCount').text(vis.length + ' records');
+        }
+        },
+        initComplete: function () {
+        $('#searchStudent').on('keyup', function () {
+        table.search($(this).val()).draw();
+        });
+        }
+        });
+        }
+
+        // ── Filters ───────────────────────────────────────────────────────────
+        $('#filterSession, #filterClass, #filterSection, #filterStatus').on('change', function () {
+        loadGrid();
+        });
+
+        function resetFilters() {
+        $('#filterSession, #filterClass, #filterSection, #filterStatus').val('');
+        $('#searchStudent').val('');
+        loadGrid();
+        }
+
+        // ── Summary Cards ─────────────────────────────────────────────────────
+        function updateSummaryCards(data) {
+        var active   = data.filter(d => d.isActive === 'Active').length;
+        var inactive = data.filter(d => d.isActive === 'Inactive').length;
+        var classes  = new Set(data.map(d => d.className)).size;
+        var sections = new Set(data.map(d => d.sectionName)).size;
+
+        $('#scTotal')   .text(data.length);
+        $('#scActive')  .text(active);
+        $('#scInactive').text(inactive);
+        $('#scClasses') .text(classes);
+        $('#scSections').text(sections);
+        $('#scShowing') .text(data.length);
+        }
+
+        // ── View Student Detail ───────────────────────────────────────────────
+        $(document).on('click', '.view-btn', function () {
+        var studentId = $(this).data('id');
+        var name      = $(this).data('name');
+
+        $('#canvasTitle').html(`<i class="fas fa-user-graduate me-2"></i>${name}`);
+        $('#canvasBody').html(`
+        <div class="text-center py-5">
+        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+        <p class="mt-2 text-muted">Loading...</p>
+        </div>`);
+
+        var canvas = new bootstrap.Offcanvas(document.getElementById('studentDetailCanvas'));
+        canvas.show();
+
+        var sessionId = $('#filterSession').val() || 0;
+
+        $.get('@Url.Action("GetStudentDetail", "AdminStudent")',
+        { studentId, sessionId },
+        function (res) {
+        if (!res.success) {
+        toastr.error(res.message);
+        return;
+        }
+        $('#canvasBody').html(buildStudentProfile(res));
+        }
+        );
+        });
+
+        // ── Build Student Profile HTML ────────────────────────────────────────
+        function buildStudentProfile(res) {
+        var s   = res.student;
+        var sum = res.summary;
+        var html = '';
+
+        // ── Header Info ───────────────────────────────────────────────────
+        html += `
+        <div class="bg-light border-bottom px-4 py-3">
+        <div class="row align-items-center">
+        <div class="col-auto">
+        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold"
+        style="width:56px;height:56px;font-size:22px">
+        ${s.studentName ? s.studentName[0].toUpperCase() : '?'}
+        </div>
+        </div>
+        <div class="col">
+        <h5 class="mb-0 fw-bold">${s.studentName}</h5>
+        <small class="text-muted">Roll No: <strong>${s.rollNo}</strong>
+        &bull; ID: ${s.studentId}
+        &bull; Joined: ${s.createdDate}</small>
+        </div>
+        <div class="col-auto">
+        ${s.isActive === 'Active'
+        ? '<span class="badge bg-success fs-6">Active</span>'
+        : '<span class="badge bg-danger fs-6">Inactive</span>'}
+        </div>
+        </div>
+        </div>`;
+
+        // ── Summary Ribbon ────────────────────────────────────────────────
+        html += `
+        <div class="row g-0 border-bottom text-center">
+        <div class="col border-end py-2">
+        <div class="text-success fw-bold">₹${fmt(sum.totalCollected)}</div>
+        <small class="text-muted">Collected</small>
+        </div>
+        <div class="col border-end py-2">
+        <div class="text-danger fw-bold">₹${fmt(sum.totalRemaining)}</div>
+        <small class="text-muted">Remaining</small>
+        </div>
+        <div class="col border-end py-2">
+        <div class="text-warning fw-bold">₹${fmt(sum.totalDiscount)}</div>
+        <small class="text-muted">Discount</small>
+        </div>
+        <div class="col border-end py-2">
+        <div class="text-danger fw-bold">₹${fmt(sum.totalFine)}</div>
+        <small class="text-muted">Fine</small>
+        </div>
+        <div class="col border-end py-2">
+        <div class="text-warning fw-bold">${sum.unpaidExtra}</div>
+        <small class="text-muted">Unpaid Extra</small>
+        </div>
+        <div class="col py-2">
+        <div class="text-danger fw-bold">${sum.pendingDues}</div>
+        <small class="text-muted">Pending Dues</small>
+        </div>
+        </div>`;
+
+        html += '<div class="px-4 py-3">';
+
+        // ── Tab Navigation ────────────────────────────────────────────────
+        html += `
+        <ul class="nav nav-tabs mb-3" id="profileTabs">
+        <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#tabSessions">
+        <i class="fas fa-calendar me-1"></i>Sessions (${res.sessions.length})
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabFees">
+        <i class="fas fa-money-bill me-1"></i>Fee Collections (${res.feeCollections.length})
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabExtra">
+        <i class="fas fa-receipt me-1"></i>Extra Charges (${res.extraCharges.length})
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabDues">
+        <i class="fas fa-exclamation-circle me-1"></i>Dues (${res.dues.length})
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabOverrides">
+        <i class="fas fa-hand-holding-usd me-1"></i>Fee Overrides (${res.overrides.length})
+        </a>
+        </li>
+        </ul>
+        <div class="tab-content">`;
+
+        // ── Tab 1: Sessions ───────────────────────────────────────────────
+        html += '<div class="tab-pane fade show active" id="tabSessions">';
+        if (!res.sessions.length) {
+        html += noDataMsg('No sessions mapped');
+        } else {
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered table-hover">';
+        html += '<thead class="table-light"><tr><th>#</th><th>Session</th><th>Class</th><th>Section</th></tr></thead><tbody>';
+        res.sessions.forEach((s, i) => {
+        html += `<tr>
+        <td class="text-center">${i+1}</td>
+        <td><span class="badge bg-primary">${s.sessionName}</span></td>
+        <td><span class="badge bg-info text-dark">${s.className}</span></td>
+        <td><span class="badge bg-secondary">${s.sectionName}</span></td>
+        </tr>`;
+        });
+        html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        // ── Tab 2: Fee Collections ────────────────────────────────────────
+        html += '<div class="tab-pane fade" id="tabFees">';
+        if (!res.feeCollections.length) {
+        html += noDataMsg('No fee collections found');
+        } else {
+        var totalPaid = res.feeCollections.reduce((s, f) => s + f.paidAmount, 0);
+        var totalDue  = res.feeCollections.reduce((s, f) => s + f.dueAmount,  0);
+        html += `<div class="alert alert-light py-2 mb-2 d-flex gap-4 small">
+        <span>Total Paid: <strong class="text-success">₹${fmt(totalPaid)}</strong></span>
+        <span>Total Due: <strong class="text-danger">₹${fmt(totalDue)}</strong></span>
+        <span>Records: <strong>${res.feeCollections.length}</strong></span>
+        </div>`;
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered table-hover">';
+        html += '<thead class="table-light"><tr><th>Month/Year</th><th>Session</th><th>Total</th><th>Paid</th><th>Due</th><th>Discount</th><th>Fine</th><th>Mode</th><th>Date</th></tr></thead><tbody>';
+        res.feeCollections.forEach(f => {
+        var dueColor = f.dueAmount > 0 ? 'text-danger' : 'text-success';
+        html += `<tr>
+        <td class="fw-semibold">${f.monthYear}</td>
+        <td><small>${f.sessionName}</small></td>
+        <td>₹${fmt(f.totalAmount)}</td>
+        <td class="text-success fw-semibold">₹${fmt(f.paidAmount)}</td>
+        <td class="${dueColor} fw-semibold">₹${fmt(f.dueAmount)}</td>
+        <td class="text-warning">₹${fmt(f.discountAmount)}</td>
+        <td class="text-danger">₹${fmt(f.fineAmount)}</td>
+        <td><span class="badge bg-info text-dark" style="font-size:10px">${f.paymentMode}</span></td>
+        <td><small>${f.paymentDate}</small></td>
+        </tr>`;
+        if (f.details && f.details.length) {
+        html += `<tr class="table-light">
+        <td colspan="9" class="py-1 ps-4">
+        <small class="text-muted">Breakdown: `;
+        html += f.details.map(d => `${d.feeName}: <strong>₹${fmt(d.amount)}</strong>`).join(' &nbsp;|&nbsp; ');
+        html += '</small></td></tr>';
+        }
+        });
+        html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        // ── Tab 3: Extra Charges ──────────────────────────────────────────
+        html += '<div class="tab-pane fade" id="tabExtra">';
+        if (!res.extraCharges.length) {
+        html += noDataMsg('No extra charges found');
+        } else {
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered table-hover">';
+        html += '<thead class="table-light"><tr><th>Fee Type</th><th>Session</th><th>Amount</th><th>Reason</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+        res.extraCharges.forEach(e => {
+        html += `<tr>
+        <td class="fw-semibold">${e.feeName}</td>
+        <td><small>${e.sessionName}</small></td>
+        <td class="text-danger fw-semibold">₹${fmt(e.amount)}</td>
+        <td><small>${e.reason || '-'}</small></td>
+        <td><small>${e.chargeDate}</small></td>
+        <td>${e.isPaid === 'Paid'
+        ? '<span class="badge bg-success">Paid</span>'
+        : '<span class="badge bg-warning text-dark">Pending</span>'}</td>
+        </tr>`;
+        });
+        html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        // ── Tab 4: Dues ───────────────────────────────────────────────────
+        html += '<div class="tab-pane fade" id="tabDues">';
+        if (!res.dues.length) {
+        html += noDataMsg('No dues found');
+        } else {
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered table-hover">';
+        html += '<thead class="table-light"><tr><th>Month/Year</th><th>Session</th><th>Total Due</th><th>Paid</th><th>Remaining</th><th>Type</th><th>Due Date</th><th>Status</th><th>Remarks</th></tr></thead><tbody>';
+        res.dues.forEach(d => {
+        var remColor = d.remainingDue > 0 ? 'text-danger' : 'text-success';
+        html += `<tr>
+        <td class="fw-semibold">${d.monthYear}</td>
+        <td><small>${d.sessionName}</small></td>
+        <td>₹${fmt(d.totalDue)}</td>
+        <td class="text-success">₹${fmt(d.paidAmount)}</td>
+        <td class="${remColor} fw-bold">₹${fmt(d.remainingDue)}</td>
+        <td><span class="badge bg-info text-dark" style="font-size:10px">${d.dueType || '-'}</span></td>
+        <td><small>${d.dueDate}</small></td>
+        <td>${d.isSettled === 'Settled'
+        ? '<span class="badge bg-success">Settled</span>'
+        : '<span class="badge bg-danger">Pending</span>'}</td>
+        <td><small class="text-muted">${d.remarks || '-'}</small></td>
+        </tr>`;
+        });
+        html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        // ── Tab 5: Fee Overrides ──────────────────────────────────────────
+        html += '<div class="tab-pane fade" id="tabOverrides">';
+        if (!res.overrides.length) {
+        html += noDataMsg('No fee overrides set for this student');
+        } else {
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered">';
+        html += '<thead class="table-light"><tr><th>Fee Type</th><th>Frequency</th><th>Override Amount</th></tr></thead><tbody>';
+        res.overrides.forEach(o => {
+        html += `<tr>
+        <td class="fw-semibold">${o.feeName}</td>
+        <td><span class="badge bg-primary">${o.isRecurring}</span></td>
+        <td class="text-success fw-bold">₹${fmt(o.amount)}</td>
+        </tr>`;
+        });
+        html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        html += '</div></div></div>'; // tab-content, px-4, offcanvas-body
+
+        return html;
+        }
+
+        function noDataMsg(msg) {
+        return `<div class="text-center text-muted py-4">
+        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>${msg}
+        </div>`;
+        }
+
+        function fmt(n) {
+        return Number(n || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+        });
+        }
+    </script>
+}

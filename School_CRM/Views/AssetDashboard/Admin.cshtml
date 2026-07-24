@@ -1,0 +1,244 @@
+@model School_CRM.Models.DTOs.AssetAdminDashboardDto
+@{ ViewData["Title"] = "Asset Dashboard"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-boxes text-primary me-2"></i>Asset Dashboard</h2>
+            <small class="text-muted">Real-time asset inventory overview</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Asset" asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Add Asset
+            </a>
+            <a asp-controller="AssetIssue" asp-action="Create" class="btn btn-success">
+                <i class="fas fa-arrow-up me-1"></i>Issue Asset
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        @{
+            var cards = new[]
+            {
+                ("Total Assets",       Model.TotalAssets,          "bg-primary",   "fas fa-boxes"),
+                ("Available",          Model.AvailableUnits,       "bg-success",   "fas fa-check-circle"),
+                ("Issued",             Model.IssuedUnits,          "bg-info",      "fas fa-arrow-up"),
+                ("Under Repair",       Model.UnderRepair,          "bg-warning",   "fas fa-tools"),
+                ("Overdue Returns",    Model.OverdueReturns,       "bg-danger",    "fas fa-clock"),
+                ("Warranty Expiring",  Model.WarrantyExpiringSoon, "bg-secondary", "fas fa-shield-alt"),
+                ("Pending Maintenance",Model.PendingMaintenance,   "bg-dark",      "fas fa-wrench"),
+                ("Open Damage Reports",Model.OpenDamageReports,    "bg-danger",    "fas fa-exclamation-triangle"),
+            };
+        }
+        @foreach (var (label, value, bg, icon) in cards)
+        {
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card border-0 shadow-sm @bg text-white">
+                    <div class="card-body text-center py-3">
+                        <i class="@icon fa-2x mb-2 opacity-75"></i>
+                        <h3 class="fw-bold mb-0">@value</h3>
+                        <small>@label</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Category-wise Stock -->
+        <div class="col-xl-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Category-wise Stock</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Category</th><th>Total</th><th>Available</th><th>Issued</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.CategoryStock)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@c.CategoryName</td>
+                                        <td>@c.Total</td>
+                                        <td class="text-success fw-semibold">@c.Available</td>
+                                        <td class="text-warning fw-semibold">@c.Issued</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="col-xl-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-success"></i>Asset Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Overdue -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between py-3">
+                    <h6 class="fw-bold mb-0 text-danger"><i class="fas fa-clock me-2"></i>Overdue Returns</h6>
+                    <a asp-controller="AssetIssue" asp-action="Overdue" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Asset</th><th>Tag</th><th>Issued To</th><th>Due</th><th>Days</th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.OverdueAssets.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-3">No overdue assets</td></tr>
+                                }
+                                @foreach (var o in Model.OverdueAssets.Take(8))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@o.AssetName</td>
+                                        <td><code class="small">@o.AssetTag</code></td>
+                                        <td>@o.IssuedTo</td>
+                                        <td class="text-danger">@o.ExpectedReturnDate.ToString("dd/MM/yy")</td>
+                                        <td><span class="badge bg-danger">@o.DaysOverdue d</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warranty Alerts -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-warning"><i class="fas fa-shield-alt me-2"></i>Warranty Expiring (30 days)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Asset</th><th>Tag</th><th>Location</th><th>Expiry</th><th>Days Left</th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.WarrantyAlerts.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-3">No warranty alerts</td></tr>
+                                }
+                                @foreach (var w in Model.WarrantyAlerts)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@w.AssetName</td>
+                                        <td><code class="small">@w.AssetTag</code></td>
+                                        <td class="text-muted small">@(w.LocationName ?? "-")</td>
+                                        <td>@w.WarrantyExpiry.ToString("dd/MM/yy")</td>
+                                        <td><span class="badge @(w.DaysLeft <= 7 ? "bg-danger" : "bg-warning text-dark")">@w.DaysLeft d</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Pending Maintenance -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-wrench me-2 text-secondary"></i>Pending Maintenance</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Asset</th><th>Tag</th><th>Type</th><th>Started</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.PendingMaintenanceList.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-3">No pending maintenance</td></tr>
+                                }
+                                @foreach (var m in Model.PendingMaintenanceList)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@m.AssetName</td>
+                                        <td><code class="small">@m.AssetTag</code></td>
+                                        <td>@m.MaintenanceType</td>
+                                        <td class="text-muted small">@m.StartDate.ToString("dd/MM/yy")</td>
+                                        <td><span class="badge @(m.Status == "InProgress" ? "bg-warning text-dark" : "bg-secondary")">@m.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location-wise Stock -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-2 text-info"></i>Location-wise Assets</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Location</th><th>Total</th><th>Issued</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var l in Model.LocationStock.Take(10))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@l.LocationName</td>
+                                        <td>@l.TotalAssets</td>
+                                        <td class="text-warning">@l.IssuedCount</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const catData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CategoryStock));
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: catData.map(x => x.categoryName),
+            datasets: [{
+                data: catData.map(x => x.total),
+                backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6c757d','#0dcaf0','#6610f2','#fd7e14']
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'right' } } }
+    });
+</script>
+}

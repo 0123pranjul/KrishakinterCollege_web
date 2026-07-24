@@ -1,0 +1,411 @@
+@{
+    ViewData["Title"] = "Trip Management";
+    var routes = ViewBag.Routes as List<School_CRM.Models.TblTrnRoute> ?? new();
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<style>
+    .btn-group-xs .btn { padding: 2px 6px; font-size: .72rem; }
+    .status-scheduled  { background:#f1f5f9;  color:#475569; }
+    .status-inprogress { background:#fef9c3;  color:#92400e; }
+    .status-completed  { background:#d1fae5;  color:#065f46; }
+    .status-cancelled  { background:#fee2e2;  color:#991b1b; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- ── Header ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-route text-primary me-2"></i>Trip Management</h4>
+            <small class="text-muted">Daily trip log — start, complete aur track karo</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <!-- Weekly Schedule button — key automation entry point -->
+            <a href="/TransportTrip/Schedule" class="btn btn-success">
+                <i class="fas fa-calendar-week me-1"></i>Weekly Schedule &amp; Auto-Generate
+            </a>
+            <button class="btn btn-primary" onclick="openTripModal(0)">
+                <i class="fas fa-plus me-1"></i>Add Trip
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Quick Generate Today Banner ── -->
+    <div class="alert alert-primary border-0 d-flex align-items-center gap-3 py-2 mb-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+        <i class="fas fa-magic fa-lg text-primary"></i>
+        <div class="flex-grow-1">
+            <strong>Auto-Generate Today's Trips</strong>
+            <span class="text-muted ms-2 small">Weekly schedule ke basis pe aaj ke trips ek click mein</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="generateToday()">
+            <i class="fas fa-bolt me-1"></i>Generate Today
+        </button>
+    </div>
+
+    <!-- ── Filters ── -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-2 px-3 d-flex gap-3 align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="small fw-semibold mb-0">Date:</label>
+                <input type="date" id="tripDate" class="form-control form-control-sm" style="max-width:160px"
+                       value="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="loadTrips()" />
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="small fw-semibold mb-0">Route:</label>
+                <select id="tripRoute" class="form-select form-select-sm" style="max-width:200px" onchange="loadTrips()">
+                    <option value="0">All Routes</option>
+                    @foreach (var r in routes)
+                    {
+                        <option value="@r.RouteId">@r.RouteName</option>
+                    }
+                </select>
+            </div>
+            <!-- Quick date navigation -->
+            <div class="ms-auto d-flex gap-1">
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeDate(-1)" title="Previous Day">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="goToday()">Today</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeDate(1)" title="Next Day">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="loadTrips()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Trips Table ── -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tblTrips" class="table table-hover align-middle mb-0" style="font-size:.84rem">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Route</th>
+                            <th>Type</th>
+                            <th>Vehicle</th>
+                            <th>Status</th>
+                            <th>Adherence</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsBody">
+                        <tr><td colspan="10" class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Trip Form Modal ── -->
+<div class="modal fade" id="tripModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="tripModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Boarding Status Modal ── -->
+<div class="modal fade" id="boardingModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-clipboard-check me-2"></i>Boarding Status</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="boardingBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Edit Remarks Modal ── -->
+<div class="modal fade" id="remarksModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-pencil-alt me-2 text-warning"></i>Edit Trip Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="remarksTripId" />
+                <label class="form-label fw-semibold">Remarks / Notes</label>
+                <textarea class="form-control" id="remarksText" rows="3"
+                          placeholder="Koi note ya karan likhein..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-warning" onclick="saveRemarks()">
+                    <i class="fas fa-save me-1"></i>Save Remarks
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+let tripsTable;
+
+// ── Badge helpers ──────────────────────────────────────────────────────────────
+function statusBadge(s) {
+    const cfg = {
+        Scheduled:  ['secondary', 'fas fa-clock'],
+        InProgress: ['warning text-dark', 'fas fa-bus'],
+        Completed:  ['success', 'fas fa-check-circle'],
+        Cancelled:  ['danger',  'fas fa-ban']
+    };
+    const [cls, icon] = cfg[s] || ['secondary', 'fas fa-circle'];
+    return '<span class="badge bg-' + cls + '"><i class="' + icon + ' me-1"></i>' + s + '</span>';
+}
+function adhBadge(a) {
+    if (!a || a === '-') return '—';
+    const ok = a === 'OnTime';
+    return '<span class="badge bg-' + (ok ? 'success' : 'danger') + '-subtle text-' + (ok ? 'success' : 'danger') + ' border">' + a + '</span>';
+}
+
+// ── Load Trips ──────────────────────────────────────────────────────────────────
+function loadTrips() {
+    const date    = $('#tripDate').val();
+    const routeId = $('#tripRoute').val() || 0;
+
+    if ($.fn.DataTable.isDataTable('#tblTrips')) {
+        $('#tblTrips').DataTable().destroy();
+    }
+
+    $.get('/TransportTrip/GetAll', { date, routeId }, function(r) {
+        if (!r.success) { toastr.error(r.message); return; }
+
+        let sno = 1;
+        const rows = r.data.map(function(t) {
+            const isSched    = t.tripStatus === 'Scheduled';
+            const isProgress = t.tripStatus === 'InProgress';
+            const isDone     = t.tripStatus === 'Completed';
+            const isCancelled = t.tripStatus === 'Cancelled';
+
+            const actionBtns =
+                (isSched
+                    ? '<button class="btn btn-success btn-sm" onclick="startTrip(' + t.tripId + ')" title="Start"><i class="fas fa-play"></i></button> '
+                    : '') +
+                (isProgress
+                    ? '<button class="btn btn-warning btn-sm" onclick="completeTrip(' + t.tripId + ')" title="Complete"><i class="fas fa-flag-checkered"></i></button> ' +
+                      '<button class="btn btn-info btn-sm" onclick="openBoarding(' + t.tripId + ')" title="Boarding"><i class="fas fa-clipboard-check"></i></button> '
+                    : '') +
+                (!isCancelled
+                    ? '<a href="/TransportTrip/Track/' + t.tripId + '" class="btn btn-outline-primary btn-sm" target="_blank" title="Track"><i class="fas fa-map-marked-alt"></i></a> '
+                    : '') +
+                '<button class="btn btn-outline-secondary btn-sm" onclick="openRemarks(' + t.tripId + ', \'' + (t.remarks || '').replace(/'/g,"\\'") + '\')" title="Remarks"><i class="fas fa-pencil-alt"></i></button> ' +
+                (isSched
+                    ? '<button class="btn btn-outline-danger btn-sm" onclick="cancelTrip(' + t.tripId + ')" title="Cancel"><i class="fas fa-ban"></i></button>'
+                    : '');
+
+            return '<tr>' +
+                '<td>' + (sno++) + '</td>' +
+                '<td class="fw-semibold">' + t.routeName + '</td>' +
+                '<td><span class="badge bg-light text-dark border">' + t.tripType + '</span></td>' +
+                '<td>' + t.vehicleNo + '</td>' +
+                '<td>' + statusBadge(t.tripStatus) + '</td>' +
+                '<td>' + adhBadge(t.adherenceStatus) + '</td>' +
+                '<td class="text-muted">' + t.actualStart + '</td>' +
+                '<td class="text-muted">' + t.actualEnd + '</td>' +
+                '<td class="text-muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (t.remarks || '') + '">' +
+                    (t.remarks ? '<small>' + t.remarks + '</small>' : '—') + '</td>' +
+                '<td><div class="d-flex gap-1 flex-wrap">' + actionBtns + '</div></td>' +
+                '</tr>';
+        });
+
+        $('#tripsBody').html(rows.length
+            ? rows.join('')
+            : '<tr><td colspan="10" class="text-center text-muted py-4"><i class="fas fa-calendar-times fa-2x mb-2 d-block opacity-25"></i>No trips found. <a href="/TransportTrip/Schedule">Generate from schedule →</a></td></tr>');
+
+        tripsTable = $('#tblTrips').DataTable({
+            pageLength: 25, order: [], destroy: true,
+            columnDefs: [{ orderable: false, targets: [0, 9] }]
+        });
+    });
+}
+
+// ── Date navigation ────────────────────────────────────────────────────────────
+function changeDate(offset) {
+    const d = new Date($('#tripDate').val());
+    d.setDate(d.getDate() + offset);
+    $('#tripDate').val(d.toISOString().split('T')[0]);
+    loadTrips();
+}
+function goToday() {
+    $('#tripDate').val(new Date().toISOString().split('T')[0]);
+    loadTrips();
+}
+
+// ── Generate Today from Schedule ───────────────────────────────────────────────
+function generateToday() {
+    const today = new Date().toISOString().split('T')[0];
+    $.ajax({
+        url: '/TransportTrip/GenerateScheduledTrips',
+        type: 'POST', contentType: 'application/json',
+        data: JSON.stringify({ fromDate: today, toDate: today, routeId: null }),
+        success: function(r) {
+            if (r.success) {
+                toastr.success(r.message);
+                loadTrips();
+            } else {
+                Swal.fire({
+                    title: 'Notice', text: r.message, icon: 'info',
+                    confirmButtonText: 'Set Schedule',
+                    showCancelButton: true, cancelButtonText: 'Close'
+                }).then(function(res) {
+                    if (res.isConfirmed) window.location.href = '/TransportTrip/Schedule';
+                });
+            }
+        }
+    });
+}
+
+// ── Trip Actions ───────────────────────────────────────────────────────────────
+function openTripModal(id) {
+    $('#tripModal').modal('show');
+    $('#tripModalContent').load('/TransportTrip/CreateOrEdit?id=' + id);
+}
+
+function saveTrip(form) {
+    const id = $(form).find('[name=TripId]').val() || 0;
+    $.ajax({
+        url: '/TransportTrip/CreateOrEdit?id=' + id,
+        type: 'POST', data: $(form).serialize(),
+        success: function(r) {
+            if (r.success) { toastr.success(r.message); $('#tripModal').modal('hide'); loadTrips(); }
+            else toastr.error(r.message);
+        }
+    });
+    return false;
+}
+
+function startTrip(tripId) {
+    Swal.fire({
+        title: 'Start Trip?',
+        text: 'Trip InProgress ho jayegi aur boarding logs create honge.',
+        icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#198754', confirmButtonText: 'Start Now'
+    }).then(function(r) {
+        if (!r.isConfirmed) return;
+        $.post('/TransportTrip/StartTrip', { tripId }, function(res) {
+            if (res.success) { toastr.success(res.message); loadTrips(); }
+            else toastr.error(res.message);
+        });
+    });
+}
+
+function completeTrip(tripId) {
+    Swal.fire({
+        title: 'Complete Trip?', icon: 'question',
+        showCancelButton: true, confirmButtonColor: '#0d6efd', confirmButtonText: 'Mark Complete'
+    }).then(function(r) {
+        if (!r.isConfirmed) return;
+        $.post('/TransportTrip/CompleteTrip', { tripId }, function(res) {
+            if (res.success) { toastr.success(res.message); loadTrips(); }
+            else toastr.error(res.message);
+        });
+    });
+}
+
+function cancelTrip(tripId) {
+    Swal.fire({
+        title: 'Cancel Trip?',
+        html: '<input id="cancelReason" class="swal2-input" placeholder="Reason (optional)">',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#dc3545', confirmButtonText: 'Cancel Trip',
+        preConfirm: function() { return document.getElementById('cancelReason').value; }
+    }).then(function(r) {
+        if (!r.isConfirmed) return;
+        $.post('/TransportTrip/CancelTrip', { tripId: tripId, reason: r.value }, function(res) {
+            if (res.success) { toastr.success(res.message); loadTrips(); }
+            else toastr.error(res.message);
+        });
+    });
+}
+
+// ── Remarks ────────────────────────────────────────────────────────────────────
+function openRemarks(tripId, existing) {
+    $('#remarksTripId').val(tripId);
+    $('#remarksText').val(existing);
+    $('#remarksModal').modal('show');
+}
+function saveRemarks() {
+    const tripId  = $('#remarksTripId').val();
+    const remarks = $('#remarksText').val();
+    $.post('/TransportTrip/UpdateTripRemarks', { tripId, remarks }, function(r) {
+        if (r.success) { toastr.success(r.message); $('#remarksModal').modal('hide'); loadTrips(); }
+        else toastr.error(r.message);
+    });
+}
+
+// ── Boarding Status ────────────────────────────────────────────────────────────
+function openBoarding(tripId) {
+    $('#boardingModal').modal('show');
+    $('#boardingBody').html('<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>');
+    $.get('/TransportTrip/GetBoardingStatus', { tripId }, function(r) {
+        if (!r.success) { $('#boardingBody').html('<div class="text-danger p-3">' + r.message + '</div>'); return; }
+        let html = '';
+        r.data.forEach(function(stop) {
+            html += '<div class="mb-4"><h6 class="fw-bold text-primary border-bottom pb-1">' +
+                '<i class="fas fa-map-marker-alt me-1"></i>Stop ' + stop.stopOrder + ': ' + stop.stopName + '</h6>' +
+                '<div class="row g-2">';
+            stop.students.forEach(function(s) {
+                html += '<div class="col-md-4">' +
+                    '<div class="d-flex align-items-center justify-content-between border rounded px-2 py-1">' +
+                    '<span class="small fw-semibold">' + s.studentName + '</span>' +
+                    '<div class="btn-group btn-group-sm">' +
+                    '<button class="btn btn-' + (s.boardingStatus === 'Present' ? 'success' : 'outline-success') + ' px-1 py-0" ' +
+                    'onclick="updateBoarding(' + s.id + ', \'Present\', this)" style="font-size:.7rem">✓</button>' +
+                    '<button class="btn btn-' + (s.boardingStatus === 'Absent' ? 'danger' : 'outline-danger') + ' px-1 py-0" ' +
+                    'onclick="updateBoarding(' + s.id + ', \'Absent\', this)" style="font-size:.7rem">✗</button>' +
+                    '</div></div></div>';
+            });
+            html += '</div></div>';
+        });
+        if (!r.data.length) html = '<div class="text-center text-muted py-4">No boarding logs found.</div>';
+        $('#boardingBody').html(html);
+    });
+}
+
+function updateBoarding(logId, status, btn) {
+    $.post('/TransportTrip/UpdateBoarding', { boardingLogId: logId, status }, function(r) {
+        if (r.success) {
+            const parent = $(btn).closest('.btn-group');
+            parent.find('.btn')
+                .filter(function() { return $(this).text().trim() === '✓'; })
+                .removeClass('btn-success').addClass('btn-outline-success');
+            parent.find('.btn')
+                .filter(function() { return $(this).text().trim() === '✗'; })
+                .removeClass('btn-danger').addClass('btn-outline-danger');
+            if (status === 'Present') {
+                parent.find('button:first').removeClass('btn-outline-success').addClass('btn-success');
+            } else {
+                parent.find('button:last').removeClass('btn-outline-danger').addClass('btn-danger');
+            }
+        } else { toastr.error(r.message); }
+    });
+}
+
+$(document).ready(function() { loadTrips(); });
+</script>
+}

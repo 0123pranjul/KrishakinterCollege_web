@@ -1,0 +1,57 @@
+@model School_CRM.Models.DTOs.AssetLocationDto
+@{ ViewData["Title"] = "Add Location"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-plus-circle text-primary me-2"></i>Add Location</h2>
+        <a asp-action="Locations" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="LocationCreate" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label asp-for="LocationName" class="form-label fw-semibold">Location Name <span class="text-danger">*</span></label>
+                            <input asp-for="LocationName" class="form-control" placeholder="e.g. Class 10-A, Science Lab 1..." />
+                            <span asp-validation-for="LocationName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="LocationType" class="form-label fw-semibold">Location Type <span class="text-danger">*</span></label>
+                            <select asp-for="LocationType" class="form-select">
+                                <option value="Classroom">Classroom</option>
+                                <option value="Lab">Lab</option>
+                                <option value="Office">Office</option>
+                                <option value="Ground">Ground</option>
+                                <option value="StoreRoom">StoreRoom</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Floor" class="form-label fw-semibold">Floor</label>
+                                <input asp-for="Floor" class="form-control" placeholder="Ground Floor, First Floor..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Building" class="form-label fw-semibold">Building</label>
+                                <input asp-for="Building" class="form-control" placeholder="Main Block, Science Block..." />
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Save</button>
+                            <a asp-action="Locations" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

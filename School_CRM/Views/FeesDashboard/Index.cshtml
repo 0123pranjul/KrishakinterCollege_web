@@ -1,0 +1,621 @@
+﻿@{
+    ViewData["Title"] = "FeesDashboard";
+}
+
+<div class="container-fluid px-3">
+
+    <!-- ── TOP FILTER BAR ─────────────────────────────────────────────────── -->
+    <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small fw-semibold mb-1">Session</label>
+                    <select id="globalSession" class="form-select form-select-sm" style="min-width:140px">
+                        <option value="">All Sessions</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small fw-semibold mb-1">From Date</label>
+                    <input type="date" id="fromDate" class="form-control form-control-sm"
+                           value="@DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small fw-semibold mb-1">To Date</label>
+                    <input type="date" id="toDate" class="form-control form-control-sm"
+                           value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small fw-semibold mb-1">Year (Charts)</label>
+                    <select id="chartYear" class="form-select form-select-sm">
+                        @for (int y = DateTime.Now.Year + 1; y >= DateTime.Now.Year - 3; y--)
+                        {
+                            <option value="@y" selected="@(y == DateTime.Now.Year ? "selected" : null)">@y</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-primary" onclick="loadAll()">
+                        <i class="fas fa-sync-alt me-1"></i> Apply
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-1" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+                <div class="col-auto ms-auto">
+                    <!-- Quick date presets -->
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="setPreset('today')">Today</button>
+                        <button class="btn btn-outline-secondary" onclick="setPreset('week')">This Week</button>
+                        <button class="btn btn-outline-secondary" onclick="setPreset('month')">This Month</button>
+                        <button class="btn btn-outline-secondary" onclick="setPreset('year')">This Year</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TODAY + THIS MONTH HIGHLIGHT CARDS ────────────────────────────── -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #0d6efd !important">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Collected Today</p>
+                            <h3 class="fw-bold text-primary mb-0" id="statToday">₹0</h3>
+                            <small class="text-muted" id="statTodayCount">0 collections</small>
+                        </div>
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                            <i class="fas fa-calendar-day text-primary fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #198754 !important">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Collected This Month</p>
+                            <h3 class="fw-bold text-success mb-0" id="statMonth">₹0</h3>
+                            <small class="text-muted" id="statMonthCount">0 collections</small>
+                        </div>
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                            <i class="fas fa-calendar-alt text-success fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #dc3545 !important">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Total Pending Dues</p>
+                            <h3 class="fw-bold text-danger mb-0" id="statDue">₹0</h3>
+                            <small class="text-muted" id="statDueStudents">0 students</small>
+                        </div>
+                        <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                            <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #fd7e14 !important">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Collected (Selected Range)</p>
+                            <h3 class="fw-bold text-warning mb-0" id="statRange">₹0</h3>
+                            <small class="text-muted" id="statRangeCount">0 collections</small>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                            <i class="fas fa-filter text-warning fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RANGE SUMMARY STRIP ────────────────────────────────────────────── -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 bg-light text-center py-2">
+                <small class="text-muted">Total Amount (Range)</small>
+                <h5 class="mb-0 text-dark" id="stripTotal">₹0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light text-center py-2">
+                <small class="text-muted">Discount Given</small>
+                <h5 class="mb-0 text-warning" id="stripDiscount">₹0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light text-center py-2">
+                <small class="text-muted">Fine Collected</small>
+                <h5 class="mb-0 text-danger" id="stripFine">₹0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light text-center py-2">
+                <small class="text-muted">All-Time Collections</small>
+                <h5 class="mb-0 text-success" id="stripAllTime">₹0</h5>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODULE COUNT CARDS ─────────────────────────────────────────────── -->
+    <div class="row g-2 mb-3">
+        @{
+            var modules = new[] {
+                new { id="mcStudents",   icon="fas fa-user-graduate", label="Students",        color="primary" },
+                new { id="mcSessions",   icon="fas fa-calendar",      label="Sessions",        color="info"    },
+                new { id="mcClasses",    icon="fas fa-chalkboard",    label="Classes",         color="success" },
+                new { id="mcSections",   icon="fas fa-layer-group",   label="Sections",        color="warning" },
+                new { id="mcFeeTypes",   icon="fas fa-tags",          label="Fee Types",       color="danger"  },
+                new { id="mcMappings",   icon="fas fa-link",          label="Mapped Students", color="secondary"},
+                new { id="mcStructures", icon="fas fa-file-invoice",  label="Fee Structures",  color="primary" },
+                new { id="mcExtraChg",   icon="fas fa-receipt",       label="Extra Charges",   color="danger"  },
+            };
+        }
+        @foreach (var m in modules)
+        {
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <i class="@m.icon text-@m.color mb-1 fa-lg"></i>
+                        <h4 class="mb-0 text-@m.color" id="@m.id">0</h4>
+                        <small class="text-muted">@m.label</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ── CHARTS ROW 1 ───────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-3">
+        <!-- Monthly Bar Chart -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-bar me-2 text-primary"></i>Monthly Collection vs Total</h6>
+                    <span class="badge bg-primary" id="chartYearBadge">@DateTime.Now.Year</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donut: Due Status -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-pie me-2 text-warning"></i>Due Status</h6>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <canvas id="dueStatusChart" height="180"></canvas>
+                    <div class="row text-center mt-2 w-100">
+                        <div class="col-6">
+                            <h5 class="text-danger mb-0" id="duePendingCount">0</h5>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-success mb-0" id="dueSettledCount">0</h5>
+                            <small class="text-muted">Settled</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CHARTS ROW 2 ───────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-3">
+        <!-- Payment Mode Horizontal Bar -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-bar me-2 text-success"></i>Payment Mode Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentModeChart" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Type Doughnut -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-pie me-2 text-info"></i>Fee Type Collection</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="feeTypeChart" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee vs Collection Progress -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-tachometer-alt me-2 text-danger"></i>Collection vs Target</h6>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center gap-2" id="collectionProgress">
+                    <div class="text-center text-muted small py-3">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── BOTTOM ROW: Defaulters + Recent Transactions ─────────────────── -->
+    <div class="row g-3">
+
+        <!-- Top Defaulters -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Top Defaulters</h6>
+                    <span class="badge bg-white text-danger" id="defaulterCount">0</span>
+                </div>
+                <div class="card-body p-0" id="defaultersList">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Recent Fee Collections</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0" id="recentTxnTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Session</th>
+                                    <th>Month</th>
+                                    <th class="text-end">Paid</th>
+                                    <th class="text-end">Due</th>
+                                    <th>Mode</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTxnBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-3">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        // ── Chart instances ───────────────────────────────────────────────────
+        let monthlyChartInst, dueChartInst, payModeChartInst, feeTypeChartInst;
+
+        const CHART_COLORS = ['#0d6efd','#198754','#dc3545','#fd7e14','#0dcaf0','#6f42c1','#20c997','#ffc107'];
+
+        // ── On Load ───────────────────────────────────────────────────────────
+        $(document).ready(function () {
+        loadSessionDropdown();
+        loadAll();
+        });
+
+        function loadSessionDropdown() {
+        $.get('@Url.Action("GetSessions", "FeesDashboard")', function (data) {
+        data.forEach(s => $('#globalSession').append(`<option value="${s.sessionId}">${s.sessionName}</option>`));
+        });
+        }
+
+        function getFilters() {
+        return {
+        sessionId : $('#globalSession').val() || 0,
+        fromDate  : $('#fromDate').val(),
+        toDate    : $('#toDate').val(),
+        year      : $('#chartYear').val()
+        };
+        }
+
+        function loadAll() {
+        var f = getFilters();
+        $('#chartYearBadge').text(f.year);
+        loadSummaryStats(f);
+        loadMonthlyChart(f);
+        loadPaymentModeChart(f);
+        loadFeeTypeChart(f);
+        loadDueStatus(f);
+        loadDefaulters(f);
+        loadRecentTransactions(f);
+        }
+
+        function resetFilters() {
+        $('#globalSession').val('');
+        $('#fromDate').val('@DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")');
+        $('#toDate'  ).val('@DateTime.Now.ToString("yyyy-MM-dd")');
+        $('#chartYear').val('@DateTime.Now.Year');
+        loadAll();
+        }
+
+        function setPreset(preset) {
+        var today = new Date();
+        var from, to = today.toISOString().split('T')[0];
+        if (preset === 'today')  { from = to; }
+        else if (preset === 'week') {
+        var d = new Date(today); d.setDate(d.getDate() - 6);
+        from = d.toISOString().split('T')[0];
+        }
+        else if (preset === 'month') {
+        from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        }
+        else if (preset === 'year') {
+        from = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+        }
+        $('#fromDate').val(from);
+        $('#toDate').val(to);
+        loadAll();
+        }
+
+        // ── Summary Stats ─────────────────────────────────────────────────────
+        function loadSummaryStats(f) {
+        $.get('@Url.Action("GetSummaryStats", "FeesDashboard")', f, function (d) {
+        // Top 4 cards
+        $('#statToday')       .text('₹' + fmt(d.collectedToday));
+        $('#statTodayCount')  .text(d.collectionsToday + ' collections');
+        $('#statMonth')       .text('₹' + fmt(d.collectedThisMonth));
+        $('#statMonthCount')  .text(d.collectionsThisMonth + ' collections');
+        $('#statDue')         .text('₹' + fmt(d.totalDueAmount));
+        $('#statDueStudents') .text(d.studentsWithDues + ' students');
+        $('#statRange')       .text('₹' + fmt(d.collectedInRange));
+        $('#statRangeCount')  .text(d.collectionsInRange + ' collections');
+
+        // Strip
+        $('#stripTotal')   .text('₹' + fmt(d.totalAmtInRange));
+        $('#stripDiscount').text('₹' + fmt(d.discountInRange));
+        $('#stripFine')    .text('₹' + fmt(d.fineInRange));
+        $('#stripAllTime') .text('₹' + fmt(d.collectedAllTime));
+
+        // Module counts
+        $('#mcStudents')  .text(d.totalStudents);
+        $('#mcSessions')  .text(d.totalSessions);
+        $('#mcClasses')   .text(d.totalClasses);
+        $('#mcSections')  .text(d.totalSections);
+        $('#mcFeeTypes')  .text(d.totalFeeTypes);
+        $('#mcMappings')  .text(d.totalMappings);
+        $('#mcStructures').text(d.totalStructures);
+        $('#mcExtraChg')  .text(d.totalExtraCharges);
+
+        // Collection vs Target progress
+        var pct = d.totalAmtThisMonth > 0
+        ? Math.min(Math.round((d.collectedThisMonth / d.totalAmtThisMonth) * 100), 100) : 0;
+        var barColor = pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger';
+        $('#collectionProgress').html(`
+        <div class="text-center mb-3">
+        <div class="display-6 fw-bold text-${pct>=80?'success':pct>=50?'warning':'danger'}">${pct}%</div>
+        <small class="text-muted">This Month Collection Rate</small>
+        </div>
+        <div class="progress mb-2" style="height:14px">
+        <div class="progress-bar ${barColor}" style="width:${pct}%">${pct}%</div>
+        </div>
+        <div class="d-flex justify-content-between small">
+        <span class="text-success">Collected: ₹${fmt(d.collectedThisMonth)}</span>
+        <span class="text-muted">Target: ₹${fmt(d.totalAmtThisMonth)}</span>
+        </div>
+        <hr class="my-2"/>
+        <div class="d-flex justify-content-between small">
+        <span>Pending Dues:</span>
+        <span class="fw-semibold text-danger">${d.pendingDuesCount}</span>
+        </div>
+        <div class="d-flex justify-content-between small">
+        <span>Settled Dues:</span>
+        <span class="fw-semibold text-success">${d.settledDuesCount}</span>
+        </div>
+        <div class="d-flex justify-content-between small">
+        <span>Unpaid Extra Charges:</span>
+        <span class="fw-semibold text-warning">${d.unpaidExtraCharges}</span>
+        </div>
+        `);
+        });
+        }
+
+        // ── Monthly Bar Chart ─────────────────────────────────────────────────
+        function loadMonthlyChart(f) {
+        $.get('@Url.Action("GetMonthlyChart", "FeesDashboard")', { sessionId: f.sessionId, year: f.year }, function (d) {
+        if (monthlyChartInst) monthlyChartInst.destroy();
+        monthlyChartInst = new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+        labels: d.months,
+        datasets: [
+        {
+        label: 'Collected (₹)',
+        data: d.paid,
+        backgroundColor: 'rgba(25,135,84,0.75)',
+        borderColor: '#198754',
+        borderWidth: 1,
+        borderRadius: 4
+        },
+        {
+        label: 'Total Due (₹)',
+        data: d.total,
+        backgroundColor: 'rgba(13,110,253,0.2)',
+        borderColor: '#0d6efd',
+        borderWidth: 2,
+        type: 'line',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4
+        }
+        ]
+        },
+        options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' }, tooltip: { callbacks: {
+        label: ctx => ctx.dataset.label + ': ₹' + Number(ctx.parsed.y).toLocaleString('en-IN')
+        }}},
+        scales: {
+        y: { ticks: { callback: v => '₹' + Number(v).toLocaleString('en-IN') } }
+        }
+        }
+        });
+        });
+        }
+
+        // ── Payment Mode Horizontal Bar ───────────────────────────────────────
+        function loadPaymentModeChart(f) {
+        $.get('@Url.Action("GetPaymentModeChart", "FeesDashboard")', { sessionId: f.sessionId }, function (d) {
+        if (payModeChartInst) payModeChartInst.destroy();
+        payModeChartInst = new Chart(document.getElementById('paymentModeChart'), {
+        type: 'bar',
+        data: {
+        labels: d.map(x => x.mode),
+        datasets: [{
+        label: 'Amount (₹)',
+        data: d.map(x => x.amount),
+        backgroundColor: CHART_COLORS.slice(0, d.length),
+        borderRadius: 4
+        }]
+        },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => '₹' + Number(ctx.parsed.x).toLocaleString('en-IN') + ' (' + d[ctx.dataIndex].count + ' txns)'
+        }}},
+        scales: { x: { ticks: { callback: v => '₹' + Number(v).toLocaleString('en-IN') } } }
+        }
+        });
+        });
+        }
+
+        // ── Fee Type Doughnut ─────────────────────────────────────────────────
+        function loadFeeTypeChart(f) {
+        $.get('@Url.Action("GetFeeTypeChart", "FeesDashboard")', { sessionId: f.sessionId }, function (d) {
+        if (feeTypeChartInst) feeTypeChartInst.destroy();
+        feeTypeChartInst = new Chart(document.getElementById('feeTypeChart'), {
+        type: 'doughnut',
+        data: {
+        labels: d.map(x => x.feeName),
+        datasets: [{
+        data: d.map(x => x.amount),
+        backgroundColor: CHART_COLORS.slice(0, d.length),
+        borderWidth: 2
+        }]
+        },
+        options: {
+        responsive: true,
+        plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ₹' + Number(ctx.parsed).toLocaleString('en-IN') } }
+        }
+        }
+        });
+        });
+        }
+
+        // ── Due Status Doughnut ───────────────────────────────────────────────
+        function loadDueStatus(f) {
+        $.get('@Url.Action("GetDueStatus", "FeesDashboard")', { sessionId: f.sessionId }, function (d) {
+        $('#duePendingCount').text(d.pending);
+        $('#dueSettledCount').text(d.settled);
+        if (dueChartInst) dueChartInst.destroy();
+        dueChartInst = new Chart(document.getElementById('dueStatusChart'), {
+        type: 'doughnut',
+        data: {
+        labels: ['Pending', 'Settled'],
+        datasets: [{ data: [d.pending, d.settled],
+        backgroundColor: ['#dc3545','#198754'], borderWidth: 2 }]
+        },
+        options: {
+        responsive: true,
+        cutout: '65%',
+        plugins: { legend: { position: 'bottom' } }
+        }
+        });
+        });
+        }
+
+        // ── Top Defaulters ────────────────────────────────────────────────────
+        function loadDefaulters(f) {
+        $.get('@Url.Action("GetTopDefaulters", "FeesDashboard")', { sessionId: f?.sessionId || 0 }, function (d) {
+        $('#defaulterCount').text(d.length);
+        if (!d.length) {
+        $('#defaultersList').html('<div class="text-center text-muted py-4"><i class="fas fa-check-circle text-success fa-2x mb-2 d-block"></i>No defaulters!</div>');
+        return;
+        }
+        var html = '';
+        d.forEach(function (s, i) {
+        var badge = i === 0 ? 'danger' : i === 1 ? 'warning' : i === 2 ? 'info' : 'secondary';
+        var pct   = 100; // worst
+        html += `
+        <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-${badge} rounded-circle" style="width:28px;height:28px;line-height:20px;text-align:center">${i+1}</span>
+        <div>
+        <div class="fw-semibold small">${s.studentName}</div>
+        <div class="text-muted" style="font-size:11px">Roll: ${s.rollNo} &bull; ${s.monthsCount} month(s) pending</div>
+        </div>
+        </div>
+        <span class="fw-bold text-danger small">₹${fmt(s.totalPending)}</span>
+        </div>`;
+        });
+        $('#defaultersList').html(html);
+        });
+        }
+
+        // ── Recent Transactions ───────────────────────────────────────────────
+        function loadRecentTransactions(f) {
+        $.get('@Url.Action("GetRecentTransactions", "FeesDashboard")', { sessionId: f?.sessionId || 0 }, function (d) {
+        if (!d.length) {
+        $('#recentTxnBody').html('<tr><td colspan="7" class="text-center text-muted py-3">No transactions found</td></tr>');
+        return;
+        }
+        var html = '';
+        d.forEach(function (t) {
+        var dueColor = t.dueAmount > 0 ? 'text-danger' : 'text-success';
+        html += `<tr>
+        <td><div class="fw-semibold small">${t.studentName}</div>
+        <div class="text-muted" style="font-size:11px">Roll: ${t.rollNo}</div></td>
+        <td class="small">${t.sessionName}</td>
+        <td class="small">${t.monthYear}</td>
+        <td class="text-end text-success fw-semibold small">₹${fmt(t.paidAmount)}</td>
+        <td class="text-end ${dueColor} fw-semibold small">₹${fmt(t.dueAmount)}</td>
+        <td><span class="badge bg-info text-dark" style="font-size:10px">${t.paymentMode}</span></td>
+        <td class="small text-muted">${t.paymentDate}</td>
+        </tr>`;
+        });
+        $('#recentTxnBody').html(html);
+        });
+        }
+
+        // ── Helper ────────────────────────────────────────────────────────────
+        function fmt(n) {
+        return Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    </script>
+}

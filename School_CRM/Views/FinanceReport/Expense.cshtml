@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Expense Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+<div class="container-fluid mt-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-danger text-white">
+            <h6 class="m-0 font-weight-bold">Expense Detailed Report (Payroll & Advances)</h6>
+        </div>
+        <div class="card-body">
+            <!-- Filter Section -->
+            <div class="row mb-4 bg-light p-3 rounded">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label font-weight-bold">Date Preset</label>
+                    <select id="datePreset" class="form-control">
+                        <option value="thisMonth">This Month</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="thisWeek">This Week</option>
+                        <option value="lastMonth">Last Month</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label font-weight-bold">Start Date</label>
+                    <input type="date" id="startDate" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label font-weight-bold">End Date</label>
+                    <input type="date" id="endDate" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-2 d-flex align-items-end">
+                    <button id="btnFilter" class="btn btn-danger w-100"><i class="fas fa-filter"></i> Apply Filter</button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Expense</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="summaryTotalExpense">₹0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Salary Paid</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="summaryTotalSalary">₹0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-money-check-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Advances</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="summaryTotalAdvance">₹0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="expenseTable" width="100%" cellspacing="0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th>Expense Date</th>
+                            <th>Type</th>
+                            <th>Employee Name</th>
+                            <th>Designation</th>
+                            <th>Month/Year</th>
+                            <th>Amount (Net/Paid)</th>
+                            <th>Gross Amount</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            
+            // Helper function to format dates to YYYY-MM-DD
+            function formatDate(date) {
+                let d = new Date(date),
+                    month = '' + (d.getMonth() + 1),
+                    day = '' + d.getDate(),
+                    year = d.getFullYear();
+
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+                return [year, month, day].join('-');
+            }
+
+            // Date preset logic
+            $('#datePreset').change(function () {
+                let preset = $(this).val();
+                let today = new Date();
+                let startDate = new Date();
+                let endDate = new Date();
+
+                if (preset === 'today') {
+                    startDate = today;
+                    endDate = today;
+                } else if (preset === 'yesterday') {
+                    startDate.setDate(today.getDate() - 1);
+                    endDate.setDate(today.getDate() - 1);
+                } else if (preset === 'thisWeek') {
+                    let first = today.getDate() - today.getDay(); // First day is Sunday
+                    startDate = new Date(today.setDate(first));
+                    endDate = new Date();
+                } else if (preset === 'thisMonth') {
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else if (preset === 'lastMonth') {
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                }
+
+                if (preset !== 'custom') {
+                    $('#startDate').val(formatDate(startDate));
+                    $('#endDate').val(formatDate(endDate));
+                }
+            });
+
+            // Trigger change to set default "This Month"
+            $('#datePreset').trigger('change');
+
+            // Initialize DataTable
+            var table = $('#expenseTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ],
+                ajax: {
+                    url: '/FinanceReport/GetExpenseData',
+                    data: function (d) {
+                        d.startDate = $('#startDate').val();
+                        d.endDate = $('#endDate').val();
+                    },
+                    dataSrc: function (json) {
+                        if (json.success) {
+                            // Update summaries
+                            let totalExpense = 0, totalSalary = 0, totalAdvance = 0;
+                            json.data.forEach(item => {
+                                totalExpense += item.amount || 0;
+                                if (item.type === 'Salary') {
+                                    totalSalary += item.amount || 0;
+                                } else if (item.type === 'Advance') {
+                                    totalAdvance += item.amount || 0;
+                                }
+                            });
+                            $('#summaryTotalExpense').text('₹' + totalExpense.toFixed(2));
+                            $('#summaryTotalSalary').text('₹' + totalSalary.toFixed(2));
+                            $('#summaryTotalAdvance').text('₹' + totalAdvance.toFixed(2));
+                            return json.data;
+                        } else {
+                            alert(json.message);
+                            return [];
+                        }
+                    }
+                },
+                columns: [
+                    { data: 'expenseDate' },
+                    { data: 'type', render: function(data) {
+                        if(data === 'Salary') return '<span class="badge badge-success">Salary</span>';
+                        return '<span class="badge badge-info">Advance</span>';
+                    }},
+                    { data: 'employeeName' },
+                    { data: 'designation' },
+                    { data: 'monthYear' },
+                    { data: 'amount', render: $.fn.dataTable.render.number(',', '.', 2, '₹') },
+                    { data: 'grossAmount', render: $.fn.dataTable.render.number(',', '.', 2, '₹') },
+                    { data: 'status' },
+                    { data: 'remarks' }
+                ],
+                order: [[0, 'desc']]
+            });
+
+            $('#btnFilter').click(function () {
+                table.ajax.reload();
+            });
+        });
+    </script>
+}

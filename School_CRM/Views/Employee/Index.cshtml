@@ -1,0 +1,204 @@
+﻿
+@{
+    ViewData["Title"] = "Employees";
+}
+
+
+
+
+
+
+
+
+<div class="container-fluid">
+   
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Employees Management</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-primary" onclick="loadEmployeeModal(0)">
+                            <i class="fas fa-plus"></i> Add Employee
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="employeeTable" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Basic Salary</th>
+                                    <th>Daily Rate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="employeeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @await Html.PartialAsync("_EmployeeModal")
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Employee Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+       
+    <script>
+        $(document).ready(function () {
+            loadDataTable();
+
+            // Salary calculation - modal open hone par bhi kaam kare
+            $(document).on('input', '#BasicSalary', function () {
+                var basic = parseFloat($(this).val()) || 0;
+                $('#DailyRate').val((basic / 30).toFixed(2));
+                $('#OvertimeRate').val((basic / 30 * 2).toFixed(2));
+            });
+        });
+
+        let table;
+        function loadDataTable() {
+            table = $('#employeeTable').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetAll", "Employee")',
+                    type: 'GET',
+                    dataSrc: 'data'
+                },
+                columns: [
+                    { data: 'employeeCode', width: '10%' },
+                    { data: 'name', width: '20%' },
+                    { data: 'designation', width: '15%' },
+                    { data: 'department', width: '15%' },
+                    { data: 'basicSalary', width: '12%', className: 'text-end' },
+                    { data: 'dailyRate', width: '12%', className: 'text-end' },
+                    {
+                        data: 'id', width: '12%',
+                        render: function (data) {
+                            return `<div class="btn-group btn-group-sm">
+                                <button class="btn btn-info edit-btn" data-id="${data}"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-success view-btn" data-id="${data}"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-danger delete-btn" data-id="${data}"><i class="fas fa-trash"></i></button>
+                            </div>`;
+                        }
+                    }
+                ],
+                language: { emptyTable: "No employees found" },
+                order: [[1, 'asc']]
+            });
+        }
+
+        function loadEmployeeModal(id) {
+            $.ajax({
+                url: '@Url.Action("CreateOrEdit", "Employee")/' + id,
+                type: 'GET',
+                success: function (data) {
+                    $('#employeeModal .modal-body').html(data);
+                    $('#modalTitle').text(id == 0 ? 'Add Employee' : 'Edit Employee');
+
+                    // Validation re-apply karo dynamic form ke liye
+                    var form = $("#employeeForm");
+                    form.removeData("validator");
+                    form.removeData("unobtrusiveValidation");
+                    $.validator.unobtrusive.parse(form);
+
+                    $('#employeeModal').modal('show');
+                }
+            });
+        }
+
+        $(document).on('click', '.edit-btn', function () {
+            loadEmployeeModal($(this).data('id'));
+        });
+
+        $(document).on('click', '.view-btn', function () {
+            var id = $(this).data('id');
+            $.ajax({
+                url: '@Url.Action("View", "Employee")/' + id,
+                type: 'GET',
+                success: function (data) {
+                    $('#viewModalContent').html(data);
+                    $('#viewModal').modal('show');
+                }
+            });
+        });
+
+        $(document).on('click', '.delete-btn', function () {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("Delete", "Employee")', { id: id }, function (data) {
+                        if (data.success) {
+                            table.ajax.reload();
+                            toastr.success(data.message);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    });
+                }
+            });
+        });
+
+        $(document).on('click', '#btnSave', function () {
+            var form = $('#employeeForm');
+            if (form.valid()) {
+                $.post(form.attr('action'), form.serialize(), function (data) {
+                    if (data.success) {
+                        $('#employeeModal').modal('hide');
+                        table.ajax.reload();
+                        toastr.success(data.message);
+                    } else {
+                        toastr.error(data.message);
+                    }
+                });
+            }
+        });
+    </script>
+}

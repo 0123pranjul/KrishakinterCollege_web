@@ -1,0 +1,119 @@
+@model School_CRM.Models.DTOs.InvStockAdjustmentDto
+@{ ViewData["Title"] = "Stock Adjustment"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-sliders-h text-warning me-2"></i>Stock Adjustment</h2>
+            @if (!string.IsNullOrEmpty(Model.ProductName)) { <small class="text-muted">@Model.ProductName</small> }
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0">Adjust Stock</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Adjust" asp-route-id="@Model.ProductId" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="ProductId" type="hidden" />
+
+                        <!-- Current stock display -->
+                        <div class="alert alert-light border mb-4">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="text-muted small">Product</div>
+                                    <div class="fw-bold">@Model.ProductName</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Current Stock</div>
+                                    <div class="fw-bold fs-4 text-primary" id="currentStockDisplay">@Model.CurrentStock</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AdjustmentType" class="form-label fw-semibold">Adjustment Type <span class="text-danger">*</span></label>
+                            <select asp-for="AdjustmentType" class="form-select">
+                                <option value="">Select Type</option>
+                                <option value="OpeningStock">Opening Stock</option>
+                                <option value="StockCount">Stock Count (Physical Count)</option>
+                                <option value="Damaged">Damaged</option>
+                                <option value="Expired">Expired</option>
+                                <option value="Lost">Lost</option>
+                                <option value="TransferIn">Transfer In</option>
+                                <option value="TransferOut">Transfer Out</option>
+                            </select>
+                            <span asp-validation-for="AdjustmentType" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AdjustedQty" class="form-label fw-semibold">
+                                Adjusted Quantity <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="AdjustedQty" type="number" class="form-control"
+                                   placeholder="Positive = Add stock, Negative = Remove stock"
+                                   oninput="updateNewStock()" />
+                            <small class="text-muted">Use <strong>positive</strong> to add, <strong>negative</strong> to remove</small>
+                            <span asp-validation-for="AdjustedQty" class="text-danger small"></span>
+                        </div>
+
+                        <!-- New stock preview -->
+                        <div class="alert alert-info py-2 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>New Stock After Adjustment:</span>
+                                <span class="fw-bold fs-5" id="newStockPreview">@Model.CurrentStock</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                            <input asp-for="Reason" class="form-control" placeholder="Reason for adjustment..." />
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Remarks" class="form-label fw-semibold">Remarks</label>
+                            <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning text-dark px-4"
+                                    onclick="return validateAdjustment()">
+                                <i class="fas fa-check me-2"></i>Apply Adjustment
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const currentStock = @Model.CurrentStock;
+
+        function updateNewStock() {
+            const adj = parseInt(document.querySelector('[name="AdjustedQty"]').value) || 0;
+            const newStock = currentStock + adj;
+            const el = document.getElementById('newStockPreview');
+            el.textContent = newStock;
+            el.className = newStock < 0 ? 'fw-bold fs-5 text-danger' : newStock === 0 ? 'fw-bold fs-5 text-warning' : 'fw-bold fs-5 text-success';
+        }
+
+        function validateAdjustment() {
+            const adj = parseInt(document.querySelector('[name="AdjustedQty"]').value) || 0;
+            if (currentStock + adj < 0) {
+                alert('Adjustment would result in negative stock (' + (currentStock + adj) + '). Not allowed.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+}

@@ -1,0 +1,326 @@
+@{
+    ViewData["Title"] = "Academic Dashboard";
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+    var classes  = ViewBag.Classes  as List<School_CRM.Models.TblClass>           ?? new();
+}
+
+<style>
+    .stat-card { border-radius: 14px; border: none; transition: transform .18s, box-shadow .18s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; }
+    .stat-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .chart-card { border-radius: 14px; border: none; }
+    .section-title { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #9aa5b4; margin-bottom: 12px; }
+    .att-badge { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .tbl-sm td, .tbl-sm th { padding: 7px 10px; font-size: .82rem; }
+    .announce-item { border-left: 3px solid var(--bs-primary); padding: 8px 12px; margin-bottom: 8px; background: #f8f9ff; border-radius: 0 8px 8px 0; }
+    .filter-bar { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(0,0,0,.06); margin-bottom: 20px; }
+    .calendar-day { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 600; cursor: default; }
+    .cal-present { background: #d1fae5; color: #065f46; }
+    .cal-absent  { background: #fee2e2; color: #991b1b; }
+    .cal-late    { background: #fef3c7; color: #92400e; }
+    .cal-empty   { background: #f3f4f6; color: #9ca3af; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- ── Welcome Bar ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">Academic Dashboard</h4>
+            <small class="text-muted" id="todayLabel">Loading...</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                <i class="fas fa-user-shield me-1"></i>@ViewBag.RoleName
+            </span>
+        </div>
+    </div>
+
+    <!-- ── Filter Bar ── -->
+    <div class="filter-bar d-flex gap-3 align-items-end flex-wrap">
+        <div>
+            <label class="form-label small fw-semibold mb-1">Academic Session</label>
+            <select id="selSession" class="form-select form-select-sm" style="min-width:160px" onchange="loadDashboard()">
+                @foreach (var s in sessions) {
+                    <option value="@s.SessionId">@s.SessionName</option>
+                }
+            </select>
+        </div>
+        <button class="btn btn-primary btn-sm px-4" onclick="loadDashboard()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- ── Stat Cards ── -->
+    <div class="row g-3 mb-4" id="statCards">
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-primary-subtle"><i class="fas fa-user-graduate text-primary"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cStudents">—</div><div class="text-muted small">Total Students</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-success-subtle"><i class="fas fa-chalkboard-teacher text-success"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cTeachers">—</div><div class="text-muted small">Total Teachers</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-info-subtle"><i class="fas fa-layer-group text-info"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cClasses">—</div><div class="text-muted small">Classes</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-success-subtle"><i class="fas fa-user-check text-success"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cPresent">—</div><div class="text-muted small">Present Today</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-danger-subtle"><i class="fas fa-user-times text-danger"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cAbsent">—</div><div class="text-muted small">Absent Today</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-warning-subtle"><i class="fas fa-file-alt text-warning"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cExams">—</div><div class="text-muted small">Exams</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon" style="background:#f3e8ff"><i class="fas fa-clipboard-list" style="color:#7c3aed"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cAssignments">—</div><div class="text-muted small">Assignments</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon" style="background:#ccfbf1"><i class="fas fa-rupee-sign" style="color:#0d9488"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="cFees">—</div><div class="text-muted small">Fee Collected</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Charts Row ── -->
+    <div class="row g-3 mb-4">
+        <!-- Attendance Trend Line Chart -->
+        <div class="col-lg-8">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="section-title mb-0">Attendance Trend</div>
+                        <small class="text-muted">Last 7 days — Present / Absent / Late</small>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">Weekly</span>
+                </div>
+                <div class="card-body pt-2">
+                    <canvas id="attTrendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Grade Distribution Pie -->
+        <div class="col-lg-4">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Grade Distribution</div>
+                    <small class="text-muted">Published report cards</small>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <canvas id="gradeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Class-wise Students Bar + Announcements ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Class-wise Student Count</div>
+                </div>
+                <div class="card-body pt-2">
+                    <canvas id="classBarChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Announcements</div>
+                    <a href="/Announcement" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body pt-2" id="announcementList" style="max-height:260px;overflow-y:auto">
+                    <div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Upcoming Assignments + Today Attendance Summary ── -->
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Upcoming Assignments</div>
+                    <a href="/Assignment" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table tbl-sm table-hover mb-0" id="assignmentGrid">
+                            <thead class="table-light">
+                                <tr><th>Title</th><th>Class</th><th>Subject</th><th>Teacher</th><th>Due</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Today's Attendance Summary</div>
+                </div>
+                <div class="card-body">
+                    <canvas id="todayAttPie" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let attChart, gradeChart, classChart, todayPie;
+    const COLORS = ['#4361ee','#2ec4b6','#e63946','#f4a261','#a8dadc','#6d6875','#b5838d','#e9c46a'];
+
+    $(document).ready(() => loadDashboard());
+
+    function loadDashboard() {
+        const sessionId = $('#selSession').val() || 0;
+        $.get('@Url.Action("GetAdminStats","AcademicDashboard")', { sessionId }, data => {
+            if (data.error) { console.error(data.error); return; }
+
+            $('#todayLabel').text(data.todayDate);
+            $('#cStudents').text(data.totalStudents);
+            $('#cTeachers').text(data.totalTeachers);
+            $('#cClasses').text(data.totalClasses);
+            $('#cPresent').text(data.presentToday);
+            $('#cAbsent').text(data.absentToday);
+            $('#cExams').text(data.totalExams);
+            $('#cAssignments').text(data.totalAssignments);
+            $('#cFees').text('₹' + Number(data.totalFeeCollected).toLocaleString('en-IN', {maximumFractionDigits:0}));
+
+            renderAttTrend(data.attendanceTrend);
+            renderGradePie(data.reportCards);
+            renderClassBar(data.classWise);
+            renderTodayPie(data.presentToday, data.absentToday, data.lateToday);
+            renderAnnouncements(data.announcements);
+            renderAssignments(data.upcomingAssignments);
+        });
+    }
+
+    function renderAttTrend(trend) {
+        const ctx = document.getElementById('attTrendChart').getContext('2d');
+        if (attChart) attChart.destroy();
+        attChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: trend.map(t => t.date),
+                datasets: [
+                    { label: 'Present', data: trend.map(t => t.present), borderColor: '#2ec4b6', backgroundColor: 'rgba(46,196,182,.1)', tension: .4, fill: true, pointRadius: 4 },
+                    { label: 'Absent',  data: trend.map(t => t.absent),  borderColor: '#e63946', backgroundColor: 'rgba(230,57,70,.08)',  tension: .4, fill: true, pointRadius: 4 },
+                    { label: 'Late',    data: trend.map(t => t.late),    borderColor: '#f4a261', backgroundColor: 'rgba(244,162,97,.08)', tension: .4, fill: true, pointRadius: 4 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    function renderGradePie(grades) {
+        const ctx = document.getElementById('gradeChart').getContext('2d');
+        if (gradeChart) gradeChart.destroy();
+        if (!grades.length) return;
+        gradeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: grades.map(g => g.grade),
+                datasets: [{ data: grades.map(g => g.count), backgroundColor: COLORS, borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }, cutout: '60%' }
+        });
+    }
+
+    function renderClassBar(classes) {
+        const ctx = document.getElementById('classBarChart').getContext('2d');
+        if (classChart) classChart.destroy();
+        classChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: classes.map(c => c.className),
+                datasets: [{ label: 'Students', data: classes.map(c => c.count), backgroundColor: '#4361ee', borderRadius: 6 }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    function renderTodayPie(present, absent, late) {
+        const ctx = document.getElementById('todayAttPie').getContext('2d');
+        if (todayPie) todayPie.destroy();
+        todayPie = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Present', 'Absent', 'Late'],
+                datasets: [{ data: [present, absent, late], backgroundColor: ['#2ec4b6','#e63946','#f4a261'], borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+        });
+    }
+
+    function renderAnnouncements(list) {
+        if (!list.length) { $('#announcementList').html('<div class="text-muted text-center py-3">No announcements</div>'); return; }
+        $('#announcementList').html(list.map(a =>
+            `<div class="announce-item">
+                <div class="fw-semibold small">${a.title}</div>
+                <div class="text-muted" style="font-size:.78rem">${a.message.substring(0,80)}${a.message.length>80?'...':''}</div>
+                <div class="text-muted mt-1" style="font-size:.72rem"><i class="fas fa-calendar-alt me-1"></i>${a.date}</div>
+            </div>`
+        ).join(''));
+    }
+
+    function renderAssignments(list) {
+        const tbody = $('#assignmentGrid tbody');
+        if (!list.length) { tbody.html('<tr><td colspan="5" class="text-center text-muted py-3">No upcoming assignments</td></tr>'); return; }
+        tbody.html(list.map(a =>
+            `<tr>
+                <td class="fw-semibold">${a.title}</td>
+                <td><span class="badge bg-primary-subtle text-primary">${a.className}</span></td>
+                <td>${a.subjectName}</td>
+                <td class="text-muted">${a.teacherName}</td>
+                <td><span class="badge bg-warning-subtle text-warning">${a.dueDate}</span></td>
+            </tr>`
+        ).join(''));
+    }
+</script>
+}

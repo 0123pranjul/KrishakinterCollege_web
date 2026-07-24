@@ -1,0 +1,493 @@
+﻿@{
+    ViewData["Title"] = "Student Dues";
+}
+
+<div class="container-fluid">
+
+    <!-- Summary Cards Row -->
+    <div class="row mb-3" id="summaryCards">
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-users text-primary"></i>
+                    </div>
+                    <h4 class="mb-0 text-primary" id="cardStudents">0</h4>
+                    <small class="text-muted">Students</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-info bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-rupee-sign text-info"></i>
+                    </div>
+                    <h4 class="mb-0 text-info" id="cardTotalDue">₹0</h4>
+                    <small class="text-muted">Total Due</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                    <h4 class="mb-0 text-success" id="cardPaid">₹0</h4>
+                    <small class="text-muted">Total Paid</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                    </div>
+                    <h4 class="mb-0 text-danger" id="cardRemaining">₹0</h4>
+                    <small class="text-muted">Remaining</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-clock text-warning"></i>
+                    </div>
+                    <h4 class="mb-0 text-warning" id="cardPending">0</h4>
+                    <small class="text-muted">Pending</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-2 d-inline-block mb-1">
+                        <i class="fas fa-check text-success"></i>
+                    </div>
+                    <h4 class="mb-0 text-success" id="cardSettled">0</h4>
+                    <small class="text-muted">Settled</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- Main Table -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-file-invoice me-2 text-primary"></i>Student Dues
+                    </h3>
+                    <button class="btn btn-sm btn-primary" onclick="loadDueModal(0)">
+                        <i class="fas fa-plus"></i> Add Due
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="card-body border-bottom pb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Session</label>
+                            <select id="filterSession" class="form-select form-select-sm">
+                                <option value="">All Sessions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Month</label>
+                            <select id="filterMonth" class="form-select form-select-sm">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Status</label>
+                            <select id="filterStatus" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Settled">Settled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Student Search</label>
+                            <input type="text" id="filterStudent"
+                                   class="form-control form-control-sm"
+                                   placeholder="Name or Roll No..." />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="dueTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student</th>
+                                    <th>Roll</th>
+                                    <th>Session</th>
+                                    <th>Month/Year</th>
+                                    <th>Total Due</th>
+                                    <th>Paid</th>
+                                    <th>Remaining</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Top Defaulters -->
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Top Defaulters</h6>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadDefaulters()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-body p-0" id="defaultersList">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Due Type Breakdown -->
+            <div class="card mt-3 border-warning">
+                <div class="card-header bg-warning text-dark py-2">
+                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Due Type Breakdown</h6>
+                </div>
+                <div class="card-body p-2" id="dueTypeBreakdown">
+                    <div class="text-center text-muted py-2 small">Select filters to see breakdown</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="dueModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus me-2"></i>Add Student Due
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="dueModalBody">
+                @* AJAX loaded *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Due Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalContent"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+        let allData = [];
+
+        $(document).ready(function () {
+        loadDataTable();
+        loadDefaulters();
+        });
+
+        // ── DataTable ─────────────────────────────────────────────────────────
+        function loadDataTable() {
+        table = $('#dueTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "StudentDue")',
+        type: 'GET',
+        dataSrc: function (json) {
+        allData = json.data;
+        loadFilterOptions(json.data);
+        updateSummaryCards(json.data);
+        updateDueTypeBreakdown(json.data);
+        return json.data;
+        }
+        },
+        columns: [
+        { data: 'id',           width: '4%',  className: 'text-center' },
+        { data: 'studentName',  width: '15%' },
+        { data: 'rollNo',       width: '7%',  className: 'text-center' },
+        { data: 'sessionName',  width: '8%',  className: 'text-center' },
+        { data: 'monthYear',    width: '10%', className: 'text-center' },
+        {
+        data: 'totalDue', width: '9%', className: 'text-end',
+        render: d => '₹' + parseFloat(d).toFixed(2)
+        },
+        {
+        data: 'paidAmount', width: '8%', className: 'text-end',
+        render: d => '<span class="text-success">₹' + parseFloat(d).toFixed(2) + '</span>'
+        },
+        {
+        data: 'remainingDue', width: '9%', className: 'text-end fw-bold',
+        render: d => {
+        var amt = parseFloat(d);
+        return amt > 0
+        ? '<span class="text-danger">₹' + amt.toFixed(2) + '</span>'
+        : '<span class="text-success">₹0.00</span>';
+        }
+        },
+        {
+        data: 'dueDate', width: '9%', className: 'text-center',
+        render: function (data, type, row) {
+        if (data === '-') return '-';
+        // Highlight overdue
+        var parts  = data.split('-');
+        var dueD   = new Date(parts[2], parts[1]-1, parts[0]);
+        var today  = new Date();
+        return dueD < today && row.isSettled === 'Pending'
+        ? '<span class="text-danger fw-semibold"><i class="fas fa-exclamation-circle me-1"></i>' + data + '</span>'
+        : data;
+        }
+        },
+        {
+        data: 'isSettled', width: '8%', className: 'text-center',
+        render: function (data, type, row) {
+        if (data === 'Settled')
+        return '<span class="badge bg-success">Settled</span>';
+        return `<button class="btn btn-xs btn-outline-warning markpaid-btn px-2 py-0"
+        data-id="${row.id}" style="font-size:11px">
+        <i class="fas fa-clock"></i> Pending
+        </button>`;
+        }
+        },
+        {
+        data: 'id', width: '13%', className: 'text-center',
+        render: data => `<div class="btn-group btn-group-sm">
+        <button class="btn btn-info edit-btn"    title="Edit"   data-id="${data}"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-success view-btn" title="View"   data-id="${data}"><i class="fas fa-eye"></i></button>
+        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}"><i class="fas fa-trash"></i></button>
+        </div>`
+        }
+        ],
+        language: { emptyTable: "No dues found" },
+        order: [[0, 'desc']],
+        drawCallback: function () {
+        if (typeof table !== 'undefined' && table) {
+        var filtered = table.rows({ filter: 'applied' }).data().toArray();
+        updateSummaryCards(filtered);
+        updateDueTypeBreakdown(filtered);
+        }
+        },
+        initComplete: function () {
+        $('#filterStudent').on('keyup', function () {
+        table.search($(this).val()).draw();
+        });
+        $('#filterSession').on('change', function () {
+        table.column(3).search($(this).val()).draw();
+        });
+        $('#filterMonth').on('change', function () {
+        table.column(4).search($(this).val()).draw();
+        });
+        $('#filterStatus').on('change', function () {
+        table.column(9).search($(this).val()).draw();
+        });
+        }
+        });
+        }
+
+        // ── Filter Options ────────────────────────────────────────────────────
+        function loadFilterOptions(data) {
+        var sessions = [...new Map(data.map(d => [d.sessionName, d])).values()];
+        var months   = [...new Map(data.map(d => [d.monthYear,   d])).values()];
+
+        sessions.forEach(d => $('#filterSession').append(`<option value="${d.sessionName}">${d.sessionName}</option>`));
+        months  .forEach(d => d.monthYear !== '-' && $('#filterMonth').append(`<option value="${d.monthYear}">${d.monthYear}</option>`));
+        }
+
+        function resetFilters() {
+        $('#filterStudent').val('');
+        $('#filterSession, #filterMonth, #filterStatus').val('');
+        table.columns().search('').search('').draw();
+        }
+
+        // ── Summary Cards ─────────────────────────────────────────────────────
+        function updateSummaryCards(data) {
+        var students  = new Set(data.map(d => d.rollNo)).size;
+        var totalDue  = data.reduce((s, d) => s + parseFloat(d.totalDue     || 0), 0);
+        var paid      = data.reduce((s, d) => s + parseFloat(d.paidAmount   || 0), 0);
+        var remaining = data.reduce((s, d) => s + parseFloat(d.remainingDue || 0), 0);
+        var pending   = data.filter(d => d.isSettled === 'Pending').length;
+        var settled   = data.filter(d => d.isSettled === 'Settled').length;
+
+        $('#cardStudents') .text(students);
+        $('#cardTotalDue') .text('₹' + totalDue .toFixed(2));
+        $('#cardPaid')     .text('₹' + paid     .toFixed(2));
+        $('#cardRemaining').text('₹' + remaining.toFixed(2));
+        $('#cardPending')  .text(pending);
+        $('#cardSettled')  .text(settled);
+        }
+
+        // ── Due Type Breakdown ────────────────────────────────────────────────
+        function updateDueTypeBreakdown(data) {
+        var types = {};
+        data.forEach(function (d) {
+        var t = d.dueType || 'Other';
+        types[t] = (types[t] || 0) + parseFloat(d.remainingDue || 0);
+        });
+
+        var html = '';
+        Object.keys(types).forEach(function (t) {
+        if (types[t] > 0) {
+        html += `<div class="d-flex justify-content-between border-bottom py-1 small">
+        <span class="text-muted">${t}</span>
+        <span class="fw-semibold text-danger">₹${types[t].toFixed(2)}</span>
+        </div>`;
+        }
+        });
+
+        $('#dueTypeBreakdown').html(html || '<div class="text-center text-muted small py-2">No pending dues</div>');
+        }
+
+        // ── Top Defaulters Panel ──────────────────────────────────────────────
+        function loadDefaulters() {
+        var sessionId = $('#filterSession').val() || 0;
+        $.get('@Url.Action("GetDefaulters", "StudentDue")', { sessionId }, function (res) {
+        if (!res.success || !res.defaulters.length) {
+        $('#defaultersList').html('<div class="text-center text-muted py-3 small">No defaulters found</div>');
+        return;
+        }
+
+        var html = '';
+        res.defaulters.forEach(function (d, i) {
+        var color = i === 0 ? 'danger' : i === 1 ? 'warning' : 'secondary';
+        html += `<div class="d-flex justify-content-between align-items-center border-bottom px-3 py-2">
+        <div>
+        <span class="badge bg-${color} me-1">#${i+1}</span>
+        <span class="small fw-semibold">${d.studentName}</span><br>
+        <small class="text-muted ms-4">Roll: ${d.rollNo} | ${d.monthsCount} month(s)</small>
+        </div>
+        <span class="text-danger fw-bold small">₹${parseFloat(d.totalPending).toFixed(2)}</span>
+        </div>`;
+        });
+
+        $('#defaultersList').html(html);
+        });
+        }
+
+        // Reload defaulters when session filter changes
+        $('#filterSession').on('change', function () {
+        loadDefaulters();
+        });
+
+        // ── Modal Load ────────────────────────────────────────────────────────
+        function loadDueModal(id) {
+        $.ajax({
+        url: '@Url.Action("CreateOrEdit", "StudentDue")/' + id,
+        type: 'GET',
+        success: function (data) {
+        $('#dueModalBody').html(data);
+        $('#modalTitle').html(id == 0
+        ? '<i class="fas fa-plus me-2"></i>Add Student Due'
+        : '<i class="fas fa-edit me-2"></i>Edit Student Due');
+
+        var form = $('#studentDueForm');
+        form.removeData('validator').removeData('unobtrusiveValidation');
+        $.validator.unobtrusive.parse(form);
+        $('#dueModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load form!'); }
+        });
+        }
+
+        // ── Buttons ───────────────────────────────────────────────────────────
+        $(document).on('click', '.edit-btn',   function () { loadDueModal($(this).data('id')); });
+
+        $(document).on('click', '.view-btn', function () {
+        $.ajax({
+        url: '@Url.Action("View", "StudentDue")/' + $(this).data('id'),
+        type: 'GET',
+        success: function (data) { $('#viewModalContent').html(data); $('#viewModal').modal('show'); },
+        error: function () { toastr.error('Failed to load details!'); }
+        });
+        });
+
+        $(document).on('click', '.markpaid-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({
+        title: 'Mark as Settled?',
+        text: 'Is due ko fully settled mark karna chahte ho?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'Yes, Settle It!'
+        }).then(r => {
+        if (r.isConfirmed) {
+        $.post('@Url.Action("MarkSettled", "StudentDue")', { id }, function (res) {
+        if (res.success) { table.ajax.reload(null, false); toastr.success(res.message); loadDefaulters(); }
+        else toastr.error(res.message);
+        });
+        }
+        });
+        });
+
+        $(document).on('click', '.delete-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({ title: 'Delete Due?', icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete!' })
+        .then(r => {
+        if (r.isConfirmed) {
+        $.post('@Url.Action("Delete", "StudentDue")', { id }, function (res) {
+        if (res.success) { table.ajax.reload(null, false); toastr.success(res.message); }
+        else toastr.error(res.message);
+        });
+        }
+        });
+        });
+
+        $(document).on('click', '#btnSave', function () {
+        var form = $('#studentDueForm');
+        if (form.valid()) {
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function (res) {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Due');
+        if (res.success) {
+        $('#dueModal').modal('hide');
+        table.ajax.reload(null, false);
+        toastr.success(res.message);
+        loadDefaulters();
+        } else toastr.error(res.message);
+        });
+        }
+        });
+    </script>
+}

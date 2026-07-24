@@ -1,0 +1,299 @@
+@model IEnumerable<School_CRM.Models.TblHelpdeskTicket>
+@{
+    ViewData["Title"] = "Helpdesk Support & Complaints";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var categories = ViewBag.Categories as List<School_CRM.Models.TblHelpdeskCategory>;
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
+<style>
+    .helpdesk-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stat-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: none;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="helpdesk-header d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="mb-1 fw-bold"><i class="fas fa-headset me-2"></i>Helpdesk & Grievance Cell</h3>
+            <p class="mb-0 text-white-50">Submit support tickets, report complaints, and track their resolutions in real-time.</p>
+        </div>
+        @if (!isAdmin)
+        {
+            <button class="btn btn-light fw-bold rounded-pill px-4 shadow" data-bs-toggle="modal" data-bs-target="#raiseTicketModal">
+                <i class="fas fa-plus me-2 text-primary"></i>Raise New Ticket
+            </button>
+        }
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100 border-start border-primary border-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase mb-1">Total Tickets</h6>
+                        <h2 class="fw-bold mb-0">@Model.Count()</h2>
+                    </div>
+                    <i class="fas fa-ticket-alt fa-2x text-primary opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100 border-start border-danger border-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase mb-1">Open Tickets</h6>
+                        <h2 class="fw-bold mb-0 text-danger">@Model.Count(t => t.Status == "Open")</h2>
+                    </div>
+                    <i class="fas fa-folder-open fa-2x text-danger opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100 border-start border-warning border-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase mb-1">In Progress</h6>
+                        <h2 class="fw-bold mb-0 text-warning">@Model.Count(t => t.Status == "In Progress")</h2>
+                    </div>
+                    <i class="fas fa-spinner fa-2x text-warning opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100 border-start border-success border-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase mb-1">Resolved</h6>
+                        <h2 class="fw-bold mb-0 text-success">@Model.Count(t => t.Status == "Resolved" || t.Status == "Closed")</h2>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket List Table -->
+    <div class="card table-container">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle w-100" id="ticketTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ticket No</th>
+                        <th>Category</th>
+                        <th>Subject / Title</th>
+                        @if (isAdmin)
+                        {
+                            <th>Raised By</th>
+                        }
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Date Created</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ticket in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold text-primary">@ticket.TicketNo</td>
+                            <td>
+                                <span class="badge bg-light text-dark border"><i class="fas fa-tag me-1"></i>@ticket.Category.CategoryName</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@ticket.Title</div>
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">@ticket.Description</small>
+                            </td>
+                            @if (isAdmin)
+                            {
+                                <td>@ticket.RaisedByNavigation.Username</td>
+                            }
+                            <td>
+                                @if (ticket.Priority == "High")
+                                {
+                                    <span class="badge border border-danger text-danger">High</span>
+                                }
+                                else if (ticket.Priority == "Normal")
+                                {
+                                    <span class="badge border border-primary text-primary">Normal</span>
+                                }
+                                else
+                                {
+                                    <span class="badge border border-secondary text-secondary">Low</span>
+                                }
+                            </td>
+                            <td>
+                                @if (ticket.Status == "Open")
+                                {
+                                    <span class="badge bg-danger"><i class="fas fa-envelope-open me-1"></i>Open</span>
+                                }
+                                else if (ticket.Status == "In Progress")
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-spinner fa-spin me-1"></i>In Progress</span>
+                                }
+                                else if (ticket.Status == "Resolved")
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check-double me-1"></i>Resolved</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="fas fa-lock me-1"></i>Closed</span>
+                                }
+                            </td>
+                            <td>@ticket.CreatedDate.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            <td class="text-end">
+                                <a href="@Url.Action("Details", new { id = ticket.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="fas fa-comments me-1"></i> View Thread
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal to Raise Ticket -->
+@if (!isAdmin)
+{
+    <div class="modal fade" id="raiseTicketModal" tabindex="-1" aria-labelledby="raiseTicketModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0 py-3">
+                    <h5 class="modal-title fw-bold" id="raiseTicketModalLabel"><i class="fas fa-plus-circle me-2"></i>Raise a Support Ticket</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="raiseTicketForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Select Category <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ticketCategory" required>
+                                    <option value="">-- Choose Category --</option>
+                                    @if (categories != null)
+                                    {
+                                        foreach (var cat in categories)
+                                        {
+                                            <option value="@cat.Id">@cat.CategoryName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Priority <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ticketPriority" required>
+                                    <option value="Normal" selected>Normal</option>
+                                    <option value="High">High</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Subject / Summary <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ticketTitle" placeholder="Briefly summarize the issue" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Detailed Description <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="ticketDescription" rows="5" placeholder="Explain your problem in detail..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Attachment (Optional)</label>
+                            <input type="file" class="form-control" id="ticketAttachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" />
+                            <small class="text-muted">Allowed formats: Images, PDF, Word documents</small>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4" id="btnSubmitTicket">
+                                <i class="fas fa-paper-plane me-1"></i> Submit Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#ticketTable').DataTable({
+                "order": [[6, "desc"]], // Sort by date created desc
+                "pageLength": 10
+            });
+
+            // Submit Ticket handler
+            $('#raiseTicketForm').submit(function(e) {
+                e.preventDefault();
+
+                var formData = new FormData();
+                formData.append('categoryId', $('#ticketCategory').val());
+                formData.append('priority', $('#ticketPriority').val());
+                formData.append('title', $('#ticketTitle').val());
+                formData.append('description', $('#ticketDescription').val());
+                
+                var fileInput = $('#ticketAttachment')[0];
+                if (fileInput.files.length > 0) {
+                    formData.append('attachment', fileInput.files[0]);
+                }
+
+                var btn = $('#btnSubmitTicket');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Submitting...');
+
+                $.ajax({
+                    url: '@Url.Action("Create", "Helpdesk")',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                            btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Submit Ticket');
+                        }
+                    },
+                    error: function() {
+                        alert('Something went wrong. Please try again.');
+                        btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Submit Ticket');
+                    }
+                });
+            });
+        });
+    </script>
+}

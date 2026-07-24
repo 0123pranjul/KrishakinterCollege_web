@@ -1,0 +1,462 @@
+@model List<UserListViewModel>
+@{
+    ViewData["Title"] = "User Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int? filterRoleId = ViewBag.FilterRoleId;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-users-cog me-2 text-primary"></i>User Management</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+                <li class="breadcrumb-item active">User Management</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Register" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1"></i> Register New User
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@* Stats Cards *@
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-primary">@Model.Count</div>
+            <div class="text-muted small">Total Users</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-success">@Model.Count(u => u.IsActive)</div>
+            <div class="text-muted small">Active</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-danger">@Model.Count(u => !u.IsActive)</div>
+            <div class="text-muted small">Inactive</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="fs-2 fw-bold text-info">@Model.Select(u => u.RoleName).Distinct().Count()</div>
+            <div class="text-muted small">Roles Used</div>
+        </div>
+    </div>
+</div>
+
+@* Filter Bar *@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="get" asp-action="UserList" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold mb-1 text-secondary"><i class="fas fa-shield-alt me-1"></i>Filter by Role</label>
+                <select name="roleId" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- All Roles --</option>
+                    @foreach (var role in (List<School_CRM.Models.RoleMaster>)ViewBag.Roles)
+                    {
+                        <option value="@role.RoleId" selected="@(filterRoleId == role.RoleId ? "selected" : null)">
+                            @role.RoleName
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold mb-1 text-secondary"><i class="fas fa-link me-1"></i>Filter by Linkage</label>
+                <select id="linkageFilterSelect" class="form-select">
+                    <option value="">-- All Linkages --</option>
+                    <option value="student">Linked to Student</option>
+                    <option value="teacher">Linked to Teacher</option>
+                    <option value="employee">Linked to Employee</option>
+                    <option value="none">Unlinked (Not Linked)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1 text-secondary"><i class="fas fa-search me-1"></i>Search</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search username, email, name..." />
+            </div>
+            <div class="col-md-2 d-grid">
+                @if (filterRoleId.HasValue)
+                {
+                    <a asp-action="UserList" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear Role
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetAllFilters()">
+                        <i class="fas fa-sync-alt me-1"></i> Reset
+                    </button>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@* User Table *@
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-users fa-3x mb-3 opacity-25"></i>
+                <p class="mb-0">No users found@(filterRoleId.HasValue ? " for the selected role" : "").</p>
+                <a asp-action="Register" class="btn btn-primary mt-3">
+                    <i class="fas fa-user-plus me-1"></i> Register First User
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="userTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">#</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Linked To</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th class="text-center pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{int sr = 1;}
+                        @foreach (var user in Model)
+                        {
+                             var linkedTypesList = user.Linkages?.Select(l => l.Type.ToLower()).ToList() ?? new List<string>();
+                             string dataLinkTypes = string.Join(",", linkedTypesList);
+                             if (string.IsNullOrEmpty(dataLinkTypes)) {
+                                 dataLinkTypes = "none";
+                             }
+                             <tr class="user-row" data-link-types="@dataLinkTypes">
+                                 <td class="ps-3 text-muted">@(sr++)</td>
+                                 <td>
+                                     <div class="d-flex align-items-center gap-2">
+                                         <div class="avatar-circle bg-primary text-white shadow-sm">
+                                             @user.Username.Substring(0, 1).ToUpper()
+                                         </div>
+                                         <span class="fw-semibold">@user.Username</span>
+                                     </div>
+                                 </td>
+                                 <td class="text-muted">@user.Email</td>
+                                 <td>
+                                     @{
+                                         var badgeClass = user.RoleName.ToLower() switch {
+                                             "superadmin" => "bg-danger",
+                                             "admin"      => "bg-warning text-dark",
+                                             "principal"  => "bg-purple text-white",
+                                             "teacher"    => "bg-info text-dark",
+                                             "student"    => "bg-success",
+                                             "employee"   => "bg-secondary",
+                                             _            => "bg-light text-dark"
+                                         };
+                                     }
+                                     <span class="badge @badgeClass">@user.RoleName</span>
+                                 </td>
+                                 <td>
+                                     @if (user.Linkages != null && user.Linkages.Any())
+                                     {
+                                         var isFirst = true;
+                                         foreach (var linkage in user.Linkages)
+                                         {
+                                             if (!isFirst)
+                                             {
+                                                 <hr class="my-1 opacity-25" />
+                                             }
+                                             isFirst = false;
+
+                                             string typeIcon = linkage.Type switch {
+                                                 "Student"  => "fas fa-user-graduate text-success",
+                                                 "Teacher"  => "fas fa-chalkboard-teacher text-info",
+                                                 "Employee" => "fas fa-briefcase text-warning",
+                                                 _          => "fas fa-user text-muted"
+                                             };
+                                             <div>
+                                                 <span><i class="@typeIcon me-1"></i>@linkage.Name</span>
+                                                 <br /><small class="text-muted text-uppercase fw-semibold" style="font-size: 10px;">@linkage.Type</small>
+                                             </div>
+                                         }
+                                     }
+                                     else
+                                     {
+                                         <span class="text-muted font-monospace">—</span>
+                                     }
+                                 </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="fas fa-circle me-1" style="font-size:8px"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <i class="fas fa-circle me-1" style="font-size:8px"></i>Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-muted small">
+                                    @user.CreatedDate?.ToString("dd MMM yyyy")
+                                </td>
+                                <td class="text-center pe-3">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                title="Manage Role & Linkage"
+                                                onclick="openManageUserModal(@user.UserId)">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <form asp-action="ToggleUserStatus" method="post" class="d-inline"
+                                              onsubmit="return confirm('Change status for @Html.Raw(user.Username)?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@user.UserId" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                                    title="@(user.IsActive ? "Deactivate" : "Activate")">
+                                                <i class="fas @(user.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Manage User Modal (Bootstrap 5) -->
+<div class="modal fade" id="manageUserModal" tabindex="-1" aria-labelledby="manageUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="manageUserModalLabel"><i class="fas fa-user-edit me-2"></i>Manage User Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="manageUserForm" method="post" onsubmit="submitManageUserForm(event)">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="modalUserId" name="userId" />
+                <div class="modal-body p-4">
+                    <!-- Alert Box for Validation Errors -->
+                    <div id="modalAlert" class="alert alert-danger d-none alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> <span id="modalAlertMessage"></span>
+                        <button type="button" class="btn-close" onclick="document.getElementById('modalAlert').classList.add('d-none')"></button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                            <input type="text" id="modalUsername" class="form-control bg-light" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Role Dropdown -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-primary">Assign Role <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-shield-alt text-muted"></i></span>
+                            <select id="modalRoleId" name="roleId" class="form-select" required>
+                                <option value="">-- Select Role --</option>
+                                @foreach (var role in (List<School_CRM.Models.RoleMaster>)ViewBag.Roles)
+                                {
+                                    <option value="@role.RoleId">@role.RoleName</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Linkage -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-info"><i class="fas fa-chalkboard-teacher me-1"></i>Link to Teacher</label>
+                        <select id="modalTeacherId" name="teacherId" class="form-select">
+                            <!-- Loaded Dynamically -->
+                        </select>
+                        <div class="form-text small text-muted">Link user to a Teacher record. If the Teacher profile is already linked elsewhere, it will not appear here.</div>
+                    </div>
+
+                    <!-- Employee Linkage -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-warning"><i class="fas fa-briefcase me-1"></i>Link to Employee</label>
+                        <select id="modalEmpId" name="empId" class="form-select">
+                            <!-- Loaded Dynamically -->
+                        </select>
+                        <div class="form-text small text-muted">Link user to an Employee record. Duplicate linking to a linked profile is prevented.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveUser"><i class="fas fa-save me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    .bg-purple { background-color: #6f42c1 !important; }
+</style>
+
+@section Scripts {
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const linkageFilterSelect = document.getElementById('linkageFilterSelect');
+        let manageUserModalObj = null;
+
+        // Combined client-side filtering function
+        function filterUsers() {
+            const q = searchInput.value.toLowerCase().trim();
+            const linkageType = linkageFilterSelect.value;
+
+            document.querySelectorAll('#userTable tbody tr.user-row').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const linkTypesAttr = row.getAttribute('data-link-types') || '';
+                const linkTypes = linkTypesAttr ? linkTypesAttr.split(',') : [];
+
+                const matchesSearch = text.includes(q);
+                const matchesLinkage = !linkageType || 
+                                       (linkageType === 'none' && (linkTypes.length === 0 || linkTypes.includes('none'))) || 
+                                       linkTypes.includes(linkageType);
+
+                if (matchesSearch && matchesLinkage) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', filterUsers);
+        linkageFilterSelect.addEventListener('change', filterUsers);
+
+        function resetAllFilters() {
+            searchInput.value = '';
+            linkageFilterSelect.value = '';
+            filterUsers();
+        }
+
+        // Open Manage Modal & Load Data via AJAX
+        function openManageUserModal(userId) {
+            const alertBox = document.getElementById('modalAlert');
+            alertBox.classList.add('d-none');
+            
+            document.getElementById('modalUserId').value = userId;
+
+            // Load data from server
+            fetch(`/Account/GetManageUserData?userId=${userId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Could not fetch user linkage data.");
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('modalUsername').value = data.username;
+                    document.getElementById('modalRoleId').value = data.roleId;
+
+                    // Populate Teacher Select
+                    const teacherSelect = document.getElementById('modalTeacherId');
+                    teacherSelect.innerHTML = '<option value="">-- No Teacher Link --</option>';
+                    data.unlinkedTeachers.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.textContent = t.name;
+                        if (t.id === data.teacherId) {
+                            opt.selected = true;
+                        }
+                        teacherSelect.appendChild(opt);
+                    });
+
+                    // Populate Employee Select
+                    const empSelect = document.getElementById('modalEmpId');
+                    empSelect.innerHTML = '<option value="">-- No Employee Link --</option>';
+                    data.unlinkedEmployees.forEach(e => {
+                        const opt = document.createElement('option');
+                        opt.value = e.id;
+                        opt.textContent = e.name;
+                        if (e.id === data.empId) {
+                            opt.selected = true;
+                        }
+                        empSelect.appendChild(opt);
+                    });
+
+                    // Show bootstrap modal
+                    if (!manageUserModalObj) {
+                        manageUserModalObj = new bootstrap.Modal(document.getElementById('manageUserModal'));
+                    }
+                    manageUserModalObj.show();
+                })
+                .catch(err => {
+                    alert("Error: " + err.message);
+                });
+        }
+
+        // Submit form via AJAX
+        function submitManageUserForm(event) {
+            event.preventDefault();
+            const form = document.getElementById('manageUserForm');
+            const formData = new FormData(form);
+
+            const alertBox = document.getElementById('modalAlert');
+            const alertMsg = document.getElementById('modalAlertMessage');
+            const btnSave = document.getElementById('btnSaveUser');
+
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+            fetch('/Account/UpdateUserRoleAndLinkage', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alertBox.classList.remove('d-none');
+                    alertMsg.textContent = result.message;
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<i class="fas fa-save me-1"></i>Save Changes';
+                }
+            })
+            .catch(err => {
+                alertBox.classList.remove('d-none');
+                alertMsg.textContent = "Error: " + err.message;
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fas fa-save me-1"></i>Save Changes';
+            });
+        }
+    </script>
+}

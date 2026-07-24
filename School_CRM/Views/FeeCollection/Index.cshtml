@@ -1,0 +1,593 @@
+﻿@{
+    ViewData["Title"] = "Fee Collection";
+}
+
+<div class="container-fluid">
+
+    <!-- Summary Cards -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                        <i class="fas fa-file-invoice-dollar text-primary fa-lg"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted">Total Collections</small>
+                        <h4 class="mb-0 text-primary" id="cardTotal">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                        <i class="fas fa-rupee-sign text-success fa-lg"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted">Total Collected</small>
+                        <h4 class="mb-0 text-success" id="cardCollected">₹0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                        <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted">Total Due</small>
+                        <h4 class="mb-0 text-danger" id="cardDue">₹0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                        <i class="fas fa-percentage text-warning fa-lg"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted">Total Discount</small>
+                        <h4 class="mb-0 text-warning" id="cardDiscount">₹0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-money-bill-wave me-2 text-primary"></i>Fee Collection Management
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Index","FeeStatusReport")" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-table me-1"></i> Fee Status Report
+                        </a>
+                        <button class="btn btn-sm btn-info text-white" onclick="openFeeDetails()">
+                            <i class="fas fa-user-circle me-1"></i> Student Fee Details
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="loadCollectionModal(0)">
+                            <i class="fas fa-plus me-1"></i> Collect Fee
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card-body border-bottom pb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Session</label>
+                            <select id="filterSession" class="form-select form-select-sm">
+                                <option value="">All Sessions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Month</label>
+                            <select id="filterMonth" class="form-select form-select-sm">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Payment Mode</label>
+                            <select id="filterPayMode" class="form-select form-select-sm">
+                                <option value="">All Modes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Student Search</label>
+                            <input type="text" id="filterStudent"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search student name..." />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="collectionTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student</th>
+                                    <th>Session</th>
+                                    <th>Month/Year</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Due</th>
+                                    <th>Mode</th>
+                                    <th>Pay Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="collectionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-money-bill-wave me-2"></i>Collect Fee
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="collectionModalBody">
+                @* AJAX loaded *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-receipt me-2"></i>Fee Receipt
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalContent"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Student Fee Details Modal ─────────────────────────────────────────── -->
+<div class="modal fade" id="feeDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:linear-gradient(135deg,#1a73e8,#0d47a1)">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-graduate me-2"></i>Student Fee Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Search Row -->
+                <div class="row g-3 mb-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Student <span class="text-danger">*</span></label>
+                        <select id="feeDetailStudent" style="width:100%">
+                            <option value=""></option>
+                        </select>
+                        <div class="form-text"><i class="fas fa-search me-1"></i>Name, Roll No ya Admission No type karo</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Session</label>
+                        <select id="feeDetailSession" class="form-select">
+                            <option value="">All Sessions</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadStudentFeeDetails()">
+                            <i class="fas fa-search me-1"></i> Load Details
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Info Bar -->
+                <div id="feeDetailStudentInfo" style="display:none" class="mb-3">
+                    <div class="alert alert-primary py-2 mb-0 d-flex gap-4 align-items-center flex-wrap">
+                        <div><small class="text-muted d-block">Student</small><strong id="fdi_name">-</strong></div>
+                        <div><small class="text-muted d-block">Roll No</small><strong id="fdi_roll">-</strong></div>
+                        <div><small class="text-muted d-block">Class</small><strong id="fdi_class">-</strong></div>
+                        <div><small class="text-muted d-block">Section</small><strong id="fdi_section">-</strong></div>
+                        <div><small class="text-muted d-block">Session</small><strong id="fdi_session">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- Summary Strip -->
+                <div id="feeDetailSummary" style="display:none" class="mb-3">
+                    <div class="row g-2 text-center">
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-primary bg-opacity-10 py-2">
+                                <small class="text-muted">Total Fee</small>
+                                <h5 class="mb-0 text-primary" id="fds_total">₹0</h5>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-success bg-opacity-10 py-2">
+                                <small class="text-muted">Total Paid</small>
+                                <h5 class="mb-0 text-success" id="fds_paid">₹0</h5>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-danger bg-opacity-10 py-2">
+                                <small class="text-muted">Total Due</small>
+                                <h5 class="mb-0 text-danger" id="fds_due">₹0</h5>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-warning bg-opacity-10 py-2">
+                                <small class="text-muted">Months Paid</small>
+                                <h5 class="mb-0 text-warning" id="fds_months">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month-wise Cards -->
+                <div id="feeDetailCards">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-user-graduate fa-3x mb-3 d-block opacity-25"></i>
+                        Student select karke "Load Details" click karo
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+        const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        $(document).ready(function () {
+        loadDataTable();
+        });
+
+        function loadDataTable() {
+        table = $('#collectionTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "FeeCollection")',
+        type: 'GET',
+        dataSrc: function (json) {
+        loadFilterOptions(json.data);
+        updateSummaryCards(json.data);
+        return json.data;
+        }
+        },
+        columns: [
+        { data: null, width: '4%', className: 'text-center',
+          render: function(d,t,r,meta){ return meta.row + meta.settings._iDisplayStart + 1; } },
+        { data: 'studentName',      width: '16%' },
+        { data: 'sessionName',      width: '9%',  className: 'text-center' },
+        { data: 'monthYear',        width: '11%', className: 'text-center' },
+        {
+        data: 'totalAmount', width: '9%', className: 'text-end',
+        render: d => '<span class="fw-semibold">₹' + parseFloat(d).toFixed(2) + '</span>'
+        },
+        {
+        data: 'paidAmount', width: '9%', className: 'text-end',
+        render: d => '<span class="text-success fw-semibold">₹' + parseFloat(d).toFixed(2) + '</span>'
+        },
+        {
+        data: 'dueAmount', width: '9%', className: 'text-end',
+        render: d => {
+        var amt = parseFloat(d);
+        return amt > 0
+        ? '<span class="text-danger fw-semibold">₹' + amt.toFixed(2) + '</span>'
+        : '<span class="text-success">₹0.00</span>';
+        }
+        },
+        {
+        data: 'paymentMode', width: '8%', className: 'text-center',
+        render: d => d ? `<span class="badge bg-info text-dark">${d}</span>` : '-'
+        },
+        { data: 'paymentDate', width: '9%', className: 'text-center' },
+        {
+        data: 'feeCollectionId', width: '16%', className: 'text-center',
+        render: function (data) {
+        return `<div class="btn-group btn-group-sm">
+        <button class="btn btn-info edit-btn" title="Edit" data-id="${data}">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-success view-btn" title="Receipt" data-id="${data}">
+        <i class="fas fa-receipt"></i>
+        </button>
+        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}">
+        <i class="fas fa-trash"></i>
+        </button>
+        </div>`;
+        }
+        }
+        ],
+        language: { emptyTable: "No fee collections found" },
+        order: [[8, 'desc']],
+        columnDefs: [{ orderable: false, targets: 0 }],
+        drawCallback: function () {
+        updateSummaryCards(this.api().rows({ filter: 'applied' }).data().toArray());
+        },
+        initComplete: function () {
+        $('#filterStudent').on('keyup',  function () { table.column(1).search($(this).val()).draw(); });
+        $('#filterSession').on('change', function () { table.column(2).search($(this).val()).draw(); });
+        $('#filterMonth')  .on('change', function () { table.column(3).search($(this).val()).draw(); });
+        $('#filterPayMode').on('change', function () { table.column(7).search($(this).val()).draw(); });
+        }
+        });
+        }
+
+        // ── Filter Options ────────────────────────────────────────────────────
+        function loadFilterOptions(data) {
+        var sessions  = [...new Map(data.map(d => [d.sessionName, d])).values()];
+        var monthYrs  = [...new Map(data.map(d => [d.monthYear,   d])).values()];
+        var payModes  = [...new Map(data.map(d => [d.paymentMode, d])).values()];
+
+        sessions.forEach(d => $('#filterSession').append(`<option value="${d.sessionName}">${d.sessionName}</option>`));
+        monthYrs.forEach(d => $('#filterMonth')  .append(`<option value="${d.monthYear}">${d.monthYear}</option>`));
+        payModes.filter(d => d.paymentMode).forEach(d =>
+        $('#filterPayMode').append(`<option value="${d.paymentMode}">${d.paymentMode}</option>`));
+        }
+
+        function resetFilters() {
+        $('#filterStudent').val('');
+        $('#filterSession, #filterMonth, #filterPayMode').val('');
+        table.columns().search('').draw();
+        }
+
+        // ── Summary Cards ─────────────────────────────────────────────────────
+        function updateSummaryCards(data) {
+        var totalCollected = data.reduce((s, d) => s + parseFloat(d.paidAmount    || 0), 0);
+        var totalDue       = data.reduce((s, d) => s + parseFloat(d.dueAmount     || 0), 0);
+        var totalDiscount  = data.reduce((s, d) => s + parseFloat(d.discountAmount|| 0), 0);
+
+        $('#cardTotal')    .text(data.length);
+        $('#cardCollected').text('₹' + totalCollected.toFixed(2));
+        $('#cardDue')      .text('₹' + totalDue.toFixed(2));
+        $('#cardDiscount') .text('₹' + totalDiscount.toFixed(2));
+        }
+
+        // ── Load Modal ────────────────────────────────────────────────────────
+        function loadCollectionModal(id) {
+        $.ajax({
+        url: '@Url.Action("CreateOrEdit", "FeeCollection")/' + id,
+        type: 'GET',
+        success: function (data) {
+        $('#collectionModalBody').html(data);
+        $('#modalTitle').html(id == 0
+        ? '<i class="fas fa-money-bill-wave me-2"></i>Collect Fee'
+        : '<i class="fas fa-edit me-2"></i>Edit Fee Collection');
+
+        var form = $('#feeCollectionForm');
+        form.removeData('validator').removeData('unobtrusiveValidation');
+        $.validator.unobtrusive.parse(form);
+        $('#collectionModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load form!'); }
+        });
+        }
+
+        $(document).on('click', '.edit-btn',   function () { loadCollectionModal($(this).data('id')); });
+
+        $(document).on('click', '.view-btn', function () {
+        $.ajax({
+        url: '@Url.Action("View", "FeeCollection")/' + $(this).data('id'),
+        type: 'GET',
+        success: function (data) { $('#viewModalContent').html(data); $('#viewModal').modal('show'); },
+        error: function () { toastr.error('Failed to load receipt!'); }
+        });
+        });
+
+        $(document).on('click', '.delete-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({ title: 'Delete Collection?', icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete!' })
+        .then(r => {
+        if (r.isConfirmed) {
+        $.post('@Url.Action("Delete", "FeeCollection")', { id }, function (res) {
+        if (res.success) { table.ajax.reload(null, false); toastr.success(res.message); }
+        else toastr.error(res.message);
+        });
+        }
+        });
+        });
+
+        $(document).on('click', '#btnSave', function () {
+        var form = $('#feeCollectionForm');
+        if (form.valid()) {
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function (res) {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Collection');
+        if (res.success) {
+        $('#collectionModal').modal('hide');
+        table.ajax.reload(null, false);
+        toastr.success(res.message);
+        } else toastr.error(res.message);
+        });
+        }
+        });
+
+        // ── Student Fee Details Modal ─────────────────────────────────────────
+        function openFeeDetails() {
+            $('#feeDetailsModal').modal('show');
+            // Init Select2 once modal is shown
+            $('#feeDetailsModal').one('shown.bs.modal', function () {
+                initFeeDetailSelect2();
+                loadFeeDetailSessions();
+            });
+        }
+
+        function initFeeDetailSelect2() {
+            if ($('#feeDetailStudent').hasClass('select2-hidden-accessible')) return;
+            $('#feeDetailStudent').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Name, Roll No ya Admission No type karo...',
+                minimumInputLength: 1,
+                allowClear: true,
+                dropdownParent: $('#feeDetailsModal'),
+                ajax: {
+                    url: '@Url.Action("SearchStudentsForFeeDetail", "FeeCollection")',
+                    dataType: 'json', delay: 300,
+                    data: function(p) { return { term: p.term, page: p.page || 1 }; },
+                    processResults: function(d, p) { p.page = p.page||1; return { results: d.results, pagination: d.pagination }; },
+                    cache: true
+                },
+                templateResult: function(s) {
+                    if (s.loading) return $('<span><i class="fas fa-spinner fa-spin me-1"></i>Searching...</span>');
+                    if (!s.id) return s.text;
+                    var cls = [s.className, s.sectionName].filter(Boolean).join('-');
+                    return $(`<div class="py-1">
+                        <div style="font-weight:600">${s.name||s.text}</div>
+                        <div style="font-size:11px;color:#666">
+                            Roll: ${s.roll||'-'}
+                            ${cls ? ' &bull; '+cls : ''}
+                            ${s.sessionName ? ' &bull; '+s.sessionName : ''}
+                        </div>
+                    </div>`);
+                },
+                templateSelection: function(s) {
+                    if (!s.id) return s.text;
+                    // store details on select
+                    $('#fdi_name')   .text(s.name        || '-');
+                    $('#fdi_roll')   .text(s.roll        || '-');
+                    $('#fdi_class')  .text(s.className   || '-');
+                    $('#fdi_section').text(s.sectionName || '-');
+                    $('#fdi_session').text(s.sessionName || '-');
+                    $('#feeDetailStudentInfo').slideDown(150);
+                    if (s.sessionId) $('#feeDetailSession').val(s.sessionId);
+                    return (s.name || s.text) + (s.roll ? ' | Roll: '+s.roll : '');
+                }
+            });
+            $('#feeDetailStudent').on('select2:clear', function() {
+                $('#feeDetailStudentInfo').slideUp(150);
+                $('#feeDetailSummary').hide();
+                $('#feeDetailCards').html('<div class="text-center text-muted py-5"><i class="fas fa-user-graduate fa-3x mb-3 d-block opacity-25"></i>Student select karke "Load Details" click karo</div>');
+            });
+        }
+
+        function loadFeeDetailSessions() {
+            if ($('#feeDetailSession option').length > 1) return;
+            $.get('@Url.Action("GetSessions", "FeesDashboard")', function(data) {
+                data.forEach(s => $('#feeDetailSession').append(`<option value="${s.sessionId}">${s.sessionName}</option>`));
+            });
+        }
+
+        function loadStudentFeeDetails() {
+            var studentId = $('#feeDetailStudent').val();
+            var sessionId = $('#feeDetailSession').val() || 0;
+            if (!studentId) { toastr.warning('Pehle student select karo!'); return; }
+
+            $('#feeDetailCards').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>');
+
+            $.get('@Url.Action("GetStudentFeeDetail", "FeeCollection")', { studentId, sessionId }, function(res) {
+                if (!res.success) { toastr.error(res.message); return; }
+
+                // Summary
+                $('#fds_total') .text('₹' + fmt(res.summary.totalFee));
+                $('#fds_paid')  .text('₹' + fmt(res.summary.totalPaid));
+                $('#fds_due')   .text('₹' + fmt(res.summary.totalDue));
+                $('#fds_months').text(res.summary.monthsPaid + ' / ' + res.summary.totalMonths);
+                $('#feeDetailSummary').slideDown(150);
+
+                if (!res.collections || res.collections.length === 0) {
+                    $('#feeDetailCards').html('<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Is student ki koi fee collection nahi mili</div>');
+                    return;
+                }
+
+                // Month-wise cards
+                var html = '<div class="row g-3">';
+                res.collections.forEach(function(c) {
+                    var dueAmt   = parseFloat(c.dueAmount || 0);
+                    var paidAmt  = parseFloat(c.paidAmount || 0);
+                    var totalAmt = parseFloat(c.totalAmount || 0);
+                    var pct      = totalAmt > 0 ? Math.min(Math.round((paidAmt / totalAmt) * 100), 100) : 0;
+                    var statusCls = dueAmt > 0 ? 'border-danger' : 'border-success';
+                    var statusBadge = dueAmt > 0
+                        ? `<span class="badge bg-warning text-dark">Partial</span>`
+                        : `<span class="badge bg-success">Fully Paid</span>`;
+                    var barCls = pct >= 100 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger';
+
+                    // Fee type breakup
+                    var detailRows = '';
+                    if (c.details && c.details.length) {
+                        c.details.forEach(d => {
+                            detailRows += `<div class="d-flex justify-content-between small text-muted">
+                                <span>${d.feeName}</span><span>₹${fmt(d.amount)}</span>
+                            </div>`;
+                        });
+                    }
+
+                    html += `<div class="col-md-4 col-lg-3">
+                        <div class="card h-100 border-2 ${statusCls} shadow-sm">
+                            <div class="card-header py-2 d-flex justify-content-between align-items-center ${dueAmt>0?'bg-danger bg-opacity-10':'bg-success bg-opacity-10'}">
+                                <strong class="small">${c.monthYear}</strong>
+                                ${statusBadge}
+                            </div>
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Total</small>
+                                    <small class="fw-semibold">₹${fmt(totalAmt)}</small>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Paid</small>
+                                    <small class="text-success fw-semibold">₹${fmt(paidAmt)}</small>
+                                </div>
+                                ${dueAmt > 0 ? `<div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Due</small>
+                                    <small class="text-danger fw-semibold">₹${fmt(dueAmt)}</small>
+                                </div>` : ''}
+                                <div class="progress mb-2" style="height:6px">
+                                    <div class="progress-bar ${barCls}" style="width:${pct}%"></div>
+                                </div>
+                                <div class="border-top pt-1 mt-1">${detailRows}</div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <span class="badge bg-info text-dark" style="font-size:10px">${c.paymentMode||'-'}</span>
+                                    <span class="text-muted" style="font-size:10px">${c.paymentDate||'-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                $('#feeDetailCards').html(html);
+            }).fail(function() { toastr.error('Failed to load details!'); });
+        }
+
+        function fmt(n) { return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    </script>
+}

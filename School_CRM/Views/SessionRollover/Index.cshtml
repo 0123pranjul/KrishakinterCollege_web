@@ -1,0 +1,203 @@
+@{
+    ViewData["Title"] = "Session Promotion Wizard";
+}
+<style>
+.wizard-wrapper { max-width: 1100px; margin: 0 auto; }
+.step-indicator  { display:flex; align-items:center; margin-bottom:28px; }
+.step-item       { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+.step-item:not(:last-child)::after { content:''; position:absolute; top:20px; left:60%; width:80%; height:2px; background:#e2e8f0; z-index:0; }
+.step-item.done:not(:last-child)::after   { background:#22c55e; }
+.step-circle { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; background:#e2e8f0; color:#64748b; z-index:1; position:relative; border:3px solid #e2e8f0; transition:all .3s; }
+.step-item.active .step-circle { background:#4361ee; color:#fff; border-color:#4361ee; }
+.step-item.done   .step-circle { background:#22c55e; color:#fff; border-color:#22c55e; }
+.step-label { font-size:0.72rem; margin-top:6px; color:#64748b; font-weight:600; text-align:center; }
+.step-item.active .step-label { color:#4361ee; }
+.step-item.done   .step-label { color:#22c55e; }
+.step-card { display:none; }
+.step-card.active { display:block; }
+.wizard-card { border-radius:14px; border:2px solid #e2e8f0; }
+.wizard-card .card-header { border-radius:12px 12px 0 0; background:linear-gradient(135deg,#4361ee,#7209b7); color:#fff; }
+.action-select   { min-width:130px; font-size:0.8rem; }
+.student-table th, .student-table td { font-size:0.82rem; vertical-align:middle; }
+.sub-form { background:#f8fafc; border-radius:8px; padding:10px 12px; margin-top:6px; border:1px solid #e2e8f0; }
+.preview-stat { border-radius:10px; padding:14px; text-align:center; }
+.preview-stat .count { font-size:2rem; font-weight:800; }
+.preview-stat .label { font-size:0.78rem; font-weight:600; }
+.stage-row  { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f1f5f9; }
+.stage-icon { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; }
+.stage-icon.pending { background:#f1f5f9; color:#94a3b8; }
+.stage-icon.running { background:#dbeafe; color:#3b82f6; }
+.stage-icon.done    { background:#d1fae5; color:#22c55e; }
+.stage-icon.error   { background:#fee2e2; color:#ef4444; }
+</style>
+
+<div class="container-fluid wizard-wrapper">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0 fw-bold"><i class="fas fa-magic me-2 text-primary"></i>Session Promotion Wizard</h4>
+            <div class="text-muted small">Step-by-step session rollover — copy setup aur students promote karo</div>
+        </div>
+        <a href="@Url.Action("History","SessionRollover")" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-history me-1"></i> Rollover History
+        </a>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step-item active" id="si-1"><div class="step-circle">1</div><div class="step-label">Sessions</div></div>
+        <div class="step-item" id="si-2"><div class="step-circle">2</div><div class="step-label">Class Sections</div></div>
+        <div class="step-item" id="si-3"><div class="step-circle">3</div><div class="step-label">Timetable</div></div>
+        <div class="step-item" id="si-4"><div class="step-circle">4</div><div class="step-label">Students</div></div>
+        <div class="step-item" id="si-5"><div class="step-circle">5</div><div class="step-label">Preview &amp; Confirm</div></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-card active" id="step-1">
+        <div class="card wizard-card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Step 1 of 5 — Select Sessions</h5></div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Source Session <span class="text-danger">*</span></label>
+                        <select id="srcSession" class="form-select"><option value="">-- Select Source Session --</option></select>
+                        <div class="form-text">Session jisme students abhi hain</div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center justify-content-center pt-4">
+                        <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Target Session <span class="text-danger">*</span></label>
+                        <select id="tgtSession" class="form-select"><option value="">-- Select Target Session --</option></select>
+                        <div class="form-text">Naya session jisme promote karna hai</div>
+                    </div>
+                </div>
+                <div id="step1-error" class="alert alert-danger mt-3" style="display:none"></div>
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button class="btn btn-primary" onclick="step1Next()">Next <i class="fas fa-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card" id="step-2">
+        <div class="card wizard-card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Step 2 of 5 — ClassSection Rollover</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="selectAllCS()">Select All</button>
+                    <button class="btn btn-sm btn-outline-light" onclick="deselectAllCS()">Deselect All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">Source session ke ClassSection mappings — jo copy karne hain unhe selected rakhein.</p>
+                <div id="cs-list"></div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-secondary" onclick="goToStep(1)"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                <button class="btn btn-primary" onclick="step2Next()">Next <i class="fas fa-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card" id="step-3">
+        <div class="card wizard-card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Step 3 of 5 — Timetable Rollover</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="selectAllTT()">Select All</button>
+                    <button class="btn btn-sm btn-outline-light" onclick="deselectAllTT()">Deselect All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">Source session ke timetable entries — jo copy karne hain unhe selected rakhein.</p>
+                <div id="tt-list"></div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-secondary" onclick="goToStep(2)"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                <button class="btn btn-primary" onclick="step3Next()">Next <i class="fas fa-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card" id="step-4">
+        <div class="card wizard-card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-users me-2"></i>Step 4 of 5 — Student Promotion</h5></div>
+            <div class="card-body p-0"><div id="student-list"></div></div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-secondary" onclick="goToStep(3)"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                <button class="btn btn-primary" onclick="step4Next()">Next <i class="fas fa-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-card" id="step-5">
+        <div class="card wizard-card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Step 5 of 5 — Preview &amp; Confirm</h5></div>
+            <div class="card-body" id="preview-body"></div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-secondary" onclick="goToStep(4)"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                <button class="btn btn-success fw-bold" id="btnConfirm" onclick="executeRollover()">
+                    <i class="fas fa-check-circle me-1"></i> Confirm &amp; Execute
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Execution Progress Modal -->
+<div class="modal fade" id="progressModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-cog fa-spin me-2"></i>Executing Promotion...</h5>
+            </div>
+            <div class="modal-body">
+                <div class="stage-row"><div class="stage-icon pending" id="si-cs"><i class="fas fa-circle"></i></div><div><strong>Stage 1:</strong> ClassSection Rollover</div></div>
+                <div class="stage-row"><div class="stage-icon pending" id="si-tt"><i class="fas fa-circle"></i></div><div><strong>Stage 2:</strong> Timetable Rollover</div></div>
+                <div class="stage-row"><div class="stage-icon pending" id="si-st"><i class="fas fa-circle"></i></div><div><strong>Stage 3-7:</strong> Student Actions</div></div>
+                <div class="progress mt-3" style="height:10px">
+                    <div id="exec-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:0%"></div>
+                </div>
+                <div id="exec-message" class="text-center mt-2 text-muted small">Please wait...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="historyModalTitle">Student History</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="historyModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const URLS = {
+        getSessions       : '@Url.Action("GetSessions","SessionRollover")',
+        getClassSections  : '@Url.Action("GetClassSections","SessionRollover")',
+        getTimetable      : '@Url.Action("GetTimetableEntries","SessionRollover")',
+        getStudents       : '@Url.Action("GetStudentsForPromotion","SessionRollover")',
+        getNextClass      : '@Url.Action("GetNextClass","SessionRollover")',
+        getAvailSections  : '@Url.Action("GetAvailableSections","SessionRollover")',
+        getClasses        : '@Url.Action("GetClasses","SessionRollover")',
+        getStudentHistory : '@Url.Action("GetStudentHistory","SessionRollover")',
+        execute           : '@Url.Action("Execute","SessionRollover")',
+        rollback          : '@Url.Action("Rollback","SessionRollover")'
+    };
+</script>
+<script src="~/js/sessionRollover.js" asp-append-version="true"></script>
+}

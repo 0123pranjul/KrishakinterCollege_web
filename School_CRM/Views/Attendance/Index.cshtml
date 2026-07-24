@@ -1,0 +1,232 @@
+﻿@{
+    ViewData["Title"] = "Daily Attendance";
+    var selectedDate = ViewBag.SelectedDate as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today);
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Daily Attendance
+                    </h3>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <input type="date" id="attendanceDate" class="form-control form-control-sm"
+                               value="@selectedDate.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd")"
+                               style="width:160px">
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadAttendance()">
+                            <i class="fas fa-sync"></i> Load
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="saveAllAttendance()">
+                            <i class="fas fa-save"></i> Save All
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="attendanceTable" class="table table-hover table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Status</th>
+                                    <th>Hours</th>
+                                    <th>Overtime</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        .table th {
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+    </style>
+
+    <script>
+        let table;
+        let currentDate = '@selectedDate.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd")';
+
+        $(document).ready(function () {
+            $('#attendanceDate').val(currentDate);
+            loadAttendance();
+            $('#attendanceDate').on('change', function () { loadAttendance(); });
+        });
+
+        function loadAttendance() {
+            currentDate = $('#attendanceDate').val();
+            if (!currentDate) { toastr.warning('Please select a date!'); return; }
+
+            if ($.fn.DataTable.isDataTable('#attendanceTable'))
+                $('#attendanceTable').DataTable().destroy();
+
+            table = $('#attendanceTable').DataTable({
+                destroy: true,
+                processing: true,
+                ajax: {
+                    url: '@Url.Action("GetTodayAttendance", "Attendance")',
+                    type: 'GET',
+                    data: { date: currentDate },
+                    dataSrc: function (json) { return json.data || []; },
+                    error: function () { toastr.error('Error loading data!'); }
+                },
+                columns: [
+                    {
+                        data: null, width: '35%',
+                        render: function (d) {
+                            return `<div><strong>${d.employeeCode||'N/A'}</strong><br>
+                                    <small class="text-muted">${d.employeeName||'Unknown'}</small></div>`;
+                        }
+                    },
+                    {
+                        data: 'status', width: '20%',
+                        render: function (d) {
+                            const map = {
+                                'Present': ['bg-success','Present'],
+                                'Absent':  ['bg-danger','Absent'],
+                                'HalfDay': ['bg-warning text-dark','Half Day'],
+                                'Holiday': ['bg-info','Holiday'],
+                                'Leave':   ['bg-secondary','On Leave']
+                            };
+                            const c = map[d] || map['Absent'];
+                            return `<span class="badge ${c[0]} px-2 py-1">${c[1]}</span>`;
+                        }
+                    },
+                    {
+                        data: 'hoursWorked', width: '15%', className: 'text-center',
+                        render: function (d) {
+                            const h = parseFloat(d)||0;
+                            const cls = h>=8?'bg-success':h>=4?'bg-warning':'bg-danger';
+                            return `<span class="badge ${cls}">${h} hrs</span>`;
+                        }
+                    },
+                    {
+                        data: 'overtimeHours', width: '15%', className: 'text-center',
+                        render: function (d) {
+                            const ot = parseFloat(d)||0;
+                            return ot>0 ? `<span class="badge bg-danger">${ot} hrs</span>`
+                                        : '<span class="text-muted">-</span>';
+                        }
+                    },
+                    {
+                        data: null, width: '15%', orderable: false, className: 'text-center',
+                        render: function (d, t, row) {
+                            return `<button class="btn btn-outline-primary btn-sm edit-attendance"
+                                        data-id="${row.id||0}" data-emp="${row.employeeId}">
+                                        <i class="fas fa-edit"></i></button>`;
+                        }
+                    }
+                ],
+                pageLength: 50, lengthChange: false, order: [[0,'asc']],
+                language: { emptyTable: "No data found", processing: "Loading...", search: "Search:" }
+            });
+        }
+
+        function saveAllAttendance() {
+            if (!table) { toastr.warning('Load attendance first!'); return; }
+
+            const rows = table.rows().data().toArray();
+            if (!rows.length) { toastr.warning('No data!'); return; }
+
+            const data = rows.filter(r => r.employeeId > 0).map(r => ({
+                id: r.id || 0,
+                employeeId: r.employeeId,
+                attendanceDate: currentDate,
+                status: r.status || 'Absent',
+                hoursWorked: parseFloat(r.hoursWorked) || 0,
+                overtimeHours: parseFloat(r.overtimeHours) || 0
+            }));
+
+            Swal.fire({
+                title: 'Save Attendance?',
+                text: `${data.length} records for ${currentDate}`,
+                icon: 'question', showCancelButton: true,
+                confirmButtonColor: '#28a745', confirmButtonText: 'Yes, Save!'
+            }).then(res => {
+                if (!res.isConfirmed) return;
+                $.ajax({
+                    url: '@Url.Action("SaveAttendance", "Attendance")',
+                    type: 'POST', contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function (r) {
+                        toastr.success(r.message);
+                        table.ajax.reload();
+                    },
+                    error: function (xhr) {
+                        toastr.error(xhr.responseJSON?.message || 'Error!');
+                    }
+                });
+            });
+        }
+
+        $(document).on('click', '.edit-attendance', function () {
+            const row = table.row($(this).closest('tr')).data();
+            if (!row) return;
+            const empId = $(this).data('emp');
+            const recId = $(this).data('id');
+
+            Swal.fire({
+                title: `Edit - ${row.employeeName}`,
+                html: `<div class="row g-3 text-start">
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Status</label>
+                        <select id="swal-status" class="form-select">
+                            <option value="Present"  ${row.status==='Present' ?'selected':''}>Present</option>
+                            <option value="HalfDay"  ${row.status==='HalfDay' ?'selected':''}>Half Day</option>
+                            <option value="Absent"   ${row.status==='Absent'  ?'selected':''}>Absent</option>
+                            <option value="Holiday"  ${row.status==='Holiday' ?'selected':''}>Holiday</option>
+                            <option value="Leave"    ${row.status==='Leave'   ?'selected':''}>On Leave</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Hours Worked</label>
+                        <input type="number" id="swal-hours" class="form-control"
+                               value="${row.hoursWorked||0}" step="0.5" min="0" max="12">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Overtime (hrs)</label>
+                        <input type="number" id="swal-ot" class="form-control"
+                               value="${row.overtimeHours||0}" step="0.5" min="0" max="8">
+                    </div>
+                </div>`,
+                showCancelButton: true, confirmButtonText: 'Update',
+                confirmButtonColor: '#0d6efd', width: '480px',
+                preConfirm: () => ({
+                    id: recId, employeeId: empId,
+                    attendanceDate: currentDate,
+                    status: document.getElementById('swal-status').value,
+                    hoursWorked: parseFloat(document.getElementById('swal-hours').value)||0,
+                    overtimeHours: parseFloat(document.getElementById('swal-ot').value)||0
+                })
+            }).then(res => {
+                if (!res.isConfirmed) return;
+                $.ajax({
+                    url: '@Url.Action("SaveAttendance", "Attendance")',
+                    type: 'POST', contentType: 'application/json',
+                    data: JSON.stringify([res.value]),
+                    success: function () { toastr.success('Updated!'); table.ajax.reload(); },
+                    error: function () { toastr.error('Error updating!'); }
+                });
+            });
+        });
+    </script>
+}

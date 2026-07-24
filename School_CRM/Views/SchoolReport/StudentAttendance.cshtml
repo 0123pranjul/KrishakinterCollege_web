@@ -1,0 +1,173 @@
+@model School_CRM.StudentAttendanceReportVm
+@{ ViewData["Title"] = "Student Attendance Report"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-user-check text-primary me-2"></i>Student Attendance Report</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Reports</a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Class</label>
+                    <select name="classId" class="form-select" asp-items="ViewBag.Classes">
+                        <option value="">All Classes</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Section</label>
+                    <select name="sectionId" class="form-select" asp-items="ViewBag.Sections">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Student</label>
+                    <select name="studentId" class="form-select" asp-items="ViewBag.Students">
+                        <option value="">All Students</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Session</label>
+                    <select name="sessionId" class="form-select" asp-items="ViewBag.Sessions">
+                        <option value="">All Sessions</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label fw-semibold">Month</label>
+                    <select name="month" class="form-select">
+                        @{
+                            var monthNames = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames;
+                        }
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            var mName = monthNames[m - 1];
+                            if (m == Model.Month)
+                            {
+                                <option value="@m" selected>@mName</option>
+                            }
+                            else
+                            {
+                                <option value="@m">@mName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label fw-semibold">Year</label>
+                    <input type="number" name="year" class="form-control" value="@Model.Year" min="2020" max="2099" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Generate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Records.Any())
+    {
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-3 bg-success text-white">
+                    <div class="card-body"><h3 class="fw-bold mb-0">@Model.Present</h3><small>Present</small></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-3 bg-danger text-white">
+                    <div class="card-body"><h3 class="fw-bold mb-0">@Model.Absent</h3><small>Absent</small></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-3 bg-warning text-dark">
+                    <div class="card-body"><h3 class="fw-bold mb-0">@Model.Late</h3><small>Late</small></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-3 @(Model.Percentage < 75 ? "bg-danger" : Model.Percentage <= 85 ? "bg-warning" : "bg-success") text-white">
+                    <div class="card-body"><h3 class="fw-bold mb-0">@Model.Percentage%</h3><small>Attendance %</small></div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Percentage < 75)
+        {
+            <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> Attendance is below the minimum 75% requirement.
+            </div>
+        }
+
+        <!-- Day-wise calendar grid -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0">@{ var headerDate = new DateTime(Model.Year, Model.Month, 1); }Day-wise Attendance — @headerDate.ToString("MMMM yyyy")</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    @{
+                        var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
+                        var recordsByDate = Model.Records.ToDictionary(r => r.AttendanceDate);
+                    }
+                    @for (int d = 1; d <= daysInMonth; d++)
+                    {
+                        var date = new DateOnly(Model.Year, Model.Month, d);
+                        var rec  = recordsByDate.GetValueOrDefault(date);
+                        string bg = rec == null ? "bg-light text-muted"
+                                  : rec.Status == "Present" ? "bg-success text-white"
+                                  : rec.Status == "Absent"  ? "bg-danger text-white"
+                                  : rec.Status == "Late"    ? "bg-warning text-dark"
+                                  : "bg-secondary text-white";
+                        <div class="col-auto">
+                            <div class="rounded text-center @bg" style="width:44px;height:44px;line-height:44px;font-size:.85rem;font-weight:600;" title="@date.ToString("dd MMM") — @(rec?.Status ?? "No record")">
+                                @d
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="d-flex gap-3 mt-3 small">
+                    <span><span class="badge bg-success">P</span> Present</span>
+                    <span><span class="badge bg-danger">A</span> Absent</span>
+                    <span><span class="badge bg-warning text-dark">L</span> Late</span>
+                    <span><span class="badge bg-light text-muted border">-</span> No record</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail table -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0">Attendance Records</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Date</th><th>Day</th><th>Student</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Records)
+                            {
+                                <tr>
+                                    <td>@r.AttendanceDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-muted">@r.AttendanceDate.DayOfWeek.ToString().Substring(0,3)</td>
+                                    <td>@(r.Student?.StudentName ?? "-")</td>
+                                    <td>
+                                        <span class="badge @(r.Status == "Present" ? "bg-success" : r.Status == "Absent" ? "bg-danger" : "bg-warning text-dark")">
+                                            @r.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.StudentId.HasValue || Model.ClassId.HasValue)
+    {
+        <div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No attendance records found for the selected filters.</div>
+    }
+</div>

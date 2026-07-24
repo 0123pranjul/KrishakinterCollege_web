@@ -1,0 +1,884 @@
+﻿@{
+    ViewData["Title"] = "Activity Calendar";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    string empName = ViewBag.EmployeeName ?? "";
+    var currentMonth = DateTime.Today.ToString("yyyy-MM");
+}
+
+<style>
+    /* ── Calendar Core ── */
+    .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+    .cal-header-day {
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 6px 2px;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
+    }
+    .cal-day {
+        min-height: 72px;
+        border-radius: 10px;
+        padding: 6px;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+        border: 2px solid transparent;
+        font-size: 0.75rem;
+    }
+    .cal-day:hover {
+        transform: scale(1.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2;
+    }
+    .cal-day.selected {
+        border-color: #4361ee !important;
+        box-shadow: 0 0 0 3px rgba(67,97,238,0.25);
+    }
+    .cal-day .day-num {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .cal-day .day-label {
+        font-size: 0.62rem;
+        font-weight: 600;
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .cal-day .day-hours {
+        font-size: 0.6rem;
+        margin-top: 2px;
+        opacity: 0.8;
+    }
+    .cal-day .ot-badge {
+        position: absolute;
+        top: 4px; right: 4px;
+        background: #e63946;
+        color: white;
+        font-size: 0.55rem;
+        padding: 1px 4px;
+        border-radius: 8px;
+        font-weight: 700;
+    }
+    .cal-day.today-ring {
+        box-shadow: 0 0 0 3px #4361ee,
+                    0 4px 12px rgba(0,0,0,0.1);
+    }
+    .cal-empty {
+        min-height: 72px;
+        border-radius: 10px;
+        background: transparent;
+    }
+
+    /* ── Status Colors ── */
+    .s-present  { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+    .s-absent   { background:#fee2e2; color:#7f1d1d; border-color:#fca5a5; }
+    .s-halfday  { background:#fef3c7; color:#78350f; border-color:#fcd34d; }
+    .s-leave    { background:#dbeafe; color:#1e3a8a; border-color:#93c5fd; }
+    .s-holiday  { background:#ede9fe; color:#4c1d95; border-color:#c4b5fd; }
+    .s-sunday   { background:#f1f5f9; color:#94a3b8; border-color:#e2e8f0; }
+    .s-future   { background:#f8fafc; color:#cbd5e1; border-color:#e2e8f0; }
+    .s-casual   { background:#dbeafe; color:#1e3a8a; border-color:#93c5fd; }
+    .s-sick     { background:#fce7f3; color:#831843; border-color:#f9a8d4; }
+    .s-earned   { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+
+    /* ── Legend ── */
+    .legend-dot {
+        width: 12px; height: 12px;
+        border-radius: 4px;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* ── Side Panel ── */
+    .side-stat-box {
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+    }
+    .day-detail-card {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 16px;
+        transition: all 0.2s;
+    }
+
+    /* ── Month Nav ── */
+    .month-nav-btn {
+        width: 34px; height: 34px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        color: #4361ee;
+        font-size: 0.9rem;
+    }
+    .month-nav-btn:hover {
+        background: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    /* ── Employee Card ── */
+    .emp-card {
+        border-radius: 12px;
+        background: linear-gradient(135deg,#4361ee,#7209b7);
+        color: white;
+        padding: 14px 18px;
+        margin-bottom: 14px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row g-3">
+
+        <!-- ══ LEFT: Calendar ══ -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+
+                    <!-- Top Controls -->
+                    <div class="d-flex justify-content-between
+                                align-items-center mb-3 flex-wrap gap-2">
+                        <!-- Month Navigation -->
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="month-nav-btn"
+                                    onclick="changeMonth(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <h5 class="mb-0 fw-bold px-2"
+                                id="monthTitle">-</h5>
+                            <button class="month-nav-btn"
+                                    onclick="changeMonth(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm"
+                                    onclick="goToday()">
+                                Today
+                            </button>
+                        </div>
+
+                        <!-- Employee selector (Admin) -->
+                        <div class="d-flex gap-2 align-items-center
+                                    flex-wrap">
+                            @if (isAdmin)
+                            {
+                                <select id="empSelect"
+                                        class="form-select form-select-sm"
+                                        style="width:220px"
+                                        onchange="loadCalendar()">
+                                    <option value="">
+                                        -- Select Employee --
+                                    </option>
+                                </select>
+                            }
+                            <input type="month" id="monthPicker"
+                                   class="form-control form-control-sm"
+                                   value="@currentMonth"
+                                   style="width:150px"
+                                   onchange="onMonthPick()">
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="d-flex flex-wrap gap-3 mb-3
+                                align-items-center"
+                         style="font-size:0.72rem">
+                        @{
+                            var legends = new[] {
+                                ("s-present","Present"),
+                                ("s-absent","Absent"),
+                                ("s-halfday","Half Day"),
+                                ("s-leave","Leave"),
+                                ("s-sick","Sick Leave"),
+                                ("s-holiday","Holiday"),
+                                ("s-sunday","Sunday"),
+                            };
+                        }
+                        @foreach (var (cls, lbl) in legends)
+                        {
+                            <div class="d-flex align-items-center gap-1">
+                                <div class="legend-dot @cls"
+                                     style="border:1.5px solid currentColor">
+                                </div>
+                                <span>@lbl</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div id="calendarArea">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-calendar-alt fa-3x mb-3
+                                      text-primary opacity-50"></i>
+                            <div>
+                                @if (isAdmin)
+                                {
+                                    <span>Select an employee to view calendar</span>
+                                }
+                                else
+                                {
+                                    <span>Loading your calendar...</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ RIGHT: Detail Panel ══ -->
+        <div class="col-lg-4">
+
+            <!-- Employee Info Card -->
+            <div id="empInfoSection" style="display:none">
+                <div class="emp-card">
+                    <div class="d-flex justify-content-between
+                                align-items-start">
+                        <div>
+                            <div class="fw-bold fs-5" id="empFullName">
+                            </div>
+                            <div style="opacity:0.8;font-size:0.8rem"
+                                 id="empDes"></div>
+                            <div style="opacity:0.7;font-size:0.75rem"
+                                 id="empDept"></div>
+                        </div>
+                        <div class="text-end">
+                            <div style="font-size:0.72rem;opacity:0.8">
+                                Code
+                            </div>
+                            <div class="fw-bold" id="empCode"></div>
+                            <div style="font-size:0.72rem;
+                                        opacity:0.8;margin-top:4px">
+                                Basic
+                            </div>
+                            <div class="fw-bold" id="empBasic"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Day Detail -->
+            <div class="card shadow-sm mb-3" id="dayDetailSection"
+                 style="display:none">
+                <div class="card-header py-2 bg-primary text-white">
+                    <span class="fw-bold small">
+                        <i class="fas fa-calendar-day me-1"></i>
+                        <span id="selectedDayTitle">Day Detail</span>
+                    </span>
+                </div>
+                <div class="card-body py-2" id="dayDetailContent">
+                </div>
+            </div>
+
+            <!-- Monthly Summary -->
+            <div class="card shadow-sm mb-3" id="summarySection"
+                 style="display:none">
+                <div class="card-header py-2">
+                    <span class="fw-bold small">
+                        <i class="fas fa-chart-pie me-1 text-primary"></i>
+                        Monthly Summary
+                    </span>
+                </div>
+                <div class="card-body py-2">
+                    <div class="row g-2" id="summaryGrid"></div>
+                </div>
+            </div>
+
+            <!-- Leave Breakdown -->
+            <div class="card shadow-sm mb-3" id="leaveSection"
+                 style="display:none">
+                <div class="card-header py-2">
+                    <span class="fw-bold small">
+                        <i class="fas fa-calendar-minus me-1
+                                  text-warning"></i>
+                        Leave Breakdown
+                    </span>
+                </div>
+                <div class="card-body py-2" id="leaveContent">
+                </div>
+            </div>
+
+            <!-- Salary Card -->
+            <div class="card shadow-sm" id="salarySection"
+                 style="display:none">
+                <div class="card-header py-2">
+                    <span class="fw-bold small">
+                        <i class="fas fa-rupee-sign me-1
+                                  text-success"></i>
+                        Salary — <span id="salMonthLabel"></span>
+                    </span>
+                </div>
+                <div class="card-body py-2" id="salaryContent">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const isAdmin = @Json.Serialize(isAdmin);
+        let currentMonth = '@currentMonth';
+        let calData      = null;
+        let selectedDate = null;
+
+        const fmt = n =>
+            '₹' + parseFloat(n || 0).toLocaleString('en-IN', {
+                minimumFractionDigits: 2
+            });
+
+        // ── Status Config ────────────────────────────────────
+        const statusCfg = {
+            'Present':     { cls:'s-present',  label:'Present',
+                             icon:'fas fa-check-circle' },
+            'Absent':      { cls:'s-absent',   label:'Absent',
+                             icon:'fas fa-times-circle' },
+            'HalfDay':     { cls:'s-halfday',  label:'Half Day',
+                             icon:'fas fa-adjust' },
+            'Leave':       { cls:'s-leave',    label:'On Leave',
+                             icon:'fas fa-plane-departure' },
+            'CasualLeave': { cls:'s-casual',   label:'Casual Leave',
+                             icon:'fas fa-calendar-minus' },
+            'SickLeave':   { cls:'s-sick',     label:'Sick Leave',
+                             icon:'fas fa-thermometer-half' },
+            'EarnedLeave': { cls:'s-earned',   label:'Earned Leave',
+                             icon:'fas fa-star' },
+            'Holiday':     { cls:'s-holiday',  label:'Holiday',
+                             icon:'fas fa-umbrella-beach' },
+            'Sunday':      { cls:'s-sunday',   label:'Sunday',
+                             icon:'fas fa-coffee' },
+            'Future':      { cls:'s-future',   label:'Upcoming',
+                             icon:'fas fa-clock' }
+        };
+
+        $(document).ready(function () {
+            updateMonthTitle();
+            if (isAdmin) {
+                loadEmployees();
+            } else {
+                loadCalendar();
+            }
+        });
+
+        // ── Month Navigation ─────────────────────────────────
+        function changeMonth(dir) {
+            const [y, m] = currentMonth.split('-').map(Number);
+            const d = new Date(y, m - 1 + dir, 1);
+            currentMonth = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0');
+            $('#monthPicker').val(currentMonth);
+            updateMonthTitle();
+            loadCalendar();
+        }
+
+        function onMonthPick() {
+            currentMonth = $('#monthPicker').val();
+            updateMonthTitle();
+            loadCalendar();
+        }
+
+        function goToday() {
+            currentMonth = new Date()
+                .toISOString().substring(0, 7);
+            $('#monthPicker').val(currentMonth);
+            updateMonthTitle();
+            loadCalendar();
+        }
+
+        function updateMonthTitle() {
+            const [y, m] = currentMonth.split('-');
+            const mn = new Date(parseInt(y), parseInt(m) - 1)
+                .toLocaleString('default',
+                    { month: 'long', year: 'numeric' });
+            $('#monthTitle').text(mn);
+            $('#salMonthLabel').text(mn);
+        }
+
+        // ── Load Employees (Admin) ────────────────────────────
+        function loadEmployees() {
+            $.get('@Url.Action("GetEmployees",
+                   "ActivityCalendar")', function (data) {
+                data.forEach(e =>
+                    $('#empSelect').append(
+                        `<option value="${e.id}">
+                            ${e.employeeCode} — ${e.name}
+                        </option>`
+                    )
+                );
+                // Auto-select first
+                if (data.length) {
+                    $('#empSelect').val(data[0].id);
+                    loadCalendar();
+                }
+            });
+        }
+
+        // ── Load Calendar Data ────────────────────────────────
+        function loadCalendar() {
+            const empId = isAdmin
+                ? $('#empSelect').val() : '';
+
+            if (isAdmin && !empId) return;
+
+            $('#calendarArea').html(`
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-spinner fa-spin fa-2x
+                              text-primary mb-2"></i>
+                    <div>Loading calendar...</div>
+                </div>`);
+
+            $.get('@Url.Action("GetCalendarData",
+                   "ActivityCalendar")',
+                { employeeId: empId || 0,
+                  monthYear: currentMonth },
+                function (res) {
+                    if (!res.success) {
+                        $('#calendarArea').html(
+                            `<div class="alert alert-warning">
+                                ${res.message}
+                            </div>`);
+                        return;
+                    }
+                    calData = res;
+                    renderCalendar(res);
+                    renderSidePanel(res);
+                    selectedDate = null;
+                    $('#dayDetailSection').hide();
+                });
+        }
+
+        // ── Render Calendar Grid ──────────────────────────────
+        function renderCalendar(res) {
+            const days     = res.calendarDays;
+            const firstDOW = res.firstDayOfWeek; // 0=Sun
+
+            // Day headers
+            const dayNames = ['Sun','Mon','Tue','Wed',
+                              'Thu','Fri','Sat'];
+            let html = '<div class="cal-grid mb-1">';
+            dayNames.forEach(dn => {
+                const isSun = dn === 'Sun';
+                html += `
+                    <div class="cal-header-day"
+                         style="background:${isSun
+                             ? '#f1f5f9' : '#f8f9ff'};
+                                color:${isSun
+                             ? '#94a3b8' : '#4361ee'}">
+                        ${dn}
+                    </div>`;
+            });
+            html += '</div><div class="cal-grid">';
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDOW; i++) {
+                html += '<div class="cal-empty"></div>';
+            }
+
+            // Day cells
+            days.forEach(d => {
+                const cfg = getStatusCfg(d);
+                const otBadge = d.overtimeHrs > 0
+                    ? `<div class="ot-badge">
+                           OT ${d.overtimeHrs}h
+                       </div>` : '';
+                const todayCls = d.isToday ? 'today-ring' : '';
+                const hoursLine = (d.status === 'Present' ||
+                    d.status === 'HalfDay') && d.hoursWorked > 0
+                    ? `<div class="day-hours">
+                           <i class="fas fa-clock"
+                              style="font-size:0.55rem"></i>
+                           ${d.hoursWorked}h
+                       </div>` : '';
+                const holidayLine = d.holidayName
+                    ? `<div class="day-hours" style="
+                           white-space:nowrap;overflow:hidden;
+                           text-overflow:ellipsis">
+                           ${d.holidayName}
+                       </div>` : '';
+
+                html += `
+                    <div class="cal-day ${cfg.cls} ${todayCls}"
+                         data-date="${d.date}"
+                         onclick="selectDay('${d.date}')">
+                        ${otBadge}
+                        <div class="day-num">${d.day}</div>
+                        <div class="day-label">
+                            <i class="${cfg.icon}"
+                               style="font-size:0.6rem"></i>
+                            ${cfg.label}
+                        </div>
+                        ${hoursLine}
+                        ${holidayLine}
+                    </div>`;
+            });
+
+            html += '</div>';
+            $('#calendarArea').html(html);
+        }
+
+        function getStatusCfg(d) {
+            if (d.status === 'Leave' && d.leaveType &&
+                statusCfg[d.leaveType]) {
+                return statusCfg[d.leaveType];
+            }
+            return statusCfg[d.status] || statusCfg['Absent'];
+        }
+
+        // ── Select Day ───────────────────────────────────────
+        function selectDay(date) {
+            if (!calData) return;
+
+            // Remove previous selection
+            $('.cal-day').removeClass('selected');
+            $(`.cal-day[data-date="${date}"]`)
+                .addClass('selected');
+
+            selectedDate = date;
+            const d = calData.calendarDays.find(
+                x => x.date === date);
+            if (!d) return;
+
+            const cfg = getStatusCfg(d);
+            const dateObj = new Date(date);
+            const dateStr = dateObj.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            $('#selectedDayTitle').text(dateStr);
+
+            let content = `
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="d-flex align-items-center
+                                justify-content-center"
+                         style="width:48px;height:48px;
+                                border-radius:12px;
+                                font-size:1.4rem"
+                         class="${cfg.cls}">
+                        <i class="${cfg.icon}"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-6">${cfg.label}</div>
+                        <div class="text-muted small">
+                            ${dateStr}
+                        </div>
+                    </div>
+                </div>`;
+
+            // Status specific info
+            if (d.status === 'Present' ||
+                d.status === 'HalfDay') {
+                content += `
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:#d1fae5">
+                                <div class="small text-muted">
+                                    Hours Worked
+                                </div>
+                                <div class="fw-bold text-success fs-5">
+                                    ${d.hoursWorked}h
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:${
+                                     d.overtimeHrs > 0
+                                         ? '#fee2e2' : '#f8fafc'}">
+                                <div class="small text-muted">
+                                    Overtime
+                                </div>
+                                <div class="fw-bold fs-5"
+                                     style="color:${
+                                         d.overtimeHrs > 0
+                                             ? '#e63946' : '#94a3b8'}">
+                                    ${d.overtimeHrs}h
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            if (d.status === 'Leave' || d.leaveType) {
+                const lt = d.leaveType
+                    ? d.leaveType.replace('Leave', ' Leave')
+                    : 'Leave';
+                content += `
+                    <div class="side-stat-box"
+                         style="background:#dbeafe">
+                        <div class="small text-muted">
+                            Leave Type
+                        </div>
+                        <div class="fw-bold text-primary">${lt}</div>
+                    </div>`;
+            }
+
+            if (d.holidayName) {
+                content += `
+                    <div class="side-stat-box"
+                         style="background:#ede9fe">
+                        <div class="small text-muted">Holiday</div>
+                        <div class="fw-bold text-purple">
+                            ${d.holidayName}
+                        </div>
+                    </div>`;
+            }
+
+            if (d.status === 'Absent') {
+                content += `
+                    <div class="side-stat-box"
+                         style="background:#fee2e2">
+                        <div class="small text-muted">Status</div>
+                        <div class="fw-bold text-danger">
+                            <i class="fas fa-times-circle me-1"></i>
+                            Not Present
+                        </div>
+                    </div>`;
+            }
+
+            if (d.status === 'Sunday') {
+                content += `
+                    <div class="side-stat-box"
+                         style="background:#f1f5f9">
+                        <div class="small text-muted">Day Off</div>
+                        <div class="fw-bold text-secondary">
+                            <i class="fas fa-coffee me-1"></i>
+                            Weekly Off
+                        </div>
+                    </div>`;
+            }
+
+            if (d.status === 'Future') {
+                content += `
+                    <div class="side-stat-box"
+                         style="background:#f8fafc">
+                        <div class="small text-muted">Status</div>
+                        <div class="fw-bold text-secondary">
+                            <i class="fas fa-clock me-1"></i>
+                            Future Date
+                        </div>
+                    </div>`;
+            }
+
+            $('#dayDetailContent').html(content);
+            $('#dayDetailSection').show();
+        }
+
+        // ── Render Side Panel ─────────────────────────────────
+        function renderSidePanel(res) {
+            const emp = res.employee;
+            const sum = res.summary;
+
+            // Employee info
+            $('#empFullName').text(emp.name);
+            $('#empDes').text(emp.designation || '-');
+            $('#empDept').text(emp.department  || '-');
+            $('#empCode').text(emp.employeeCode);
+            $('#empBasic').text(fmt(emp.basicSalary));
+            $('#empInfoSection').show();
+
+            // Summary grid
+            const summaryItems = [
+                { label: 'Present',  val: sum.presentDays,
+                  bg: '#d1fae5', color: '#065f46',
+                  icon: 'fa-check-circle' },
+                { label: 'Half Day', val: sum.halfDays,
+                  bg: '#fef3c7', color: '#78350f',
+                  icon: 'fa-adjust' },
+                { label: 'Absent',   val: sum.absentDays,
+                  bg: '#fee2e2', color: '#7f1d1d',
+                  icon: 'fa-times-circle' },
+                { label: 'Leave',    val: sum.leaveDays,
+                  bg: '#dbeafe', color: '#1e3a8a',
+                  icon: 'fa-plane-departure' },
+                { label: 'Holiday',  val: sum.holidayDays,
+                  bg: '#ede9fe', color: '#4c1d95',
+                  icon: 'fa-umbrella-beach' },
+                { label: 'Sundays',  val: sum.sundayCount,
+                  bg: '#f1f5f9', color: '#475569',
+                  icon: 'fa-coffee' },
+                { label: 'Total Hrs', val: sum.totalHours + 'h',
+                  bg: '#d1fae5', color: '#065f46',
+                  icon: 'fa-clock' },
+                { label: 'OT Hours', val: sum.totalOTHours + 'h',
+                  bg: '#fee2e2', color: '#7f1d1d',
+                  icon: 'fa-bolt' }
+            ];
+
+            let sumHtml = '';
+            summaryItems.forEach(s => {
+                sumHtml += `
+                    <div class="col-6">
+                        <div class="side-stat-box"
+                             style="background:${s.bg};
+                                    color:${s.color}">
+                            <div style="font-size:0.65rem;
+                                        opacity:0.8">
+                                <i class="fas ${s.icon} me-1"></i>
+                                ${s.label}
+                            </div>
+                            <div style="font-size:1.1rem;
+                                        font-weight:700">
+                                ${s.val}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#summaryGrid').html(sumHtml);
+            $('#summarySection').show();
+
+            // Leave breakdown
+            let leaveHtml = '';
+            const leaveTypes = [
+                { key: 'casualLeave',  label: 'Casual Leave',
+                  max: 12, color: '#4361ee' },
+                { key: 'sickLeave',    label: 'Sick Leave',
+                  max: 12, color: '#e63946' },
+                { key: 'earnedLeave',  label: 'Earned Leave',
+                  max: 15, color: '#2dc653' }
+            ];
+            leaveTypes.forEach(lt => {
+                const used = sum[lt.key] || 0;
+                const bal  = Math.max(0, lt.max - used);
+                const pct  = Math.round((used / lt.max) * 100);
+                leaveHtml += `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between
+                                    mb-1">
+                            <span style="font-size:0.75rem;
+                                         font-weight:600">
+                                ${lt.label}
+                            </span>
+                            <span style="font-size:0.72rem;
+                                         color:#666">
+                                Used: ${used} / ${lt.max}
+                                &nbsp;|&nbsp;
+                                <span style="color:${
+                                    bal > 0 ? '#2dc653'
+                                            : '#e63946'}">
+                                    Bal: ${bal}
+                                </span>
+                            </span>
+                        </div>
+                        <div style="background:#f0f0f0;
+                                    border-radius:4px;
+                                    height:7px">
+                            <div style="width:${pct}%;
+                                        background:${lt.color};
+                                        height:7px;
+                                        border-radius:4px;
+                                        transition:width 0.5s">
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#leaveContent').html(leaveHtml);
+            $('#leaveSection').show();
+
+            // Salary
+            if (res.summary.salary) {
+                const sal = res.summary.salary;
+                const statusMap = {
+                    'Generated': ['#fff3cd','#856404'],
+                    'Paid':      ['#d1e7dd','#0a3622'],
+                    'Hold':      ['#f8d7da','#842029']
+                };
+                const [sbg, sclr] =
+                    statusMap[sal.Status] ||
+                    ['#f1f5f9','#475569'];
+
+                $('#salaryContent').html(`
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:#f1f5f9">
+                                <div style="font-size:0.65rem;
+                                            color:#666">
+                                    Gross
+                                </div>
+                                <div style="font-weight:700;
+                                            color:#2d3748">
+                                    ${fmt(sal.GrossSalary)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:#fee2e2">
+                                <div style="font-size:0.65rem;
+                                            color:#7f1d1d">
+                                    Deductions
+                                </div>
+                                <div style="font-weight:700;
+                                            color:#e63946">
+                                    ${fmt(sal.Deductions)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:#d1fae5">
+                                <div style="font-size:0.65rem;
+                                            color:#065f46">
+                                    OT Amount
+                                </div>
+                                <div style="font-weight:700;
+                                            color:#2dc653">
+                                    ${fmt(sal.OvertimeAmount)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="side-stat-box"
+                                 style="background:#dbeafe">
+                                <div style="font-size:0.65rem;
+                                            color:#1e3a8a">
+                                    Net Salary
+                                </div>
+                                <div style="font-weight:700;
+                                            color:#4361ee;
+                                            font-size:1rem">
+                                    ${fmt(sal.NetSalary)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="text-center py-1 rounded"
+                                 style="background:${sbg};
+                                        color:${sclr};
+                                        font-weight:600;
+                                        font-size:0.8rem">
+                                <i class="fas fa-circle me-1"
+                                   style="font-size:0.5rem"></i>
+                                Salary Status: ${sal.Status}
+                            </div>
+                        </div>
+                    </div>`);
+                $('#salarySection').show();
+            } else {
+                $('#salaryContent').html(`
+                    <div class="text-center text-muted py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Salary not generated yet
+                    </div>`);
+                $('#salarySection').show();
+            }
+        }
+    </script>
+}

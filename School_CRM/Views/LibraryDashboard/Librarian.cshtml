@@ -1,0 +1,248 @@
+@model School_CRM.Models.DTOs.LibrarianDashboardDto
+@{
+    ViewData["Title"] = "Library Dashboard";
+}
+
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-book-open text-primary me-2"></i>Library Dashboard</h2>
+            <small class="text-muted">Real-time library operations overview</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="LibraryIssue" asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Issue Book
+            </a>
+            <a asp-controller="LibraryIssue" asp-action="Return" class="btn btn-success">
+                <i class="fas fa-undo me-1"></i>Return Book
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-primary text-white">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-arrow-up fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.BooksIssuedToday</h3>
+                    <small>Issued Today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-arrow-down fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.BooksReturnedToday</h3>
+                    <small>Returned Today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-warning text-dark">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-rupee-sign fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">₹@Model.FineCollectedToday.ToString("F0")</h3>
+                    <small>Fine Today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-danger text-white">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-clock fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.OverdueCount</h3>
+                    <small>Overdue</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-secondary text-white">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.OutOfStockBooks</h3>
+                    <small>Out of Stock</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100 bg-dark text-white">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-ban fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.BlockedMembers</h3>
+                    <small>Blocked Members</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Overdue Books Table -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                    <h6 class="fw-bold mb-0 text-danger"><i class="fas fa-clock me-2"></i>Overdue Books</h6>
+                    <a asp-controller="LibraryIssue" asp-action="Overdue" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Type</th>
+                                    <th>Book</th>
+                                    <th>Due Date</th>
+                                    <th>Days</th>
+                                    <th>Est. Fine</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.TopOverdueBooks.Any())
+                                {
+                                    <tr><td colspan="7" class="text-center text-muted py-3">No overdue books</td></tr>
+                                }
+                                @foreach (var item in Model.TopOverdueBooks)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.MemberName</td>
+                                        <td><span class="badge @(item.UserType == "Student" ? "bg-info" : "bg-purple") text-white">@item.UserType</span></td>
+                                        <td class="text-truncate" style="max-width:150px" title="@item.BookTitle">@item.BookTitle</td>
+                                        <td class="text-danger">@item.DueDate.ToString("dd/MM/yyyy")</td>
+                                        <td><span class="badge bg-danger">@item.OverdueDays d</span></td>
+                                        <td class="fw-semibold text-danger">₹@item.EstimatedFine.ToString("F2")</td>
+                                        <td>
+                                            <a asp-controller="LibraryIssue" asp-action="Return" class="btn btn-xs btn-outline-success">Return</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Fine Chart -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Monthly Fine Collection</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="fineChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Today's Returns -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                    <h6 class="fw-bold mb-0 text-success"><i class="fas fa-undo me-2"></i>Today's Returns</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Member</th><th>Book</th><th>Fine</th><th>Condition</th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.TodayReturns.Any())
+                                {
+                                    <tr><td colspan="4" class="text-center text-muted py-3">No returns today</td></tr>
+                                }
+                                @foreach (var item in Model.TodayReturns)
+                                {
+                                    <tr>
+                                        <td>@item.MemberName</td>
+                                        <td class="text-truncate" style="max-width:120px">@item.BookTitle</td>
+                                        <td class="@(item.FineAmount > 0 ? "text-danger fw-semibold" : "")">
+                                            @(item.FineAmount > 0 ? $"₹{item.FineAmount:F2}" : "-")
+                                        </td>
+                                        <td>
+                                            <span class="badge @(item.ConditionOnReturn == "Good" ? "bg-success" : item.ConditionOnReturn == "Damaged" ? "bg-warning text-dark" : "bg-danger")">
+                                                @(item.ConditionOnReturn ?? "Good")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocked Members -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-ban me-2"></i>Blocked Members</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Member</th><th>Type</th><th>Block Type</th><th>Since</th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.BlockedMembersList.Any())
+                                {
+                                    <tr><td colspan="4" class="text-center text-muted py-3">No blocked members</td></tr>
+                                }
+                                @foreach (var item in Model.BlockedMembersList)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.MemberName</td>
+                                        <td><span class="badge @(item.UserType == "Student" ? "bg-info" : "bg-secondary")">@item.UserType</span></td>
+                                        <td><span class="badge bg-danger">@item.BlockType</span></td>
+                                        <td class="text-muted small">@item.BlockedAt.ToString("dd/MM/yy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Fine Chart
+    const fineData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyFineChart));
+    const ctx = document.getElementById('fineChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: fineData.map(x => x.month),
+            datasets: [{
+                label: 'Fine Collected (₹)',
+                data: fineData.map(x => x.totalFine),
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => '₹' + v }
+                }
+            }
+        }
+    });
+</script>
+}

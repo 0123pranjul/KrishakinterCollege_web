@@ -1,0 +1,105 @@
+@model School_CRM.Models.TblStudentFeeOverride
+
+<div class="row g-3">
+
+    <!-- Student Info -->
+    <div class="col-md-6">
+        <div class="card h-100 border-primary">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Student ID</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentId ?? 0)</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Name</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Roll No</td>
+                        <td class="fw-semibold">@(Model.Student?.RollNo ?? "-")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fee Override Info -->
+    <div class="col-md-6">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark py-2">
+                <h6 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Override Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Fee Type</td>
+                        <td class="fw-semibold">@(Model.FeeType?.FeeName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Frequency</td>
+                        <td>
+                            @if (Model.FeeType?.IsRecurring == true)
+                            {
+                                <span class="badge bg-primary">Monthly</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">One Time</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status</td>
+                        <td>
+                            @if (Model.IsActive == true)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactive</span>
+                            }
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Amount Highlight -->
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <small class="text-muted d-block mb-1">Override Amount</small>
+                <h2 class="text-success fw-bold mb-0">
+                    ₹@(Model.Amount.HasValue ? Model.Amount.Value.ToString("0.00") : "0.00")
+                </h2>
+                <small class="text-muted">
+                    @(Model.FeeType?.IsRecurring == true ? "Per Month" : "One Time Payment")
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timestamps -->
+    <div class="col-md-6">
+        <small class="text-muted d-block">Created Date</small>
+        <span class="fw-semibold">
+            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy hh:mm tt") : "-")
+        </span>
+    </div>
+    @if (Model.UpdatedDate.HasValue)
+    {
+        <div class="col-md-6">
+            <small class="text-muted d-block">Last Updated</small>
+            <span class="fw-semibold">
+                @Model.UpdatedDate.Value.ToString("dd-MM-yyyy hh:mm tt")
+            </span>
+        </div>
+    }
+
+</div>

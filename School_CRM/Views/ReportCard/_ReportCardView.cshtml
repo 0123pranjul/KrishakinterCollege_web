@@ -1,0 +1,261 @@
+@model School_CRM.Models.TblReportCard
+@{
+    // Calculate result status dynamically based on percentage if not explicitly set
+    string resultStatus = !string.IsNullOrEmpty(Model.ResultStatus) ? Model.ResultStatus : (Model.Percentage >= 33 ? "PASS" : "FAIL");
+    string statusClass = resultStatus.Equals("PASS", StringComparison.OrdinalIgnoreCase) ? "text-success" : "text-danger";
+    
+    // QR Code URL - Verification link using VerificationCode if available, else ReportCardId
+    var domain = Context.Request.Host.ToString();
+    var verifyCode = !string.IsNullOrEmpty(Model.VerificationCode) ? Model.VerificationCode : Model.ReportCardId.ToString();
+    var verifyUrl = $"https://{domain}/Result/Verify?code={verifyCode}";
+    var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={Uri.EscapeDataString(verifyUrl)}";
+    
+    // Smart Remarks
+    string remarks = !string.IsNullOrEmpty(Model.TeacherRemark) ? Model.TeacherRemark : (Model.Grade?.Remark ?? "Good performance. Keep it up!");
+}
+
+<style>
+    #printableArea {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        background-color: #fff;
+        position: relative;
+        padding: 2.5rem;
+        border: 2px solid #1e3c72;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.04;
+        width: 60%;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .mark-sheet-content {
+        position: relative;
+        z-index: 1;
+    }
+    .school-header {
+        border-bottom: 3px double #1e3c72;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+    .student-info-box {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+    }
+    .marks-table th {
+        background-color: #1e3c72 !important;
+        color: white !important;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .marks-table td {
+        vertical-align: middle;
+    }
+    .qr-box {
+        border: 1px dashed #ccc;
+        padding: 5px;
+        border-radius: 4px;
+        display: inline-block;
+        background: white;
+    }
+    .progress-bar-custom {
+        height: 6px;
+        border-radius: 3px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+    }
+    @@media print {
+        body * { visibility: hidden; }
+        #printableArea, #printableArea * { visibility: visible; }
+        #printableArea { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
+        .btn-print { display: none !important; }
+        .marks-table th { background-color: #1e3c72 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .progress-bar-custom { background-color: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .progress-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .student-info-box, .bg-light { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+
+<div id="printableArea">
+    <!-- Watermark -->
+    <img src="/kic_logo.png" class="watermark" alt="Watermark" />
+
+    <div class="mark-sheet-content">
+        <!-- Official Header -->
+        <div class="row align-items-center school-header">
+            <div class="col-2 text-center">
+                <img src="/kic_logo.png" alt="School Logo" style="height: 100px; object-fit: contain;" />
+            </div>
+            <div class="col-8 text-center">
+                <h2 class="fw-bold" style="color: #1e3c72; text-transform: uppercase; letter-spacing: 1px;">Krishak Inter College</h2>
+                <p class="mb-1 fw-semibold">Affiliated to Central Board of Secondary Education</p>
+                <p class="mb-0 text-muted small">123 Education Lane, Knowledge City, State - 100001 | Email: info@kic.in</p>
+                <h4 class="mt-3 mb-0 fw-bold bg-light d-inline-block px-4 py-1 border rounded rounded-pill text-dark" style="border-color: #1e3c72 !important;">
+                    STATEMENT OF MARKS
+                </h4>
+            </div>
+            <div class="col-2 text-center">
+                <div class="qr-box">
+                    <img src="@qrCodeUrl" alt="QR Code for Verification" title="Scan to Verify" style="width: 90px; height: 90px;" />
+                    <div style="font-size: 0.6rem; margin-top: 4px; font-weight: bold; color: #555;">SCAN TO VERIFY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Details -->
+        <div class="student-info-box mb-4">
+            <div class="row">
+                <div class="col-md-10">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted fw-bold" width="20%">Student Name</td>
+                            <td width="30%" class="fw-bold fs-5 text-uppercase">: @Model.Student?.StudentName</td>
+                            <td class="text-muted fw-bold" width="20%">Session</td>
+                            <td width="30%">: @Model.Session?.SessionName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Roll / Admission No</td>
+                            <td>: @Model.Student?.RollNo / @Model.Student?.AdmissionNo</td>
+                            <td class="text-muted fw-bold">Class & Section</td>
+                            <td>: @Model.Class?.ClassName - @Model.Section?.SectionName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Date of Birth</td>
+                            <td>: @Model.Student?.DateOfBirth?.ToString("dd-MMM-yyyy")</td>
+                            <td class="text-muted fw-bold">Result Status</td>
+                            <td class="fw-bold @statusClass">: @resultStatus</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-2 text-center border-start">
+                    @if (!string.IsNullOrEmpty(Model.Student?.PhotoUrl))
+                    {
+                        <img src="@Model.Student.PhotoUrl" alt="Student Photo" style="width: 90px; height: 110px; object-fit: cover; border: 2px solid #ddd; padding: 2px;" />
+                    }
+                    else
+                    {
+                        <div style="width: 90px; height: 110px; border: 2px dashed #ccc; display: inline-flex; align-items: center; justify-content: center; color: #999; background: #fff;">
+                            <i class="fas fa-user fa-3x"></i>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Marks Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered marks-table">
+                <thead>
+                    <tr>
+                        <th width="8%">S.No</th>
+                        <th width="27%" class="text-start">Subject Name</th>
+                        <th width="12%">Max Marks</th>
+                        <th width="15%">Marks Obtained</th>
+                        <th width="23%">Performance Chart</th>
+                        <th width="15%">Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int sno = 1; }
+                    @foreach (var sub in Model.TblReportCardSubjects)
+                    {
+                        // Calculate percentage for progress bar
+                        double subPercent = sub.MaxMarks > 0 ? (double)(sub.ObtainedMarks / sub.MaxMarks) * 100 : 0;
+                        string barColor = subPercent >= 75 ? "#28a745" : (subPercent >= 50 ? "#ffc107" : "#dc3545");
+                        
+                        <tr>
+                            <td class="text-center fw-bold text-muted">@sno</td>
+                            <td class="fw-semibold text-uppercase">@sub.Subject?.SubjectName</td>
+                            <td class="text-center">@sub.MaxMarks.ToString("0")</td>
+                            <td class="text-center fw-bold">@sub.ObtainedMarks.ToString("0.0")</td>
+                            <td class="align-middle">
+                                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                                    <span>0</span>
+                                    <span class="fw-bold">@subPercent.ToString("0")%</span>
+                                    <span>100</span>
+                                </div>
+                                <div class="progress-bar-custom">
+                                    <div class="progress-fill" style="width: @subPercent%; background-color: @barColor;"></div>
+                                </div>
+                            </td>
+                            <td class="text-center"><span class="badge bg-secondary fs-6" style="min-width:40px;">@sub.Grade?.GradeName</span></td>
+                        </tr>
+                        sno++;
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="2" class="text-end fw-bold fs-6 text-uppercase" style="background-color: #f8f9fa;">Grand Total :</td>
+                        <td class="text-center fw-bold fs-6" style="background-color: #f8f9fa;">@Model.TotalMarks.ToString("0")</td>
+                        <td class="text-center fw-bold fs-5 text-primary" style="background-color: #f8f9fa;">@Model.ObtainedMarks.ToString("0.0")</td>
+                        <td colspan="2" class="text-center fw-bold fs-5 text-primary" style="background-color: #f8f9fa;">GRADE: @Model.Grade?.GradeName</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Performance Summary & Remarks -->
+        <div class="row mb-5 align-items-stretch">
+            <div class="col-md-7">
+                <div class="border rounded p-3 h-100 bg-light">
+                    <h6 class="fw-bold border-bottom pb-2 text-uppercase" style="color: #1e3c72;">
+                        <i class="fas fa-comment-dots me-2"></i>Teacher's Remarks
+                    </h6>
+                    <p class="mb-0 mt-2" style="font-family: 'Comic Sans MS', cursive, sans-serif; font-size: 1.1rem; color: #444;">
+                        @remarks
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <table class="table table-sm table-bordered mb-0 h-100">
+                    <tr style="background-color: #e9ecef;"><th colspan="2" class="text-center text-uppercase">Overall Performance</th></tr>
+                    <tr><td class="fw-bold text-muted ps-3">Percentage</td><td class="text-center fw-bold fs-6">@Model.Percentage.ToString("0.00")%</td></tr>
+                    <tr><td class="fw-bold text-muted ps-3">Class Rank</td><td class="text-center fw-bold fs-6 text-info">@(Model.Rank.HasValue ? "#" + Model.Rank : "N/A")</td></tr>
+                    <tr><td class="fw-bold text-muted ps-3">Final Result</td><td class="text-center fw-bold fs-6 @statusClass">@resultStatus</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row mt-5 pt-4 text-center">
+            <div class="col-4">
+                <div style="border-top: 1px solid #333; margin: 0 20px; padding-top: 5px; font-weight: bold;">Class Teacher</div>
+            </div>
+            <div class="col-4">
+                <!-- Seal placeholder -->
+                <div style="opacity: 0.15; transform: rotate(-15deg); margin-top: -40px;">
+                    <i class="fas fa-stamp fa-4x"></i>
+                    <p class="fw-bold mb-0 mt-1">OFFICIAL SEAL</p>
+                </div>
+            </div>
+            <div class="col-4">
+                <div style="border-top: 1px solid #333; margin: 0 20px; padding-top: 5px; font-weight: bold;">Principal</div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="text-center mt-5 pt-3 border-top text-muted small">
+            <p class="mb-0">This is a computer-generated marksheet. Scan the QR code to verify its authenticity online.</p>
+            <p class="mb-0">Generated On: @Model.GeneratedDate?.ToString("dd-MM-yyyy hh:mm tt") | School CRM Verified</p>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4 mb-4 btn-print">
+    <button class="btn btn-primary px-5 py-2 shadow-sm" onclick="window.print()" style="border-radius: 30px; font-weight: 600;">
+        <i class="fas fa-print me-2"></i> Print Official Marksheet
+    </button>
+</div>

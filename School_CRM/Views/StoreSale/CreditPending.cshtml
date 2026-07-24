@@ -1,0 +1,65 @@
+@model List<School_CRM.Models.InvSaleTransaction>
+@{ ViewData["Title"] = "Pending Credits"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-hand-holding-usd text-danger me-2"></i>Pending Credits</h2>
+            <small class="text-muted">@Model.Count unpaid bills</small>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+    @if (TempData["Error"] != null)   { <div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>No pending credits. All bills are paid!</div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm bg-danger text-white mb-4">
+            <div class="card-body text-center py-3">
+                <h3 class="fw-bold mb-0">₹@Model.Sum(x => x.BalanceDue ?? 0).ToString("F2")</h3>
+                <small>Total Pending Amount — @Model.Count bills</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Bill No.</th><th>Customer</th><th>Type</th><th>Sale Date</th><th>Due Date</th><th class="text-end">Total</th><th class="text-end">Paid</th><th class="text-end">Balance</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.OrderBy(x => x.SaleDate))
+                            {
+                                bool isOverdue = s.DueDate.HasValue && s.DueDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                                <tr class="@(isOverdue ? "table-danger" : "")">
+                                    <td><code>@s.BillNumber</code></td>
+                                    <td class="fw-semibold">@(s.CustomerName ?? $"{s.CustomerType} #{s.CustomerId}")</td>
+                                    <td><span class="badge bg-secondary">@s.CustomerType</span></td>
+                                    <td>@s.SaleDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="@(isOverdue ? "text-danger fw-bold" : "")">@(s.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td class="text-end">₹@s.TotalAmount.ToString("F2")</td>
+                                    <td class="text-end text-success">₹@s.AmountPaid.ToString("F2")</td>
+                                    <td class="text-end fw-bold text-danger">₹@(s.BalanceDue?.ToString("F2"))</td>
+                                    <td>
+                                        @if (s.CustomerId.HasValue)
+                                        {
+                                            <a asp-action="CollectPayment" asp-route-type="@s.CustomerType" asp-route-id="@s.CustomerId"
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-rupee-sign me-1"></i>Collect
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

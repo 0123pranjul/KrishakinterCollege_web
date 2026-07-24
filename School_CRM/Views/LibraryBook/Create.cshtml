@@ -1,0 +1,137 @@
+@model School_CRM.Models.DTOs.BookDto
+@{
+    ViewData["Title"] = "Add New Book";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-plus-circle text-primary me-2"></i>Add New Book</h2>
+            <small class="text-muted">Add book master record and generate copies with QR codes</small>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]</div>
+    }
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <!-- Book Details -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-book me-2 text-primary"></i>Book Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                                <input asp-for="Title" class="form-control" placeholder="Enter book title" />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ISBN" class="form-label fw-semibold">ISBN</label>
+                                <input asp-for="ISBN" class="form-control" placeholder="978-..." />
+                                <span asp-validation-for="ISBN" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Author" class="form-label fw-semibold">Author <span class="text-danger">*</span></label>
+                                <input asp-for="Author" class="form-control" placeholder="Author name" />
+                                <span asp-validation-for="Author" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Publisher" class="form-label fw-semibold">Publisher</label>
+                                <input asp-for="Publisher" class="form-control" placeholder="Publisher name" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="CategoryId" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.Categories">
+                                    <option value="">Select Category</option>
+                                </select>
+                                <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Language" class="form-label fw-semibold">Language</label>
+                                <select asp-for="Language" class="form-select">
+                                    <option value="Hindi">Hindi</option>
+                                    <option value="English">English</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PublishedYear" class="form-label fw-semibold">Published Year</label>
+                                <input asp-for="PublishedYear" type="number" class="form-control" placeholder="2024" min="1800" max="2099" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Edition" class="form-label fw-semibold">Edition</label>
+                                <input asp-for="Edition" class="form-control" placeholder="1st, 2nd..." />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ShelfLocation" class="form-label fw-semibold">Shelf Location</label>
+                                <input asp-for="ShelfLocation" class="form-control" placeholder="A-12, Rack 3..." />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief description..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing & Copies -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-rupee-sign me-2 text-success"></i>Pricing & Copies</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="BookPrice" class="form-label fw-semibold">Book Price (₹) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input asp-for="BookPrice" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="BookPrice" class="text-danger small"></span>
+                            <small class="text-muted">Used for fine calculation</small>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NumberOfCopies" class="form-label fw-semibold">Number of Copies <span class="text-danger">*</span></label>
+                            <input asp-for="NumberOfCopies" type="number" class="form-control" min="1" max="100" />
+                            <span asp-validation-for="NumberOfCopies" class="text-danger small"></span>
+                            <small class="text-muted">QR codes will be generated for each copy</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-qrcode me-2 text-primary"></i>QR Code Generation</h6>
+                        <p class="small text-muted mb-0">
+                            Each copy will automatically get a unique accession number and QR code.
+                            Format: <code>LIB-YYYY-NNNNN</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save Book & Generate QR Codes
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

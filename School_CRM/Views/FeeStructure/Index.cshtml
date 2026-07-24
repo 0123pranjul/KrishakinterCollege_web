@@ -1,0 +1,308 @@
+﻿@{
+    ViewData["Title"] = "Fee Structure";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Fee Structure Management
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success" onclick="loadBulkModal()">
+                            <i class="fas fa-layer-group me-1"></i> Bulk Assign
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="loadFeeStructureModal(0)">
+                            <i class="fas fa-plus me-1"></i> Add Single
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="card-body border-bottom pb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Filter by Session</label>
+                            <select id="filterSession" class="form-select form-select-sm">
+                                <option value="">All Sessions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Filter by Class</label>
+                            <select id="filterClass" class="form-select form-select-sm">
+                                <option value="">All Classes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Filter by Fee Type</label>
+                            <select id="filterFeeType" class="form-select form-select-sm">
+                                <option value="">All Fee Types</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-redo"></i> Reset Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="feeStructureTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Session</th>
+                                    <th>Class</th>
+                                    <th>Fee Type</th>
+                                    <th>Frequency</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <small class="text-muted">Total Records</small>
+                            <h5 class="mb-0 text-primary" id="summaryTotal">0</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Monthly Fees</small>
+                            <h5 class="mb-0 text-success" id="summaryMonthly">0</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">One Time Fees</small>
+                            <h5 class="mb-0 text-warning" id="summaryOneTime">0</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Single Add/Edit Modal ─────────────────────────────────────────────── -->
+<div class="modal fade" id="feeStructureModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-plus me-2"></i>Add Fee Structure</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="feeStructureModalBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Bulk Assign Modal ──────────────────────────────────────────────────── -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-layer-group me-2"></i>Bulk Fee Structure Assignment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Academic Session <span class="text-danger">*</span></label>
+                        <select id="bulkSession" class="form-select"><option value="">-- Select Session --</option></select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Class <span class="text-danger">*</span></label>
+                        <select id="bulkClass" class="form-select"><option value="">-- Select Class --</option></select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" onclick="loadBulkFeeTypes()">
+                            <i class="fas fa-search me-1"></i> Load
+                        </button>
+                    </div>
+                </div>
+                <div id="bulkFeeSection" style="display:none">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Green rows</strong> = already mapped. Uncheck karo jo remove karne ho.
+                        Naye fee types ka amount fill karo aur save karo.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th width="5%" class="text-center">
+                                        <input type="checkbox" id="checkAll" title="Select All" />
+                                    </th>
+                                    <th width="35%">Fee Type</th>
+                                    <th width="15%" class="text-center">Frequency</th>
+                                    <th width="25%">Amount (₹)</th>
+                                    <th width="20%" class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkFeeBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="text-muted small" id="bulkSelCount">0 fee types selected</span>
+                        <button class="btn btn-success px-4" onclick="saveBulk()" id="btnSaveBulk">
+                            <i class="fas fa-save me-1"></i> Save All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── View Modal ─────────────────────────────────────────────────────────── -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Fee Structure Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"><div id="viewModalContent"></div></div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <form id="__AjaxAntiForgeryForm" method="post">@Html.AntiForgeryToken()</form>
+    <script>
+        let table;
+        $(document).ready(function () { loadDataTable(); loadBulkDropdowns(); });
+
+        function loadDataTable() {
+            table = $('#feeStructureTable').DataTable({
+                ajax: { url: '@Url.Action("GetAll","FeeStructure")', type: 'GET',
+                    dataSrc: function (json) { loadFilterDropdowns(json.data); updateSummary(json.data); return json.data; }
+                },
+                columns: [
+                    { data: null, width: '5%', className: 'text-center',
+                      render: function (d, t, r, meta) { return meta.row + meta.settings._iDisplayStart + 1; } },
+                    { data: 'sessionName', width: '15%', className: 'text-center' },
+                    { data: 'className',   width: '12%', className: 'text-center' },
+                    { data: 'feeName',     width: '20%' },
+                    { data: 'isRecurring', width: '12%', className: 'text-center',
+                      render: function (d) { return d === 'Monthly' ? '<span class="badge bg-primary">Monthly</span>' : '<span class="badge bg-secondary">One Time</span>'; } },
+                    { data: 'amount', width: '10%', className: 'text-end fw-semibold',
+                      render: function (d) { return '<span class="text-success">' + d + '</span>'; } },
+                    { data: 'status', width: '8%', className: 'text-center',
+                      render: function (d) { return d === 'Active' ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Inactive</span>'; } },
+                    { data: 'feeStructureId', width: '18%', className: 'text-center',
+                      render: function (d) { return `<div class="btn-group btn-group-sm"><button class="btn btn-info edit-btn" data-id="${d}"><i class="fas fa-edit"></i></button><button class="btn btn-success view-btn" data-id="${d}"><i class="fas fa-eye"></i></button><button class="btn btn-danger delete-btn" data-id="${d}"><i class="fas fa-trash"></i></button></div>`; } }
+                ],
+                language: { emptyTable: "No fee structures found" },
+                order: [], columnDefs: [{ orderable: false, targets: 0 }],
+                drawCallback: function () { updateSummary(this.api().rows({ filter: 'applied' }).data().toArray()); },
+                initComplete: function () { $('#filterSession,#filterClass,#filterFeeType').on('change', applyFilters); }
+            });
+        }
+
+        function loadFilterDropdowns(data) {
+            [...new Map(data.map(d => [d.sessionName,d])).values()].forEach(d => $('#filterSession').append(`<option value="${d.sessionName}">${d.sessionName}</option>`));
+            [...new Map(data.map(d => [d.className,  d])).values()].forEach(d => $('#filterClass')  .append(`<option value="${d.className}">${d.className}</option>`));
+            [...new Map(data.map(d => [d.feeName,    d])).values()].forEach(d => $('#filterFeeType').append(`<option value="${d.feeName}">${d.feeName}</option>`));
+        }
+        function applyFilters() {
+            var s=$('#filterSession').val(), c=$('#filterClass').val(), f=$('#filterFeeType').val();
+            $.fn.dataTable.ext.search=[];
+            $.fn.dataTable.ext.search.push(function(st,data){return(!s||data[1]===s)&&(!c||data[2]===c)&&(!f||data[3]===f);});
+            table.draw();
+        }
+        function resetFilters() { $('#filterSession,#filterClass,#filterFeeType').val(''); $.fn.dataTable.ext.search=[]; table.draw(); }
+        function updateSummary(data) {
+            $('#summaryTotal').text(data.length);
+            $('#summaryMonthly').text(data.filter(d=>d.isRecurring==='Monthly').length);
+            $('#summaryOneTime').text(data.filter(d=>d.isRecurring==='One Time').length);
+        }
+        function loadFeeStructureModal(id) {
+            $.get('@Url.Action("CreateOrEdit","FeeStructure")/'+id, function(data) {
+                $('#feeStructureModalBody').html(data);
+                $('#modalTitle').html(id==0?'<i class="fas fa-plus me-2"></i>Add Fee Structure':'<i class="fas fa-edit me-2"></i>Edit Fee Structure');
+                var f=$("#feeStructureForm"); f.removeData("validator").removeData("unobtrusiveValidation"); $.validator.unobtrusive.parse(f);
+                $('#feeStructureModal').modal('show');
+            }).fail(function(){toastr.error("Failed to load form!");});
+        }
+        function loadBulkDropdowns() {
+            $.get('@Url.Action("GetDropdownData","FeeStructure")', function(res) {
+                res.sessions.forEach(s=>$('#bulkSession').append(`<option value="${s.sessionId}">${s.sessionName}</option>`));
+                res.classes .forEach(c=>$('#bulkClass')  .append(`<option value="${c.classId}">${c.className}</option>`));
+            });
+        }
+        function loadBulkModal() {
+            $('#bulkFeeSection').hide(); $('#bulkSession,#bulkClass').val(''); $('#bulkFeeBody').html('');
+            $('#bulkModal').modal('show');
+        }
+        function loadBulkFeeTypes() {
+            var sId=$('#bulkSession').val(), cId=$('#bulkClass').val();
+            if(!sId||!cId){toastr.warning('Session aur Class dono select karo!');return;}
+            $.get('@Url.Action("GetBulkFeeData","FeeStructure")',{sessionId:sId,classId:cId},function(res){
+                var html='';
+                res.forEach(function(f){
+                    var chk=f.isExisting?'checked':'', amt=f.existingAmount?f.existingAmount.toFixed(2):'';
+                    var badge=f.isRecurring?'<span class="badge bg-primary">Monthly</span>':'<span class="badge bg-secondary">One Time</span>';
+                    var stat=f.isExisting?'<span class="badge bg-success"><i class="fas fa-check me-1"></i>Mapped</span>':'<span class="badge bg-light text-muted border">Not Mapped</span>';
+                    html+=`<tr class="${f.isExisting?'table-success':''}">
+                      <td class="text-center"><input type="checkbox" class="fee-chk form-check-input" ${chk} data-fee-type-id="${f.feeTypeId}" data-struct-id="${f.feeStructureId||0}" onchange="updateRowStyle(this);updateSelCount()"/></td>
+                      <td class="fw-semibold">${f.feeName}</td><td class="text-center">${badge}</td>
+                      <td><div class="input-group input-group-sm"><span class="input-group-text">₹</span>
+                          <input type="number" step="0.01" min="0" class="form-control fee-amount" data-fee-type-id="${f.feeTypeId}" placeholder="0.00" value="${amt}"/></div></td>
+                      <td class="text-center">${stat}</td></tr>`;
+                });
+                $('#bulkFeeBody').html(html); $('#bulkFeeSection').slideDown(200); updateSelCount();
+            }).fail(function(){toastr.error('Failed to load!');});
+        }
+        $('#checkAll').on('change',function(){$('.fee-chk').prop('checked',$(this).is(':checked')).each(function(){updateRowStyle(this);});updateSelCount();});
+        function updateRowStyle(chk){$(chk).closest('tr').toggleClass('table-success',$(chk).is(':checked')).toggleClass('table-light',!$(chk).is(':checked'));}
+        function updateSelCount(){var c=$('.fee-chk:checked').length;$('#bulkSelCount').text(c+' fee type'+(c!==1?'s':'')+' selected');}
+        function saveBulk(){
+            var sId=$('#bulkSession').val(),cId=$('#bulkClass').val(),items=[],err=false;
+            $('.fee-chk:checked').each(function(){
+                var fId=$(this).data('fee-type-id'),stId=$(this).data('struct-id');
+                var amt=parseFloat($('.fee-amount[data-fee-type-id="'+fId+'"]').val());
+                if(!amt||amt<=0){toastr.warning('Sab selected fee types ka amount fill karo!');err=true;return false;}
+                items.push({feeTypeId:fId,amount:amt,feeStructureId:stId});
+            });
+            if(err||!items.length){if(!err)toastr.warning('Kam se kam ek fee type select karo!');return;}
+            var btn=$('#btnSaveBulk').prop('disabled',true).html('<i class="fas fa-spinner fa-spin me-1"></i>Saving...');
+            $.ajax({url:'@Url.Action("SaveBulk","FeeStructure")',type:'POST',contentType:'application/json',
+                data:JSON.stringify({sessionId:parseInt(sId),classId:parseInt(cId),items:items}),
+                headers:{'RequestVerificationToken':$('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val()},
+                success:function(res){btn.prop('disabled',false).html('<i class="fas fa-save me-1"></i>Save All');if(res.success){$('#bulkModal').modal('hide');table.ajax.reload(null,false);toastr.success(res.message);}else toastr.error(res.message);},
+                error:function(){btn.prop('disabled',false).html('<i class="fas fa-save me-1"></i>Save All');toastr.error('Server error!');}
+            });
+        }
+        $(document).on('click','.edit-btn',function(){loadFeeStructureModal($(this).data('id'));});
+        $(document).on('click','.view-btn',function(){
+            $.get('@Url.Action("View","FeeStructure")/'+$(this).data('id'),function(d){$('#viewModalContent').html(d);$('#viewModal').modal('show');}).fail(function(){toastr.error("Failed!");});
+        });
+        $(document).on('click','.delete-btn',function(){
+            var id=$(this).data('id');
+            Swal.fire({title:'Delete?',text:'Fee structure deactivate ho jaayegi!',icon:'warning',showCancelButton:true,confirmButtonColor:'#d33',cancelButtonColor:'#3085d6',confirmButtonText:'Yes!'})
+            .then(r=>{if(r.isConfirmed)$.post('@Url.Action("Delete","FeeStructure")',{id:id},function(d){if(d.success){table.ajax.reload(null,false);toastr.success(d.message);}else toastr.error(d.message);});});
+        });
+        $(document).on('click','#btnSave',function(){
+            var form=$('#feeStructureForm');
+            if(form.valid()){
+                var btn=$(this).prop('disabled',true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+                $.post(form.attr('action'),form.serialize(),function(d){
+                    btn.prop('disabled',false).html('<i class="fas fa-save"></i> Save Structure');
+                    if(d.success){$('#feeStructureModal').modal('hide');table.ajax.reload(null,false);toastr.success(d.message);}else toastr.error(d.message);
+                });
+            }
+        });
+    </script>
+}

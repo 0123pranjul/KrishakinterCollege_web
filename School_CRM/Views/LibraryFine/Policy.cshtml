@@ -1,0 +1,59 @@
+@model List<School_CRM.Models.LibFinePolicy>
+@{
+    ViewData["Title"] = "Fine Policies";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-gavel text-primary me-2"></i>Fine Policies</h2>
+            <small class="text-muted">Manage library fine and issue policies</small>
+        </div>
+        <a asp-action="CreatePolicy" class="btn btn-primary"><i class="fas fa-plus me-1"></i>New Policy</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="row g-3">
+        @foreach (var policy in Model)
+        {
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm @(policy.IsActive ? "border-start border-success border-3" : "")">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                        <h6 class="fw-bold mb-0">@policy.PolicyName</h6>
+                        <span class="badge @(policy.IsActive ? "bg-success" : "bg-secondary")">
+                            @(policy.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 small">
+                            <div class="col-6"><span class="text-muted">Per Day Fine:</span> <strong>₹@policy.PerDayFine</strong></div>
+                            <div class="col-6"><span class="text-muted">Grace Period:</span> <strong>@policy.GracePeriodDays days</strong></div>
+                            <div class="col-6"><span class="text-muted">Max Fine:</span> <strong>@(policy.MaxOverdueFine.HasValue ? $"₹{policy.MaxOverdueFine}" : "No cap")</strong></div>
+                            <div class="col-6"><span class="text-muted">Student Limit:</span> <strong>@policy.MaxBooksForStudent books</strong></div>
+                            <div class="col-6"><span class="text-muted">Teacher Limit:</span> <strong>@policy.MaxBooksForTeacher books</strong></div>
+                            <div class="col-6"><span class="text-muted">Student Issue Days:</span> <strong>@policy.IssueDaysForStudent days</strong></div>
+                            <div class="col-6"><span class="text-muted">Teacher Issue Days:</span> <strong>@policy.IssueDaysForTeacher days</strong></div>
+                            <div class="col-6"><span class="text-muted">Damage Fine:</span> <strong>@policy.DamageFineValue @(policy.DamageFineType == "Percentage" ? "%" : "₹")</strong></div>
+                            <div class="col-6"><span class="text-muted">Lost Fine:</span> <strong>@policy.LostFineType (@policy.LostFineValue)</strong></div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white text-muted small py-2">
+                        Created: @policy.CreatedAt.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-gavel fa-3x mb-3 opacity-25"></i>
+            <p>No policies found. <a asp-action="CreatePolicy">Create the first policy</a></p>
+        </div>
+    }
+</div>

@@ -1,0 +1,231 @@
+﻿@{
+    ViewData["Title"] = "Students";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h3 class="card-title mb-0">Student Management</h3>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="Student" asp-action="NewAdmission" class="btn btn-sm btn-success">
+                            <i class="fas fa-user-plus me-1"></i> New Admission
+                        </a>
+                        <button class="btn btn-sm btn-primary" onclick="loadStudentModal(0)">
+                            <i class="fas fa-plus me-1"></i> Quick Add
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="studentTable" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student Name</th>
+                                    <th>Admission No</th>
+                                    <th>Roll No</th>
+                                    <th>Gender</th>
+                                    <th>Admission Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="studentModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">Add Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="studentModalBody">
+                @* Content loaded dynamically via AJAX *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Student Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+            loadDataTable();
+        });
+
+        function loadDataTable() {
+            table = $('#studentTable').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetAll", "Student")',
+                    type: 'GET',
+                    dataSrc: 'data'
+                },
+                columns: [
+                    {
+                        data: null, width: '5%', className: 'text-center',
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    { data: 'studentName', width: '22%' },
+                    { data: 'admissionNo', width: '13%', className: 'text-center', defaultContent: '-' },
+                    { data: 'rollNo',      width: '10%', className: 'text-center', defaultContent: '-' },
+                    { data: 'gender',      width: '8%',  className: 'text-center', defaultContent: '-' },
+                    { data: 'createdDate', width: '12%', className: 'text-center' },
+                    {
+                        data: 'status', width: '8%', className: 'text-center',
+                        render: function (data) {
+                            return data === 'Active'
+                                ? '<span class="badge bg-success">Active</span>'
+                                : '<span class="badge bg-danger">Inactive</span>';
+                        }
+                    },
+                    {
+                        data: 'studentId', width: '22%', className: 'text-center',
+                        render: function (data) {
+                            return `<div class="btn-group btn-group-sm">
+                                        <a href="/Student/NewAdmission/${data}" class="btn btn-warning" title="Edit Admission">
+                                            <i class="fas fa-file-alt"></i>
+                                        </a>
+                                        <button class="btn btn-info edit-btn" title="Quick Edit" data-id="${data}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-success view-btn" title="View" data-id="${data}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>`;
+                        }
+                    }
+                ],
+                language: { emptyTable: "No students found" },
+                order: [],
+                columnDefs: [
+                    { orderable: false, targets: 0 }
+                ]
+            });
+        }
+
+        // Load Create/Edit Modal
+        function loadStudentModal(id) {
+            $.ajax({
+                url: '@Url.Action("CreateOrEdit", "Student")/' + id,
+                type: 'GET',
+                success: function (data) {
+                    $('#studentModalBody').html(data);
+                    $('#modalTitle').text(id == 0 ? 'Add Student' : 'Edit Student');
+
+                    var form = $("#studentForm");
+                    form.removeData("validator");
+                    form.removeData("unobtrusiveValidation");
+                    $.validator.unobtrusive.parse(form);
+
+                    $('#studentModal').modal('show');
+                },
+                error: function () {
+                    toastr.error("Failed to load form!");
+                }
+            });
+        }
+
+        // Edit Button
+        $(document).on('click', '.edit-btn', function () {
+            loadStudentModal($(this).data('id'));
+        });
+
+        // View Button
+        $(document).on('click', '.view-btn', function () {
+            var id = $(this).data('id');
+            $.ajax({
+                url: '@Url.Action("View", "Student")/' + id,
+                type: 'GET',
+                success: function (data) {
+                    $('#viewModalContent').html(data);
+                    $('#viewModal').modal('show');
+                },
+                error: function () {
+                    toastr.error("Failed to load details!");
+                }
+            });
+        });
+
+        // Delete Button
+        $(document).on('click', '.delete-btn', function () {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This student will be deactivated!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("Delete", "Student")', { id: id }, function (data) {
+                        if (data.success) {
+                            table.ajax.reload();
+                            toastr.success(data.message);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Save Button
+        $(document).on('click', '#btnSave', function () {
+            var form = $('#studentForm');
+            if (form.valid()) {
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+                $.post(form.attr('action'), form.serialize(), function (data) {
+                    btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Student');
+                    if (data.success) {
+                        $('#studentModal').modal('hide');
+                        table.ajax.reload(null, false);
+                        toastr.success(data.message);
+                    } else {
+                        toastr.error(data.message);
+                    }
+                });
+            }
+        });
+    </script>
+}

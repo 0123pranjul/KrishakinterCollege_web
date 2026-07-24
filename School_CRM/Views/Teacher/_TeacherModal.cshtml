@@ -1,0 +1,47 @@
+@model School_CRM.Models.TblTeacher
+
+<form id="teacherForm" asp-action="CreateOrEdit" asp-controller="Teacher" asp-route-id="@Model.TeacherId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="TeacherId" />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="TeacherName" class="form-label fw-semibold">Teacher Name <span class="text-danger">*</span></label>
+            <input asp-for="TeacherName" class="form-control" placeholder="Full name" required />
+            <span asp-validation-for="TeacherName" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Designation" class="form-label fw-semibold">Designation</label>
+            <select asp-for="Designation" class="form-select">
+                <option value="">-- Select --</option>
+                <option>Principal</option>
+                <option>Vice Principal</option>
+                <option>PGT</option>
+                <option>TGT</option>
+                <option>PRT</option>
+                <option>Lecturer</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="MobileNo" class="form-label fw-semibold">Mobile No</label>
+            <input asp-for="MobileNo" class="form-control" placeholder="10-digit mobile" maxlength="15" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Email" class="form-label fw-semibold">Email</label>
+            <input asp-for="Email" class="form-control" type="email" placeholder="email@school.com" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="JoiningDate" class="form-label fw-semibold">Joining Date</label>
+            <input asp-for="JoiningDate" class="form-control" type="date" />
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check form-switch">
+                <input type="checkbox" name="IsActive" value="true" class="form-check-input" @(Model.IsActive == true ? "checked" : "") />
+                <label class="form-check-label">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Teacher</button>
+    </div>
+</form>

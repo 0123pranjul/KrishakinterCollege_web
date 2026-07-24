@@ -1,0 +1,56 @@
+@model List<School_CRM.Models.DTOs.OverdueAssetDto>
+@{ ViewData["Title"] = "Overdue Assets"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-clock text-danger me-2"></i>Overdue Assets</h2>
+            <small class="text-muted">@Model.Count overdue issue(s)</small>
+        </div>
+        <a asp-action="Return" class="btn btn-success"><i class="fas fa-undo me-1"></i>Return Asset</a>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-danger">
+                        <tr><th>#</th><th>Asset</th><th>Tag</th><th>Issued To</th><th>Type</th><th>Issue Date</th><th>Expected Return</th><th>Days Overdue</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-5">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3 d-block"></i>
+                                    No overdue assets! All assets returned on time.
+                                </td>
+                            </tr>
+                        }
+                        @{ int sno = 1; }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@sno++</td>
+                                <td class="fw-semibold">@item.AssetName</td>
+                                <td><code class="small">@item.AssetTag</code></td>
+                                <td>@item.IssuedTo</td>
+                                <td><span class="badge bg-secondary">@item.IssuedToType</span></td>
+                                <td>@item.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-danger fw-semibold">@item.ExpectedReturnDate.ToString("dd/MM/yyyy")</td>
+                                <td><span class="badge @(item.DaysOverdue > 30 ? "bg-danger" : "bg-warning text-dark")">@item.DaysOverdue days</span></td>
+                                <td>
+                                    <a asp-action="Return" class="btn btn-sm btn-outline-success" title="Return">
+                                        <i class="fas fa-undo"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

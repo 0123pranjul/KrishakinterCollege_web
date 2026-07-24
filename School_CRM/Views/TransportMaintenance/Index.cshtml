@@ -1,0 +1,375 @@
+@{
+    ViewData["Title"] = "Maintenance & Fuel Logs";
+    var vehicles = ViewBag.Vehicles as List<School_CRM.Models.TblTrnVehicle> ?? new();
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-tools text-primary me-2"></i>Maintenance & Fuel Logs</h4>
+            <small class="text-muted">Track vehicle servicing and fuel consumption</small>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="mntTab">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mntLogTab"><i class="fas fa-wrench me-1"></i>Maintenance Log</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#fuelLogTab"><i class="fas fa-gas-pump me-1"></i>Fuel Log</button></li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ── Maintenance Tab ── -->
+        <div class="tab-pane fade show active" id="mntLogTab">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <label class="small fw-semibold mb-0">Vehicle:</label>
+                    <select id="mntVehicle" class="form-select form-select-sm" style="max-width:200px" onchange="loadMaintenance()">
+                        <option value="0">All Vehicles</option>
+                        @foreach (var v in vehicles)
+                        {
+                            <option value="@v.VehicleId">@v.RegistrationNumber</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openMntModal(0)"><i class="fas fa-plus me-1"></i>Add Maintenance</button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblMnt" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Vehicle</th><th>Service Type</th><th>Date</th><th>Cost (₹)</th>
+                                    <th>Provider</th><th>Next Due</th><th>Remarks</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mntBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Fuel Log Tab ── -->
+        <div class="tab-pane fade" id="fuelLogTab">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <label class="small fw-semibold mb-0">Vehicle:</label>
+                    <select id="fuelVehicle" class="form-select form-select-sm" style="max-width:200px" onchange="loadFuelLog()">
+                        <option value="0">All Vehicles</option>
+                        @foreach (var v in vehicles)
+                        {
+                            <option value="@v.VehicleId">@v.RegistrationNumber</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openFuelModal(0)"><i class="fas fa-plus me-1"></i>Add Fuel Entry</button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblFuel" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Vehicle</th><th>Date</th><th>Qty (L)</th><th>Rate (₹/L)</th>
+                                    <th>Total Cost (₹)</th><th>Odometer</th><th>Station</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fuelBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal fade" id="mntModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mntModalTitle"><i class="fas fa-wrench me-2 text-warning"></i>Add Maintenance Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="mntForm" onsubmit="return saveMaintenance(this)">
+                <input type="hidden" id="mntId" name="Id" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vehicle <span class="text-danger">*</span></label>
+                            <select class="form-select" id="mntVehicleId" name="VehicleId" required>
+                                <option value="">-- Select Vehicle --</option>
+                                @foreach (var v in vehicles)
+                                {
+                                    <option value="@v.VehicleId">@v.RegistrationNumber (@v.VehicleType)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Service Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="mntServiceType" name="ServiceType" required>
+                                <option value="">-- Select --</option>
+                                @foreach (var t in new[] { "Oil Change", "Tyre Change", "Brake Service", "Engine Service", "AC Repair", "Electrical", "Body Work", "Annual Maintenance", "Other" })
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Service Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="mntServiceDate" name="ServiceDate" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Service Cost (₹) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="mntCost" name="ServiceCost" step="0.01" min="0" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Next Service Due</label>
+                            <input type="date" class="form-control" id="mntNextDue" name="NextServiceDueDate" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Service Provider</label>
+                            <input type="text" class="form-control" id="mntProvider" name="ServiceProvider" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Remarks</label>
+                            <textarea class="form-control" id="mntRemarks" name="Remarks" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Fuel Modal -->
+<div class="modal fade" id="fuelModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fuelModalTitle"><i class="fas fa-gas-pump me-2 text-info"></i>Add Fuel Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="fuelForm" onsubmit="return saveFuelLog(this)">
+                <input type="hidden" id="fuelId" name="Id" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vehicle <span class="text-danger">*</span></label>
+                            <select class="form-select" id="fuelVehicleId" name="VehicleId" required>
+                                <option value="">-- Select Vehicle --</option>
+                                @foreach (var v in vehicles)
+                                {
+                                    <option value="@v.VehicleId">@v.RegistrationNumber (@v.VehicleType)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fuel Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="fuelDate" name="FuelDate" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Quantity (Litres) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="fuelQty" name="FuelQuantityLitres" step="0.01" min="0" required onchange="calcTotal()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Rate (₹/Litre) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="fuelRate" name="FuelCostPerLitre" step="0.01" min="0" required onchange="calcTotal()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Total Cost (₹)</label>
+                            <input type="number" class="form-control" id="fuelTotal" step="0.01" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Odometer Reading (km) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="fuelOdometer" name="OdometerReading" required min="0" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fuel Station</label>
+                            <input type="text" class="form-control" id="fuelStation" name="FuelStation" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+    let mntTable, fuelTable;
+
+    // ── MAINTENANCE ──────────────────────────────────────────────────────────
+    function loadMaintenance() {
+        const vehicleId = $('#mntVehicle').val() || 0;
+        $.get('/TransportMaintenance/GetMaintenance', { vehicleId }, function (r) {
+            if (!r.success) return;
+            if (mntTable) { mntTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(m => `<tr class="${m.isOverdue ? 'table-danger' : ''}">
+                <td>${sno++}</td>
+                <td>${m.vehicleNo}</td>
+                <td>${m.serviceType}</td>
+                <td>${m.serviceDate}</td>
+                <td>₹${Number(m.serviceCost).toLocaleString()}</td>
+                <td>${m.serviceProvider || '-'}</td>
+                <td class="${m.isOverdue ? 'text-danger fw-semibold' : ''}">${m.nextDue}${m.isOverdue ? ' <i class="fas fa-exclamation-triangle"></i>' : ''}</td>
+                <td class="text-muted">${m.remarks || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openMntModal(${m.id})"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>`);
+            $('#mntBody').html(rows.length ? rows.join('') : '<tr><td colspan="9" class="text-center text-muted py-4">No records found.</td></tr>');
+            mntTable = $('#tblMnt').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function openMntModal(id) {
+        $('#mntForm')[0].reset();
+        $('#mntId').val(0);
+        if (id > 0) {
+            $.get('/TransportMaintenance/GetMaintenance', {}, function (r) {
+                const m = r.data.find(x => x.id === id);
+                if (!m) return;
+                $('#mntId').val(m.id);
+                $('#mntVehicleId').val(m.vehicleId);
+                $('#mntServiceType').val(m.serviceType);
+                $('#mntServiceDate').val(m.serviceDate ? new Date(m.serviceDate).toISOString().split('T')[0] : '');
+                $('#mntCost').val(m.serviceCost);
+                $('#mntProvider').val(m.serviceProvider);
+                $('#mntRemarks').val(m.remarks);
+                if (m.nextDueRaw) $('#mntNextDue').val(m.nextDueRaw.split('T')[0]);
+                $('#mntModalTitle').html('<i class="fas fa-wrench me-2 text-warning"></i>Edit Maintenance Log');
+            });
+        } else {
+            $('#mntModalTitle').html('<i class="fas fa-wrench me-2 text-warning"></i>Add Maintenance Log');
+            $('#mntServiceDate').val(new Date().toISOString().split('T')[0]);
+        }
+        $('#mntModal').modal('show');
+    }
+
+    function saveMaintenance(form) {
+        const data = {
+            Id: parseInt($('#mntId').val()),
+            VehicleId: parseInt($('#mntVehicleId').val()),
+            ServiceType: $('#mntServiceType').val(),
+            ServiceDate: $('#mntServiceDate').val(),
+            ServiceCost: parseFloat($('#mntCost').val()),
+            ServiceProvider: $('#mntProvider').val(),
+            NextServiceDueDate: $('#mntNextDue').val() || null,
+            Remarks: $('#mntRemarks').val(),
+            IsActive: true
+        };
+        $.ajax({
+            url: '/TransportMaintenance/SaveMaintenance',
+            type: 'POST', contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#mntModal').modal('hide'); loadMaintenance(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    // ── FUEL LOG ──────────────────────────────────────────────────────────────
+    function loadFuelLog() {
+        const vehicleId = $('#fuelVehicle').val() || 0;
+        $.get('/TransportMaintenance/GetFuelLog', { vehicleId }, function (r) {
+            if (!r.success) return;
+            if (fuelTable) { fuelTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(f => `<tr>
+                <td>${sno++}</td>
+                <td>${f.vehicleNo}</td>
+                <td>${f.fuelDate}</td>
+                <td>${f.fuelQuantityLitres} L</td>
+                <td>₹${f.fuelCostPerLitre}</td>
+                <td>₹${Number(f.totalCost).toLocaleString()}</td>
+                <td>${f.odometerReading.toLocaleString()} km</td>
+                <td>${f.fuelStation || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openFuelModal(${f.id})"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>`);
+            $('#fuelBody').html(rows.length ? rows.join('') : '<tr><td colspan="9" class="text-center text-muted py-4">No records found.</td></tr>');
+            fuelTable = $('#tblFuel').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function calcTotal() {
+        const qty = parseFloat($('#fuelQty').val()) || 0;
+        const rate = parseFloat($('#fuelRate').val()) || 0;
+        $('#fuelTotal').val((qty * rate).toFixed(2));
+    }
+
+    function openFuelModal(id) {
+        $('#fuelForm')[0].reset();
+        $('#fuelId').val(0);
+        if (id > 0) {
+            $.get('/TransportMaintenance/GetFuelLog', {}, function (r) {
+                const f = r.data.find(x => x.id === id);
+                if (!f) return;
+                $('#fuelId').val(f.id);
+                $('#fuelVehicleId').val(f.vehicleId);
+                $('#fuelDate').val(f.fuelDate ? new Date(f.fuelDate).toISOString().split('T')[0] : '');
+                $('#fuelQty').val(f.fuelQuantityLitres);
+                $('#fuelRate').val(f.fuelCostPerLitre);
+                $('#fuelTotal').val(f.totalCost);
+                $('#fuelOdometer').val(f.odometerReading);
+                $('#fuelStation').val(f.fuelStation);
+                $('#fuelModalTitle').html('<i class="fas fa-gas-pump me-2 text-info"></i>Edit Fuel Log');
+            });
+        } else {
+            $('#fuelModalTitle').html('<i class="fas fa-gas-pump me-2 text-info"></i>Add Fuel Log');
+            $('#fuelDate').val(new Date().toISOString().split('T')[0]);
+        }
+        $('#fuelModal').modal('show');
+    }
+
+    function saveFuelLog(form) {
+        const data = {
+            Id: parseInt($('#fuelId').val()),
+            VehicleId: parseInt($('#fuelVehicleId').val()),
+            FuelDate: $('#fuelDate').val(),
+            FuelQuantityLitres: parseFloat($('#fuelQty').val()),
+            FuelCostPerLitre: parseFloat($('#fuelRate').val()),
+            OdometerReading: parseInt($('#fuelOdometer').val()),
+            FuelStation: $('#fuelStation').val(),
+            IsActive: true
+        };
+        $.ajax({
+            url: '/TransportMaintenance/SaveFuelLog',
+            type: 'POST', contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#fuelModal').modal('hide'); loadFuelLog(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    $(document).ready(function () {
+        loadMaintenance();
+        loadFuelLog();
+    });
+</script>
+}

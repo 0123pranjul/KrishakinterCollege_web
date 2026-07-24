@@ -1,0 +1,39 @@
+@model School_CRM.Models.TblTimeTable
+
+<form id="ttForm" asp-action="CreateOrEdit" asp-controller="TimeTable" asp-route-id="@Model.TimeTableId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="TimeTableId" />
+    <input type="hidden" asp-for="SessionId" />
+    <input type="hidden" asp-for="ClassId" />
+    <input type="hidden" asp-for="SectionId" />
+    <input type="hidden" asp-for="PeriodId" />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="DayOfWeek" class="form-label fw-semibold">Day <span class="text-danger">*</span></label>
+            <select asp-for="DayOfWeek" class="form-select" required>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SubjectId" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            <select asp-for="SubjectId" class="form-select" asp-items="@(new SelectList(ViewBag.Subjects, "SubjectId", "SubjectName"))" required>
+                <option value="">-- Select Subject --</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label asp-for="TeacherId" class="form-label fw-semibold">Teacher <span class="text-danger">*</span></label>
+            <select asp-for="TeacherId" class="form-select" asp-items="@(new SelectList(ViewBag.Teachers, "TeacherId", "TeacherName"))" required>
+                <option value="">-- Select Teacher --</option>
+            </select>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+    </div>
+</form>

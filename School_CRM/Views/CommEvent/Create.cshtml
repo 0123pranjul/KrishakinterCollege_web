@@ -1,0 +1,154 @@
+@model School_CRM.Models.CommEvent
+@{ ViewData["Title"] = "Add Event"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-calendar-plus text-primary me-2"></i>Add Event</h2>
+        <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="EventTitle" class="form-label fw-semibold">Event Title <span class="text-danger">*</span></label>
+                                <input asp-for="EventTitle" class="form-control" placeholder="e.g. Annual Sports Day, Mid-Term Exam..." />
+                                <span asp-validation-for="EventTitle" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EventType" class="form-label fw-semibold">Event Type <span class="text-danger">*</span></label>
+                                <select asp-for="EventType" class="form-select" id="eventTypeSelect" onchange="setEventColor()">
+                                    <option value="">Select Type</option>
+                                    <option value="Holiday">🔴 Holiday</option>
+                                    <option value="Exam">🟠 Exam</option>
+                                    <option value="PTM">🔵 PTM</option>
+                                    <option value="Function">🟣 Function</option>
+                                    <option value="Sports">🟢 Sports</option>
+                                    <option value="Workshop">🩵 Workshop</option>
+                                    <option value="Meeting">⚫ Meeting</option>
+                                    <option value="Other">⚪ Other</option>
+                                </select>
+                                <span asp-validation-for="EventType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Color" class="form-label fw-semibold">Color</label>
+                                <div class="input-group">
+                                    <input asp-for="Color" type="color" class="form-control form-control-color" id="colorPicker" />
+                                    <input type="text" class="form-control" id="colorText" value="@Model.Color" readonly />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
+                                <input asp-for="StartDate" type="date" class="form-control" />
+                                <span asp-validation-for="StartDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EndDate" class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
+                                <input asp-for="EndDate" type="date" class="form-control" />
+                                <span asp-validation-for="EndDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsFullDay" class="form-check-input" type="checkbox" id="isFullDaySwitch"
+                                           onchange="toggleTimeFields()" />
+                                    <label asp-for="IsFullDay" class="form-check-label">Full Day Event</label>
+                                </div>
+                            </div>
+                            <div id="timeFields" class="col-12 d-none">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="StartTime" class="form-label fw-semibold">Start Time</label>
+                                        <input asp-for="StartTime" type="time" class="form-control" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="EndTime" class="form-label fw-semibold">End Time</label>
+                                        <input asp-for="EndTime" type="time" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Venue" class="form-label fw-semibold">Venue</label>
+                                <input asp-for="Venue" class="form-control" placeholder="e.g. School Ground, Main Hall..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TargetType" class="form-label fw-semibold">Target Audience</label>
+                                <select asp-for="TargetType" class="form-select" id="targetTypeSelect"
+                                        onchange="toggleClassField()">
+                                    <option value="All">All</option>
+                                    <option value="AllStudents">All Students</option>
+                                    <option value="AllTeachers">All Teachers</option>
+                                    <option value="ClassWise">Class-wise</option>
+                                </select>
+                            </div>
+                            <div id="classField" class="col-md-6 d-none">
+                                <label asp-for="TargetClassId" class="form-label fw-semibold">Class</label>
+                                <select asp-for="TargetClassId" class="form-select" asp-items="ViewBag.Classes">
+                                    <option value="">Select Class</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                                <textarea asp-for="Description" class="form-control" rows="2"
+                                          placeholder="Optional details..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input asp-for="IsPublished" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsPublished" class="form-check-label">Publish on Calendar</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Save Event
+                            </button>
+                            <a asp-action="Manage" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const eventColors = {
+            Holiday: '#e74c3c', Exam: '#e67e22', PTM: '#3498db',
+            Function: '#9b59b6', Sports: '#27ae60', Workshop: '#1abc9c',
+            Meeting: '#34495e', Other: '#95a5a6'
+        };
+
+        function setEventColor() {
+            const type = document.getElementById('eventTypeSelect').value;
+            const color = eventColors[type] || '#3498db';
+            document.getElementById('colorPicker').value = color;
+            document.getElementById('colorText').value = color;
+            document.querySelector('[name="Color"]').value = color;
+        }
+
+        document.getElementById('colorPicker').addEventListener('input', function () {
+            document.getElementById('colorText').value = this.value;
+            document.querySelector('[name="Color"]').value = this.value;
+        });
+
+        function toggleTimeFields() {
+            const isFullDay = document.getElementById('isFullDaySwitch').checked;
+            document.getElementById('timeFields').classList.toggle('d-none', isFullDay);
+        }
+
+        function toggleClassField() {
+            const t = document.getElementById('targetTypeSelect').value;
+            document.getElementById('classField').classList.toggle('d-none', t !== 'ClassWise');
+        }
+
+        // Init
+        toggleTimeFields();
+    </script>
+}

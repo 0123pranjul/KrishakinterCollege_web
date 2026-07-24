@@ -1,0 +1,92 @@
+@model School_CRM.Models.TblStudentSession
+
+<div class="row g-3">
+
+    <!-- Student Info -->
+    <div class="col-md-6">
+        <div class="card h-100 border-primary">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Student ID</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentId ?? 0)</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Name</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Roll No</td>
+                        <td class="fw-semibold">@(Model.Student?.RollNo ?? "-")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session / Class / Section Info -->
+    <div class="col-md-6">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>Academic Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Session</td>
+                        <td class="fw-semibold">@(Model.Session?.SessionName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Class</td>
+                        <td class="fw-semibold">@(Model.Class?.ClassName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Section</td>
+                        <td class="fw-semibold">@(Model.Section?.SectionName ?? "-")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapping Meta Info -->
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body py-2">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Mapping ID</small>
+                        <span class="fw-semibold">#@Model.Id</span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Status</small>
+                        @if (Model.IsActive == true)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactive</span>
+                        }
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Created Date</small>
+                        <span class="fw-semibold">
+                            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy") : "-")
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Last Updated</small>
+                        <span class="fw-semibold">
+                            @(Model.UpdatedDate.HasValue ? Model.UpdatedDate.Value.ToString("dd-MM-yyyy") : "-")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

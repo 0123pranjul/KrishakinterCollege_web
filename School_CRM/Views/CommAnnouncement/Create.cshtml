@@ -1,0 +1,111 @@
+@model School_CRM.Models.CommAnnouncement
+@{ ViewData["Title"] = "Create Announcement"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-plus-circle text-primary me-2"></i>Create Announcement</h2>
+        <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0">Announcement Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="Announcement title..." />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Body" class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
+                            <textarea asp-for="Body" class="form-control" rows="6" placeholder="Write your announcement..."></textarea>
+                            <span asp-validation-for="Body" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">PDF Attachment (optional, max 5MB)</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0">Settings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Priority" class="form-label fw-semibold">Priority</label>
+                            <select asp-for="Priority" class="form-select" id="prioritySelect">
+                                <option value="Low">Low</option>
+                                <option value="Normal" selected>Normal</option>
+                                <option value="High">High</option>
+                                <option value="Emergency">🚨 Emergency</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="TargetType" class="form-label fw-semibold">Target Audience</label>
+                            <select asp-for="TargetType" class="form-select" id="targetTypeSelect" onchange="toggleTargetFields()">
+                                <option value="All">All (Everyone)</option>
+                                <option value="AllStudents">All Students</option>
+                                <option value="AllTeachers">All Teachers</option>
+                                <option value="ClassWise">Class-wise</option>
+                                <option value="SectionWise">Section-wise</option>
+                            </select>
+                        </div>
+                        <div id="classRow" class="mb-3 d-none">
+                            <label asp-for="TargetClassId" class="form-label fw-semibold">Class</label>
+                            <select asp-for="TargetClassId" class="form-select" asp-items="ViewBag.Classes">
+                                <option value="">Select Class</option>
+                            </select>
+                        </div>
+                        <div id="sectionRow" class="mb-3 d-none">
+                            <label asp-for="TargetSectionId" class="form-label fw-semibold">Section</label>
+                            <select asp-for="TargetSectionId" class="form-select" asp-items="ViewBag.Sections">
+                                <option value="">Select Section</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="PublishAt" class="form-label fw-semibold">Publish At</label>
+                            <input asp-for="PublishAt" type="datetime-local" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ExpiresAt" class="form-label fw-semibold">Expires At (optional)</label>
+                            <input asp-for="ExpiresAt" type="datetime-local" class="form-control" />
+                        </div>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input asp-for="IsPublished" class="form-check-input" type="checkbox" checked />
+                                <label asp-for="IsPublished" class="form-check-label">Publish Now</label>
+                            </div>
+                            <div class="form-check">
+                                <input asp-for="IsPinned" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsPinned" class="form-check-label">Pin</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-save me-2"></i>Save Announcement
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    function toggleTargetFields() {
+        const t = document.getElementById('targetTypeSelect').value;
+        document.getElementById('classRow').classList.toggle('d-none', t !== 'ClassWise' && t !== 'SectionWise');
+        document.getElementById('sectionRow').classList.toggle('d-none', t !== 'SectionWise');
+    }
+    toggleTargetFields();
+</script>
+}

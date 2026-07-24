@@ -1,0 +1,161 @@
+@* ═══════════════════════════════════════════════════════════
+   _DashboardCharts.cshtml  —  Premium Charts + Mini Calendar
+   JS is rendered in SecurePage.cshtml @@section Scripts
+   ═══════════════════════════════════════════════════════════ *@
+
+<p class="section-label"><i class="fas fa-chart-bar me-2"></i>Analytics & Charts</p>
+<div class="row g-3 mb-4">
+
+    <!-- Fee Trend Line Chart -->
+    <div class="col-xl-5 col-lg-6 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-chart-line me-2 text-primary"></i>Fee Collection Trend</span>
+                <span class="badge rounded-pill" style="background:rgba(30,64,175,0.1);color:#1e40af;font-size:.7rem;padding:4px 10px;">Last 6 Months</span>
+            </div>
+            <div class="dash-card-body">
+                <canvas id="feeChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Donut -->
+    <div class="col-xl-3 col-lg-6 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-chart-pie me-2 text-teal"></i>Today's Attendance</span>
+            </div>
+            <div class="dash-card-body d-flex flex-column align-items-center justify-content-center">
+                <div style="max-width:200px;width:100%;">
+                    <canvas id="attChart"></canvas>
+                </div>
+                <div class="d-flex gap-3 mt-3 flex-wrap justify-content-center">
+                    <span class="legend-dot green">Present @(ViewBag.AttPresent ?? 0)</span>
+                    <span class="legend-dot red">Absent @(ViewBag.AttAbsent ?? 0)</span>
+                    <span class="legend-dot amber">Late @(ViewBag.AttLate ?? 0)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Category Bar -->
+    <div class="col-xl-4 col-lg-6 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-boxes me-2 text-teal"></i>Stock Value by Category</span>
+            </div>
+            <div class="dash-card-body">
+                <canvas id="invChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Module Health + Dept Chart + Calendar -->
+<div class="row g-3 mb-4">
+
+    <!-- Module Health Progress Bars -->
+    <div class="col-xl-4 col-lg-6 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-heartbeat me-2 text-danger"></i>Module Health</span>
+            </div>
+            <div class="dash-card-body">
+                @{
+                    decimal attPct2    = ViewBag.AttPct ?? 0m;
+                    decimal feeMonth2  = ViewBag.FeeCollectedMonth ?? 0m;
+                    decimal feePend2   = ViewBag.FeePending ?? 0m;
+                    decimal feeTotal2  = feeMonth2 + feePend2;
+                    decimal feePct2    = feeTotal2 > 0 ? Math.Round(feeMonth2 * 100 / feeTotal2, 1) : 0m;
+                    int libBooks2      = ViewBag.LibTotalBooks  ?? 0;
+                    int libIssued2     = ViewBag.LibIssuedBooks ?? 0;
+                    decimal libPct2    = libBooks2 > 0 ? Math.Round((decimal)libIssued2 * 100 / libBooks2, 1) : 0m;
+                    int invProd2       = ViewBag.InvTotalProducts ?? 0;
+                    int invLow2        = ViewBag.InvLowStock      ?? 0;
+                    int invOut2        = ViewBag.InvOutOfStock     ?? 0;
+                    decimal invH2      = invProd2 > 0 ? Math.Round((decimal)(invProd2 - invLow2 - invOut2) * 100 / invProd2, 1) : 100m;
+                    int asmTotal2      = ViewBag.AsmTotalAssets ?? 0;
+                    int asmAvail2      = ViewBag.AsmAvailable   ?? 0;
+                    decimal asmPct2    = asmTotal2 > 0 ? Math.Round((decimal)asmAvail2 * 100 / asmTotal2, 1) : 0m;
+                    int commAnn2       = ViewBag.CommAnnouncements ?? 0;
+
+                    var healthItems = new[]
+                    {
+                        ("Academic",       attPct2,  "blue"),
+                        ("Fee Collection", feePct2,  "green"),
+                        ("Library",        100m - libPct2, "indigo"),
+                        ("Inventory",      invH2,    "teal"),
+                        ("Assets",         asmPct2,  "amber"),
+                        ("Communication",  commAnn2 > 0 ? 90m : 50m, "red"),
+                    };
+                }
+                @foreach (var (name, pct, color) in healthItems)
+                {
+                    string barClass = color + "-bar";
+                    string txtColor = pct >= 75 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-semibold text-secondary">@name</span>
+                            <span class="small fw-bold" style="color:@txtColor">@pct.ToString("F0")%</span>
+                        </div>
+                        <div class="health-bar-wrap">
+                            <div class="health-bar @barClass" style="width:@pct%;"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Distribution Polar Area -->
+    <div class="col-xl-4 col-lg-6 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-sitemap me-2 text-indigo"></i>Staff by Department</span>
+            </div>
+            <div class="dash-card-body">
+                <canvas id="deptChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Mini Calendar -->
+    <div class="col-xl-4 col-lg-6 fade-up">
+        <div class="mini-cal-card h-100">
+            <div class="mini-cal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="mini-cal-nav" onclick="miniCalPrev()"><i class="fas fa-chevron-left"></i></div>
+                </div>
+                <span class="cal-title" id="miniCalTitle">Loading...</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="mini-cal-nav" onclick="miniCalNext()"><i class="fas fa-chevron-right"></i></div>
+                </div>
+            </div>
+            <div class="mini-cal-grid" id="miniCalGrid">
+                <!-- Calendar days rendered by JS -->
+            </div>
+            <div class="px-3 pb-3 pt-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#4f46e5);display:inline-block;"></span>
+                        <span class="small text-muted fw-semibold">Today</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;"></span>
+                        <span class="small text-muted fw-semibold">Sunday</span>
+                    </div>
+                    <a href="/Communication/Calendar" class="btn-link-sm" style="font-size:.68rem;">
+                        <i class="fas fa-expand-arrows-alt me-1"></i>Full View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Communication Stats -->
+<div class="row g-3 mb-4 fade-up">
+    <div class="col-12">
+        @await Html.PartialAsync("_DashboardComm")
+    </div>
+</div>

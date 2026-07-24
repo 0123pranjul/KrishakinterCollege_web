@@ -1,0 +1,939 @@
+@{
+    ViewData["Title"] = "Employee Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int employeeId = ViewBag.EmployeeId;
+    string empName = ViewBag.EmployeeName;
+    string empCode = ViewBag.EmployeeCode;
+    string designation = ViewBag.Designation;
+    string department = ViewBag.Department;
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    var today = DateTime.Today;
+    var currentMonth = today.ToString("yyyy-MM");
+}
+
+<style>
+    /* ── Core Aesthetics ── */
+    .dashboard-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(30, 60, 114, 0.15);
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        pointer-events: none;
+    }
+    .stat-card {
+        border-radius: 16px;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+    }
+    .stat-card .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .stat-card .stat-num {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+    .stat-card .stat-label {
+        font-size: 0.78rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+    .stat-card .stat-sub {
+        font-size: 0.72rem;
+        opacity: 0.7;
+    }
+
+    /* ── Calendar Styles ── */
+    .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+    }
+    .cal-header-day {
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 8px 2px;
+        color: #4b5563;
+        background: #f3f4f6;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .cal-day {
+        min-height: 68px;
+        border-radius: 12px;
+        padding: 8px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        font-size: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .cal-day:hover {
+        transform: scale(1.03);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        z-index: 2;
+    }
+    .cal-day.selected {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    .cal-day .day-num {
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+    .cal-day .day-label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .cal-day.today-ring {
+        box-shadow: 0 0 0 3px #1e3c72, 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .cal-empty {
+        min-height: 68px;
+        border-radius: 12px;
+        background: #f9fafb;
+        opacity: 0.5;
+    }
+
+    /* ── Status Color Badges ── */
+    .s-present  { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .s-absent   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .s-halfday  { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .s-leave    { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .s-holiday  { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+    .s-sunday   { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+    .s-future   { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+    /* ── Lists & Cards ── */
+    .dashboard-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        margin-bottom: 24px;
+    }
+    .dashboard-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 16px 20px;
+    }
+    .holiday-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .holiday-item:last-child {
+        border-bottom: none;
+    }
+    .holiday-date-box {
+        min-width: 50px;
+        text-align: center;
+        background: #e0e7ff;
+        color: #4f46e5;
+        border-radius: 10px;
+        padding: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .quick-link-btn {
+        border-radius: 12px;
+        border: 2px solid;
+        padding: 12px 18px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quick-link-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ── Payslip Print / Modal Style ── */
+    #slipPrintArea {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .slip-title {
+        border-bottom: 2px solid #1e3c72;
+        padding-bottom: 10px;
+    }
+</style>
+
+<div class="container-fluid py-2">
+
+    <!-- ══ HEADER SECTION ══ -->
+    <div class="dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="text-uppercase tracking-wider small fw-semibold opacity-75 mb-1">Employee Space</div>
+            <h3 class="mb-0 fw-bold">Welcome back, @empName</h3>
+            <div class="small opacity-80 mt-1">
+                <i class="fas fa-briefcase me-1"></i> @designation &nbsp;|&nbsp; 
+                <i class="fas fa-building me-1"></i> @department &nbsp;|&nbsp; 
+                <i class="fas fa-id-card me-1"></i> @empCode
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-primary px-3 py-2 fs-6 shadow-sm">
+                <i class="fas fa-calendar-day me-1"></i> @today.ToString("dd MMM yyyy")
+            </span>
+        </div>
+    </div>
+
+    <!-- ══ STATS ROW ══ -->
+    <div class="row g-3 mb-4">
+        <!-- Today Attendance Status -->
+        <div class="col-6 col-lg-3">
+            <div class="stat-card card h-100 bg-white" id="cardTodayAttendance">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon-box text-success" style="background:#d1fae5">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num text-success" id="valTodayStatus">Loading...</div>
+                        <div class="stat-label text-secondary">Today Attendance</div>
+                        <div class="stat-sub text-muted" id="valTodayPunch">--:-- | --:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- YTD Leaves Summary -->
+        <div class="col-6 col-lg-3">
+            <div class="stat-card card h-100 bg-white" onclick="openApplyLeaveModal()">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon-box text-warning" style="background:#fef3c7">
+                        <i class="fas fa-calendar-minus"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num text-warning" id="valPendingLeaves">-</div>
+                        <div class="stat-label text-secondary">Pending Leave Requests</div>
+                        <div class="stat-sub text-muted" id="valApprovedLeaves">- Approved</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last Month Salary -->
+        <div class="col-6 col-lg-3">
+            <div class="stat-card card h-100 bg-white" id="cardSalary">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon-box text-purple" style="background:#f3e8ff; color:#7c3aed">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="color:#7c3aed" id="valLastSalary">₹-</div>
+                        <div class="stat-label text-secondary">Last Paid Salary</div>
+                        <div class="stat-sub text-muted" id="valLastSalaryMonth">Month: -</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Holiday -->
+        <div class="col-6 col-lg-3">
+            <div class="stat-card card h-100 bg-white" id="cardHoliday">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon-box text-info" style="background:#e0f2fe; color:#0284c7">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="color:#0284c7" id="valNextHoliday">-</div>
+                        <div class="stat-label text-secondary">Upcoming Holiday</div>
+                        <div class="stat-sub text-muted" id="valNextHolidayDate">Date: -</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MAIN LAYOUT GRID ══ -->
+    <div class="row g-4">
+        <!-- ══ LEFT PANEL: Calendar & Leaves ══ -->
+        <div class="col-lg-8">
+            <!-- Calendar Card -->
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold fs-5 text-dark">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i>Activity Calendar
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="prevMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="fw-bold px-2 text-dark" id="calendarMonthTitle" style="min-width:110px; text-align:center">Loading...</span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Legend -->
+                    <div class="d-flex flex-wrap gap-3 mb-4 justify-content-center" style="font-size:0.75rem">
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-present" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> Present</div>
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-absent" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> Absent</div>
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-halfday" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> HalfDay</div>
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-leave" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> Leave</div>
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-holiday" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> Holiday</div>
+                        <div class="d-flex align-items-center gap-1"><span class="legend-dot s-sunday" style="width:12px; height:12px; border-radius:4px; display:inline-block"></span> Sunday</div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div class="cal-grid" id="calendarGrid">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leave Request Status Card -->
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold fs-5 text-dark">
+                        <i class="fas fa-file-signature text-warning me-2"></i>My Leave Requests
+                    </span>
+                    <button class="btn btn-warning btn-sm fw-semibold px-3 text-dark shadow-sm" onclick="openApplyLeaveModal()">
+                        <i class="fas fa-plus me-1"></i>Apply Leave
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="leaveHistoryTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Total Days</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Loading leave data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ RIGHT PANEL: Salaries, Holidays & Quick Links ══ -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header py-3">
+                    <span class="fw-bold text-dark"><i class="fas fa-bolt text-danger me-2"></i>Quick Actions</span>
+                </div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <a href="/ActivityCalendar/Index" class="quick-link-btn" style="border-color:#3b82f6; color:#3b82f6">
+                        <i class="fas fa-calendar-alt"></i> View Full Calendar
+                    </a>
+                    <a href="/Leave/Index" class="quick-link-btn" style="border-color:#eab308; color:#eab308">
+                        <i class="fas fa-user-clock"></i> Apply Leave / View History
+                    </a>
+                    <a href="/Report/Index" class="quick-link-btn" style="border-color:#ec4899; color:#ec4899">
+                        <i class="fas fa-file-invoice-dollar"></i> My Salary Reports
+                    </a>
+                    <a href="/Holiday/Index" class="quick-link-btn" style="border-color:#8b5cf6; color:#8b5cf6">
+                        <i class="fas fa-plane-departure"></i> School Holidays
+                    </a>
+                </div>
+            </div>
+
+            <!-- Salary Slip History -->
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header py-3">
+                    <span class="fw-bold text-dark"><i class="fas fa-file-invoice-dollar text-purple me-2" style="color:#7c3aed"></i>Recent Salary Slips</span>
+                </div>
+                <div class="card-body p-0" id="salaryHistoryList">
+                    <div class="text-center py-4 text-muted small">Loading salary slips...</div>
+                </div>
+            </div>
+
+            <!-- Upcoming School Holidays -->
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header py-3">
+                    <span class="fw-bold text-dark"><i class="fas fa-umbrella-beach text-info me-2"></i>Upcoming School Holidays</span>
+                </div>
+                <div class="card-body py-1" id="holidayListArea">
+                    <div class="text-center py-4 text-muted small">Loading holidays...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ APPLY LEAVE MODAL ══ -->
+<div class="modal fade" id="applyLeaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-calendar-plus me-2"></i>Apply For Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="applyLeaveForm" onsubmit="submitLeaveForm(event)">
+                <input type="hidden" name="EmployeeId" value="@employeeId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Leave Type</label>
+                        <select name="LeaveType" class="form-select" required>
+                            <option value="CasualLeave">Casual Leave</option>
+                            <option value="SickLeave">Sick Leave</option>
+                            <option value="EarnedLeave">Earned Leave</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">From Date</label>
+                            <input type="date" name="FromDate" id="leaveFromDate" class="form-control" required onchange="calcLeaveDays()" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">To Date</label>
+                            <input type="date" name="ToDate" id="leaveToDate" class="form-control" required onchange="calcLeaveDays()" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Total Days</label>
+                        <input type="text" id="leaveTotalDays" name="TotalDays" class="form-control bg-light" readonly value="0" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light" style="border-bottom-left-radius:16px; border-bottom-right-radius:16px">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning px-4" id="btnSubmitLeave">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PAYS LIP SLIP MODAL ══ -->
+<div class="modal fade" id="slipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i>Payslip View</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="slipContent">
+                <!-- Slip Content loaded here -->
+            </div>
+            <div class="modal-footer bg-light border-0" style="border-bottom-left-radius:16px; border-bottom-right-radius:16px">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printSlip()"><i class="fas fa-print me-1"></i>Print Slip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const empId = @employeeId;
+        let currentYear = @today.Year;
+        let currentMonthNum = @today.Month;
+        let applyLeaveModalObj = null;
+        let slipModalObj = null;
+        let calendarDays = [];
+
+        $(document).ready(function() {
+            loadStats();
+            loadCalendar();
+        });
+
+        // 1. Fetch & Draw stats
+        function loadStats() {
+            $.get(`/EmployeeDashboard/GetStats?employeeId=${empId}`, function(res) {
+                if (res.success) {
+                    // Attendance card
+                    $("#valTodayStatus").text(res.todayStatus);
+                    $("#valTodayPunch").text(`${res.todayEntry} - ${res.todayExit}`);
+                    
+                    // Style attendance card
+                    const attCard = $("#cardTodayAttendance .icon-box");
+                    if (res.todayStatus === "Present") {
+                        $("#valTodayStatus").attr("class", "stat-num text-success");
+                        attCard.attr("class", "icon-box text-success").css("background", "#d1fae5");
+                    } else if (res.todayStatus === "Absent") {
+                        $("#valTodayStatus").attr("class", "stat-num text-danger");
+                        attCard.attr("class", "icon-box text-danger").css("background", "#fee2e2");
+                    } else {
+                        $("#valTodayStatus").attr("class", "stat-num text-warning");
+                        attCard.attr("class", "icon-box text-warning").css("background", "#fef3c7");
+                    }
+
+                    // Leave stats
+                    $("#valPendingLeaves").text(res.pendingLeaves);
+                    $("#valApprovedLeaves").text(`${res.approvedLeaves} Approved`);
+
+                    // Salary card
+                    if (res.salaries && res.salaries.length > 0) {
+                        const latestSal = res.salaries[0];
+                        $("#valLastSalary").text(`₹${latestSal.netSalary.toLocaleString('en-IN')}`);
+                        $("#valLastSalaryMonth").text(`Month: ${latestSal.monthYear} (${latestSal.status})`);
+                    } else {
+                        $("#valLastSalary").text("₹0");
+                        $("#valLastSalaryMonth").text("No payout history");
+                    }
+
+                    // Holiday card
+                    if (res.upcomingHolidays && res.upcomingHolidays.length > 0) {
+                        const nextHoliday = res.upcomingHolidays[0];
+                        $("#valNextHoliday").text(nextHoliday.holidayName);
+                        $("#valNextHolidayDate").text(nextHoliday.date);
+                    } else {
+                        $("#valNextHoliday").text("None");
+                        $("#valNextHolidayDate").text("No upcoming holidays");
+                    }
+
+                    // Holidays list
+                    let holidayHtml = '';
+                    if (res.upcomingHolidays && res.upcomingHolidays.length > 0) {
+                        res.upcomingHolidays.forEach(h => {
+                            const dateObj = new Date(h.date);
+                            const day = dateObj.getDate();
+                            const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const month = monthsList[dateObj.getMonth()];
+                            holidayHtml += `
+                                <div class="holiday-item">
+                                    <div class="holiday-date-box">
+                                        <div class="fw-bold">${day}</div>
+                                        <div style="font-size:0.6rem">${month}</div>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small text-dark">${h.holidayName}</div>
+                                        <div class="text-muted small">${h.dayName}</div>
+                                    </div>
+                                </div>`;
+                        });
+                    } else {
+                        holidayHtml = '<div class="text-center py-3 text-muted small">No upcoming holidays</div>';
+                    }
+                    $("#holidayListArea").html(holidayHtml);
+
+                    // Leaves list
+                    let leaveHtml = '';
+                    if (res.recentLeaves && res.recentLeaves.length > 0) {
+                        res.recentLeaves.forEach(l => {
+                            let badge = 'bg-secondary';
+                            if (l.status === 'Approved') badge = 'bg-success';
+                            if (l.status === 'Pending') badge = 'bg-warning text-dark';
+                            if (l.status === 'Rejected') badge = 'bg-danger';
+
+                            leaveHtml += `
+                                <tr>
+                                    <td class="ps-3 fw-semibold text-dark">${l.leaveType}</td>
+                                    <td class="small text-muted">${l.fromDate} to ${l.toDate}</td>
+                                    <td class="fw-bold">${l.totalDays}</td>
+                                    <td><span class="badge ${badge}">${l.status}</span></td>
+                                </tr>`;
+                        });
+                    } else {
+                        leaveHtml = '<tr><td colspan="4" class="text-center py-3 text-muted">No leaves applied yet</td></tr>';
+                    }
+                    $("#leaveHistoryTable tbody").html(leaveHtml);
+
+                    // Salary history list
+                    let salaryHtml = '';
+                    if (res.salaries && res.salaries.length > 0) {
+                        res.salaries.forEach(s => {
+                            let badge = s.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark';
+                            salaryHtml += `
+                                <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                                    <div>
+                                        <div class="fw-bold text-dark">${s.monthYear}</div>
+                                        <div class="small text-muted">Net Paid: ₹${s.netSalary.toLocaleString('en-IN')}</div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge ${badge} small">${s.status}</span>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewSlip(${s.id})" title="View Payslip">
+                                            <i class="fas fa-file-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>`;
+                        });
+                    } else {
+                        salaryHtml = '<div class="text-center py-4 text-muted small">No salary logs available</div>';
+                    }
+                    $("#salaryHistoryList").html(salaryHtml);
+                }
+            });
+        }
+
+        // 2. Fetch & Render Calendar
+        function loadCalendar() {
+            const monthStr = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
+            
+            // Format Month Title
+            const monthsListLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthName = monthsListLong[currentMonthNum - 1] + ' ' + currentYear;
+            $("#calendarMonthTitle").text(monthName);
+
+            // Fetch calendar details
+            $.get(`/ActivityCalendar/GetCalendarData?employeeId=${empId}&monthYear=${monthStr}`, function(res) {
+                if (res.success) {
+                    calendarDays = res.calendarDays || [];
+                    let gridHtml = '';
+
+                    // Add headers
+                    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    weekDays.forEach(wd => {
+                        gridHtml += `<div class="cal-header-day">${wd}</div>`;
+                    });
+
+                    // Add empty cells for starting offset
+                    if (calendarDays && calendarDays.length > 0) {
+                        const firstDate = new Date(calendarDays[0].date);
+                        const startOffset = firstDate.getDay();
+                        for (let i = 0; i < startOffset; i++) {
+                            gridHtml += `<div class="cal-empty"></div>`;
+                        }
+
+                        // Add active days
+                        calendarDays.forEach(d => {
+                            let statusClass = 's-future';
+                            let displayLabel = '';
+
+                            if (d.status === 'Present') { statusClass = 's-present'; displayLabel = 'Present'; }
+                            else if (d.status === 'Absent') { statusClass = 's-absent'; displayLabel = 'Absent'; }
+                            else if (d.status === 'HalfDay') { statusClass = 's-halfday'; displayLabel = 'Half Day'; }
+                            else if (d.status === 'Leave') { statusClass = 's-leave'; displayLabel = d.leaveType || 'Leave'; }
+                            else if (d.status === 'Holiday') { statusClass = 's-holiday'; displayLabel = d.holidayName || 'Holiday'; }
+                            else if (d.status === 'Sunday') { statusClass = 's-sunday'; displayLabel = 'Sunday'; }
+                            else if (d.status === 'Future') { statusClass = 's-future'; displayLabel = ''; }
+
+                            const todayRing = d.isToday ? 'today-ring' : '';
+                            const otBadge = d.overtimeHrs > 0 ? `<span class="ot-badge" style="position: absolute; top: 4px; right: 4px; background: #e63946; color: white; font-size: 0.55rem; padding: 1px 4px; border-radius: 8px; font-weight: 700;">OT</span>` : '';
+
+                            gridHtml += `
+                                <div class="cal-day ${statusClass} ${todayRing}" onclick="selectDay('${d.date}')">
+                                    <div class="day-num">${d.day}</div>
+                                    <div class="day-label">${displayLabel}</div>
+                                    ${otBadge}
+                                </div>`;
+                        });
+                    }
+
+                    $("#calendarGrid").html(gridHtml);
+                }
+            });
+        }
+
+        // Calendar Month Nav
+        function prevMonth() {
+            currentMonthNum--;
+            if (currentMonthNum < 1) {
+                currentMonthNum = 12;
+                currentYear--;
+            }
+            loadCalendar();
+        }
+
+        // Calendar Month Nav
+        function nextMonth() {
+            currentMonthNum++;
+            if (currentMonthNum > 12) {
+                currentMonthNum = 1;
+                currentYear++;
+            }
+            loadCalendar();
+        }
+
+        // Day click selection & details display
+        function selectDay(dateStr) {
+            const d = calendarDays.find(x => x.date === dateStr);
+            if (!d) return;
+
+            // Highlight selection
+            $('.cal-day').removeClass('selected');
+            $(`.cal-day[onclick="selectDay('${dateStr}')"]`).addClass('selected');
+
+            showDayDetails(d);
+        }
+
+        function showDayDetails(d) {
+            const dateObj = new Date(d.date);
+            const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthsNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const formattedDate = daysNames[dateObj.getDay()] + ', ' + dateObj.getDate() + ' ' + monthsNames[dateObj.getMonth()] + ' ' + dateObj.getFullYear();
+            
+            let detailHtml = `
+                <div class="p-2">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Day Log Details</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr><td class="fw-bold text-secondary" style="width:40%">Date:</td><td class="text-dark">${formattedDate}</td></tr>
+                        <tr><td class="fw-bold text-secondary">Status:</td><td><span class="badge ${getStatusBadgeClass(d.status)}">${d.status}</span></td></tr>`;
+            
+            if (d.status === 'Present' || d.status === 'HalfDay') {
+                detailHtml += `
+                        <tr><td class="fw-bold text-secondary">Hours Worked:</td><td class="text-dark">${d.hoursWorked} Hrs</td></tr>
+                        <tr><td class="fw-bold text-secondary">Overtime:</td><td class="text-dark">${d.overtimeHrs} Hrs</td></tr>`;
+            } else if (d.status === 'Holiday') {
+                detailHtml += `<tr><td class="fw-bold text-secondary">Holiday Name:</td><td class="text-dark font-italic">${d.holidayName || 'Official Holiday'}</td></tr>`;
+            } else if (d.status === 'Leave') {
+                detailHtml += `<tr><td class="fw-bold text-secondary">Leave Info:</td><td class="text-dark font-italic">${d.leaveType || 'Approved Leave'}</td></tr>`;
+            }
+
+            detailHtml += `</table></div>`;
+            
+            Swal.fire({
+                html: detailHtml,
+                showConfirmButton: true,
+                confirmButtonText: 'Close',
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4'
+                },
+                buttonsStyling: false
+            });
+        }
+
+        function getStatusBadgeClass(status) {
+            if (status === 'Present') return 'bg-success';
+            if (status === 'Absent') return 'bg-danger';
+            if (status === 'HalfDay') return 'bg-warning text-dark';
+            if (status === 'Leave') return 'bg-info text-dark';
+            if (status === 'Holiday') return 'bg-purple text-white';
+            return 'bg-secondary';
+        }
+
+        // Leave Apply Form Modal triggers
+        function openApplyLeaveModal() {
+            if (!applyLeaveModalObj) {
+                applyLeaveModalObj = new bootstrap.Modal(document.getElementById('applyLeaveModal'));
+            }
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('leaveFromDate').min = todayStr;
+            document.getElementById('leaveToDate').min = todayStr;
+            document.getElementById('applyLeaveForm').reset();
+            document.getElementById('leaveTotalDays').value = "0";
+
+            applyLeaveModalObj.show();
+        }
+
+        // Calculation of leave duration
+        function calcLeaveDays() {
+            const from = $("#leaveFromDate").val();
+            const to = $("#leaveToDate").val();
+            if (!from || !to) return;
+
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+
+            if (toDate < fromDate) {
+                $("#leaveToDate").val(from);
+                $("#leaveTotalDays").val("1");
+                return;
+            }
+
+            const diffTime = Math.abs(toDate - fromDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            $("#leaveTotalDays").val(diffDays);
+        }
+
+        // Submit leave form via AJAX
+        function submitLeaveForm(e) {
+            e.preventDefault();
+            const form = document.getElementById('applyLeaveForm');
+            const data = {
+                Id: 0,
+                EmployeeId: empId,
+                LeaveType: form.LeaveType.value,
+                FromDate: form.FromDate.value,
+                ToDate: form.ToDate.value,
+                TotalDays: parseFloat(form.TotalDays.value),
+                Status: "Pending"
+            };
+
+            const btn = $("#btnSubmitLeave");
+            btn.prop('disabled', true);
+            btn.html('<i class="fas fa-spinner fa-spin me-1"></i>Submitting...');
+
+            $.ajax({
+                url: '/Leave/Save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    btn.prop('disabled', false);
+                    btn.html('Submit Application');
+                    if (res.success) {
+                        applyLeaveModalObj.hide();
+                        Swal.fire('Success', 'Leave application submitted successfully!', 'success');
+                        loadStats();
+                        loadCalendar();
+                    } else {
+                        Swal.fire('Error', res.message || 'Could not apply leave.', 'error');
+                    }
+                },
+                error: function() {
+                    btn.prop('disabled', false);
+                    btn.html('Submit Application');
+                    Swal.fire('Error', 'Server error while submitting request.', 'error');
+                }
+            });
+        }
+
+        // Payslips Viewer
+        function viewSlip(id) {
+            $.get('/Report/GetSlip', { id }, function(res) {
+                if (res.success) {
+                    const r = res.data;
+                    const slipHtml = `
+                    <div id="slipPrintArea">
+                        <div class="text-center mb-4">
+                            <h4 class="mb-1 text-primary fw-bold">SALARY SLIP</h4>
+                            <h5 class="text-dark fw-bold mb-0">MONTH: ${r.monthYear}</h5>
+                        </div>
+                        <hr class="my-3" />
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="small text-muted">EMPLOYEE NAME:</div>
+                                <div class="fw-bold text-dark">${r.employeeName || ''}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">EMPLOYEE ID / CODE:</div>
+                                <div class="fw-bold text-dark">${r.employeeCode || ''}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">DESIGNATION:</div>
+                                <div class="fw-bold text-dark">${r.designation || ''}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">DEPARTMENT:</div>
+                                <div class="fw-bold text-dark">${r.department || ''}</div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light border-0 p-3 mb-4">
+                            <h6 class="fw-bold text-dark mb-2"><i class="fas fa-calculator text-primary me-2"></i>Attendance Summary</h6>
+                            <div class="row text-center g-2 text-dark small">
+                                <div class="col-3">
+                                    <div class="text-muted">Present</div>
+                                    <div class="fw-bold">${r.presentDays || 0}</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-muted">Holidays</div>
+                                    <div class="fw-bold">${r.holidayDays || 0}</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-muted">Leaves</div>
+                                    <div class="fw-bold">${r.leaveDays || 0}</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-muted">Paid Days</div>
+                                    <div class="fw-bold">${r.payableDays || 0}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered mb-4 align-middle text-dark">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Salary Heads</th>
+                                    <th class="text-end" style="width: 35%">Amount (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Basic Salary</td>
+                                    <td class="text-end">${(r.basicSalary || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Overtime Amount (${r.overtimeHours || 0} Hrs)</td>
+                                    <td class="text-end text-success">+ ${(r.overtimeAmount || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr class="table-info fw-bold">
+                                    <td>Gross Salary</td>
+                                    <td class="text-end">${(r.grossSalary || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Deductions (LWP / Others)</td>
+                                    <td class="text-end text-danger">- ${(r.deductions || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr class="table-primary fw-bold fs-5">
+                                    <td>Net Salary Payable</td>
+                                    <td class="text-end text-primary">${(r.netSalary || 0).toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="d-flex justify-content-between text-muted small mt-4 pt-3 border-top">
+                            <div>Generated Date: ${r.generatedDate || ''}</div>
+                            <div>Payout Status: <span class="badge bg-success">${r.status || ''}</span></div>
+                        </div>
+                    </div>`;
+
+                    $("#slipContent").html(slipHtml);
+
+                    if (!slipModalObj) {
+                        slipModalObj = new bootstrap.Modal(document.getElementById('slipModal'));
+                    }
+                    slipModalObj.show();
+                } else {
+                    Swal.fire('Error', res.message || 'Slip not found!', 'error');
+                }
+            });
+        }
+
+        // Print payslip
+        function printSlip() {
+            const slipHtml = $('#slipPrintArea').html();
+            if (!slipHtml) return;
+
+            $('#dynamicPrintArea').remove();
+            $('body').append(`
+                <div id="dynamicPrintArea">
+                    <div style="padding:30px">
+                        ${slipHtml}
+                    </div>
+                </div>`);
+
+            window.print();
+            setTimeout(() => $('#dynamicPrintArea').remove(), 1500);
+        }
+    </script>
+}

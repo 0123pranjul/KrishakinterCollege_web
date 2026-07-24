@@ -1,0 +1,104 @@
+@{ ViewData["Title"] = "New Message"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-pen text-primary me-2"></i>New Message</h2>
+        <a asp-action="Inbox" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Inbox</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0">Compose Message</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Compose" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Recipient Type <span class="text-danger">*</span></label>
+                            <select name="recipientType" class="form-select" id="recipientTypeSelect"
+                                    onchange="loadRecipients()">
+                                <option value="">Select Type</option>
+                                <option value="Teacher">Teacher</option>
+                                <option value="Student">Student</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Search Recipient</label>
+                            <input type="text" id="recipientSearch" class="form-control"
+                                   placeholder="Type name to search..." oninput="searchRecipients()" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Recipient <span class="text-danger">*</span></label>
+                            <select name="recipientId" class="form-select" id="recipientSelect" required>
+                                <option value="">Select Recipient</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Subject</label>
+                            <input type="text" name="subject" class="form-control"
+                                   placeholder="Optional subject..." />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
+                            <textarea name="messageBody" class="form-control" rows="5"
+                                      placeholder="Write your message here..." required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Attachment</label>
+                            <input type="file" name="attachment" class="form-control" />
+                            <small class="text-muted">Optional. Max 2 MB.</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                            <a asp-action="Inbox" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function loadRecipients() {
+        const type = document.getElementById('recipientTypeSelect').value;
+        const sel  = document.getElementById('recipientSelect');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        if (!type) { sel.innerHTML = '<option value="">Select Recipient</option>'; return; }
+
+        const resp = await fetch(`/Store/Sale/GetPersonList?type=${type}`);
+        const data = await resp.json();
+        sel.innerHTML = '<option value="">Select Recipient</option>';
+        data.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.code})</option>`);
+    }
+
+    let searchTimer;
+    function searchRecipients() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(async () => {
+            const type   = document.getElementById('recipientTypeSelect').value;
+            const search = document.getElementById('recipientSearch').value;
+            if (!type || search.length < 2) return;
+
+            const resp = await fetch(`/Store/Sale/GetPersonList?type=${type}&search=${encodeURIComponent(search)}`);
+            const data = await resp.json();
+            const sel  = document.getElementById('recipientSelect');
+            sel.innerHTML = '<option value="">Select Recipient</option>';
+            data.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.code})</option>`);
+        }, 300);
+    }
+</script>
+}

@@ -1,0 +1,66 @@
+@model School_CRM.Models.TblTrnVehicle
+@{
+    bool isNew = Model.VehicleId == 0;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title"><i class="fas fa-bus me-2 text-primary"></i>@(isNew ? "Add Vehicle" : "Edit Vehicle")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form onsubmit="return saveVehicle(this)">
+    <input type="hidden" name="VehicleId" value="@Model.VehicleId" />
+    <div class="modal-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Registration Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="RegistrationNumber" value="@Model.RegistrationNumber" required placeholder="e.g. UP32AB1234" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Vehicle Type <span class="text-danger">*</span></label>
+                <select class="form-select" name="VehicleType" required>
+                    <option value="">-- Select --</option>
+                    @foreach (var t in new[] { "Bus", "Mini Bus", "Van", "Auto" })
+                    {
+                        <option value="@t" selected="@(Model.VehicleType == t)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Make</label>
+                <input type="text" class="form-control" name="Make" value="@Model.Make" placeholder="e.g. Tata" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Model</label>
+                <input type="text" class="form-control" name="Model" value="@Model.Model" placeholder="e.g. Starbus" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Year</label>
+                <input type="number" class="form-control" name="ManufactureYear" value="@Model.ManufactureYear" min="1990" max="2099" placeholder="e.g. 2020" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Max Capacity <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="MaxCapacity" value="@Model.MaxCapacity" required min="1" max="100" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Photo URL</label>
+                <input type="text" class="form-control" name="PhotoUrl" value="@Model.PhotoUrl" placeholder="Optional" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Insurance Expiry</label>
+                <input type="date" class="form-control" name="InsuranceExpiry" value="@(Model.InsuranceExpiry.HasValue ? Model.InsuranceExpiry.Value.ToString("yyyy-MM-dd") : "")" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Fitness Expiry</label>
+                <input type="date" class="form-control" name="FitnessExpiry" value="@(Model.FitnessExpiry.HasValue ? Model.FitnessExpiry.Value.ToString("yyyy-MM-dd") : "")" />
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Remarks</label>
+                <textarea class="form-control" name="Remarks" rows="2" placeholder="Optional remarks...">@Model.Remarks</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Vehicle</button>
+    </div>
+</form>

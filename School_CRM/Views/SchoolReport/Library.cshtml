@@ -1,0 +1,147 @@
+@model List<object>
+@{
+    ViewData["Title"] = "Library Reports";
+    string tab      = ViewBag.Tab ?? "issued";
+    DateTime from   = ViewBag.FromDate;
+    DateTime to     = ViewBag.ToDate;
+    string? userType = ViewBag.UserType;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-book-open text-secondary me-2"></i>Library Reports</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Reports</a>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        @foreach (var (t, label, icon) in new[] { ("issued","Currently Issued","fa-arrow-up"), ("overdue","Overdue","fa-clock"), ("fine","Fine Collection","fa-rupee-sign"), ("lost","Lost/Damaged","fa-times-circle") })
+        {
+            <li class="nav-item">
+                <a class="nav-link @(tab == t ? "active" : "")"
+                   asp-action="Library" asp-route-tab="@t"
+                   asp-route-fromDate="@from.ToString("yyyy-MM-dd")"
+                   asp-route-toDate="@to.ToString("yyyy-MM-dd")">
+                    <i class="fas @icon me-1"></i>@label
+                </a>
+            </li>
+        }
+    </ul>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="tab" value="@tab" />
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">From Date</label>
+                    <input type="date" name="fromDate" class="form-control" value="@from.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">To Date</label>
+                    <input type="date" name="toDate" class="form-control" value="@to.ToString("yyyy-MM-dd")" />
+                </div>
+                @if (tab == "issued" || tab == "overdue")
+                {
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">User Type</label>
+                        <select name="userType" class="form-select">
+                            <option value="">All</option>
+                            @if (userType == "Student") { <option value="Student" selected>Student</option> } else { <option value="Student">Student</option> }
+                            @if (userType == "Teacher") { <option value="Teacher" selected>Teacher</option> } else { <option value="Teacher">Teacher</option> }
+                        </select>
+                    </div>
+                }
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (tab == "fine")
+    {
+        <div class="card border-0 shadow-sm bg-warning text-dark mb-3">
+            <div class="card-body text-center py-2">
+                <strong>Total Fine Collected: ₹@ViewBag.TotalFine?.ToString("F2")</strong>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                @if (tab == "issued" || tab == "overdue")
+                {
+                    var issues = Model.Cast<School_CRM.Models.LibIssueTransaction>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Member</th><th>Type</th><th>Book</th><th>Accession No.</th><th>Issue Date</th><th>Due Date</th>@if(tab=="overdue"){<th>Overdue Days</th>}</tr>
+                        </thead>
+                        <tbody>
+                            @if (!issues.Any()) { <tr><td colspan="7" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var t in issues)
+                            {
+                                var overdueDays = tab == "overdue" ? (DateOnly.FromDateTime(DateTime.Today).ToDateTime(TimeOnly.MinValue) - t.DueDate.ToDateTime(TimeOnly.MinValue)).Days : 0;
+                                <tr class="@(tab == "overdue" && overdueDays > 30 ? "table-danger" : "")">
+                                    <td>@t.UserType #@t.UserId</td>
+                                    <td><span class="badge @(t.UserType == "Student" ? "bg-info" : "bg-secondary")">@t.UserType</span></td>
+                                    <td>@t.Copy?.Book?.Title</td>
+                                    <td><code>@t.Copy?.AccessionNo</code></td>
+                                    <td>@t.IssueDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="@(tab == "overdue" ? "text-danger fw-bold" : "")">@t.DueDate.ToString("dd/MM/yyyy")</td>
+                                    @if (tab == "overdue") { <td><span class="badge bg-danger">@overdueDays days</span></td> }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (tab == "fine")
+                {
+                    var payments = Model.Cast<School_CRM.Models.LibFinePayment>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Payment Date</th><th>User Type</th><th>User ID</th><th>Payment Mode</th><th>Receipt No.</th><th class="text-end">Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!payments.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var p in payments)
+                            {
+                                <tr>
+                                    <td>@p.PaymentDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@p.UserType</td>
+                                    <td>@p.UserId</td>
+                                    <td>@p.PaymentMode</td>
+                                    <td>@(p.ReceiptNo ?? "-")</td>
+                                    <td class="text-end fw-bold text-success">₹@p.AmountPaid.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    var lost = Model.Cast<School_CRM.Models.LibIssueTransaction>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Member</th><th>Book</th><th>Status</th><th>Fine</th><th>Fine Paid</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!lost.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var t in lost)
+                            {
+                                <tr>
+                                    <td>@t.UserType #@t.UserId</td>
+                                    <td>@t.Copy?.Book?.Title</td>
+                                    <td><span class="badge @(t.TransactionStatus == "Lost" ? "bg-danger" : "bg-warning text-dark")">@t.TransactionStatus</span></td>
+                                    <td class="text-danger fw-bold">₹@t.FineAmount.ToString("F2")</td>
+                                    <td><span class="badge @(t.IsFinePaid ? "bg-success" : "bg-danger")">@(t.IsFinePaid ? "Paid" : "Pending")</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>

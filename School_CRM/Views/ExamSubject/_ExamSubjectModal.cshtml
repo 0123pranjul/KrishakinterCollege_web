@@ -1,0 +1,47 @@
+@model School_CRM.Models.TblExamSubject
+
+<form id="esForm" asp-action="CreateOrEdit" asp-controller="ExamSubject" asp-route-id="@Model.Id" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="ExamId" class="form-label fw-semibold">Exam <span class="text-danger">*</span></label>
+            <select asp-for="ExamId" class="form-select" required>
+                <option value="">-- Select Exam --</option>
+                @foreach (var e in ViewBag.Exams) {
+                    <option value="@e.ExamId">@e.ExamName (@e.Session.SessionName)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClassId" class="form-label fw-semibold">Class <span class="text-danger">*</span></label>
+            <select asp-for="ClassId" class="form-select" asp-items="@(new SelectList(ViewBag.Classes, "ClassId", "ClassName"))" required>
+                <option value="">-- Select Class --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SubjectId" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            <select asp-for="SubjectId" class="form-select" asp-items="@(new SelectList(ViewBag.Subjects, "SubjectId", "SubjectName"))" required>
+                <option value="">-- Select Subject --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="MaxMarks" class="form-label fw-semibold">Max Marks <span class="text-danger">*</span></label>
+            <input asp-for="MaxMarks" class="form-control" type="number" step="0.01" min="1" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="PassMarks" class="form-label fw-semibold">Pass Marks <span class="text-danger">*</span></label>
+            <input asp-for="PassMarks" class="form-control" type="number" step="0.01" min="0" required />
+        </div>
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input type="checkbox" name="IsActive" value="true" class="form-check-input" @(Model.IsActive == true ? "checked" : "") />
+                <label class="form-check-label">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+    </div>
+</form>

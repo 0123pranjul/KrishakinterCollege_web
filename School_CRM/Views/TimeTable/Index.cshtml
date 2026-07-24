@@ -1,0 +1,138 @@
+@{
+    ViewData["Title"] = "Time Table";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-calendar-alt me-2 text-danger"></i>Time Table Management</h5>
+        </div>
+        <div class="card-body border-bottom">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Session</label>
+                    <select id="selSession" class="form-select form-select-sm">
+                        <option value="">-- Select Session --</option>
+                        @foreach (var s in ViewBag.Sessions) {
+                            <option value="@s.SessionId">@s.SessionName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Class</label>
+                    <select id="selClass" class="form-select form-select-sm">
+                        <option value="">-- Select Class --</option>
+                        @foreach (var c in ViewBag.Classes) {
+                            <option value="@c.ClassId">@c.ClassName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Section</label>
+                    <select id="selSection" class="form-select form-select-sm">
+                        <option value="">-- Select Section --</option>
+                        @foreach (var sec in ViewBag.Sections) {
+                            <option value="@sec.SectionId">@sec.SectionName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary btn-sm w-100" onclick="loadGrid()">
+                        <i class="fas fa-search me-1"></i> Load Timetable
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="ttGridContainer">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-calendar-alt fa-3x mb-3 opacity-25"></i>
+                    <p>Select Session, Class and Section to view the timetable</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ttModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-calendar-plus me-2"></i>Add Slot</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="ttModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        const days = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        function loadGrid() {
+            const sessionId = $('#selSession').val(), classId = $('#selClass').val(), sectionId = $('#selSection').val();
+            if (!sessionId || !classId || !sectionId) { toastr.warning('Please select Session, Class and Section'); return; }
+
+            $.get('@Url.Action("GetGrid","TimeTable")', { sessionId, classId, sectionId }, res => {
+                let html = `<div class="table-responsive"><table class="table table-bordered text-center align-middle" style="min-width:900px">
+                    <thead class="table-dark"><tr><th>Period</th><th>Time</th>`;
+                for (let d = 1; d <= 6; d++) html += `<th>${days[d]}</th>`;
+                html += `</tr></thead><tbody>`;
+
+                res.data.forEach(p => {
+                    html += `<tr>`;
+                    html += `<td class="fw-semibold">${p.periodName}</td>`;
+                    html += `<td class="text-muted small">${p.startTime} - ${p.endTime}</td>`;
+                    if (p.isBrake) {
+                        html += `<td colspan="6" class="bg-warning-subtle text-warning fw-semibold"><i class="fas fa-coffee me-1"></i>Break</td>`;
+                    } else {
+                        p.days.forEach(d => {
+                            if (d.timeTableId > 0) {
+                                html += `<td class="bg-primary-subtle">
+                                    <div class="fw-semibold small text-primary">${d.subjectName}</div>
+                                    <div class="text-muted" style="font-size:11px">${d.teacherName}</div>
+                                    <div class="mt-1">
+                                        <button class="btn btn-xs btn-outline-primary py-0 px-1 me-1" style="font-size:10px" onclick="loadSlotModal(${d.timeTableId},${sessionId},${classId},${sectionId},${p.periodId},${d.day})"><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:10px" onclick="deleteSlot(${d.timeTableId})"><i class="fas fa-times"></i></button>
+                                    </div>
+                                </td>`;
+                            } else {
+                                html += `<td class="bg-light">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadSlotModal(0,${sessionId},${classId},${sectionId},${p.periodId},${d.day})">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </td>`;
+                            }
+                        });
+                    }
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div>`;
+                $('#ttGridContainer').html(html);
+            });
+        }
+
+        function loadSlotModal(id, sessionId, classId, sectionId, periodId, dayOfWeek) {
+            $('#modalTitle').html(id === 0 ? '<i class="fas fa-plus me-2"></i>Add Slot' : '<i class="fas fa-edit me-2"></i>Edit Slot');
+            $.get('@Url.Action("CreateOrEdit","TimeTable")', { id, sessionId, classId, sectionId, periodId, dayOfWeek }, html => {
+                $('#ttModalBody').html(html);
+                $('#ttModal').modal('show');
+                $('#btnSave').off('click').on('click', () => {
+                    $.post($('#ttForm').attr('action'), $('#ttForm').serialize(), res => {
+                        if (res.success) { $('#ttModal').modal('hide'); loadGrid(); toastr.success(res.message); }
+                        else toastr.error(res.message);
+                    });
+                });
+            });
+        }
+
+        function deleteSlot(id) {
+            Swal.fire({ title: 'Remove this slot?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes!' })
+                .then(r => { if (r.isConfirmed) $.post('@Url.Action("Delete","TimeTable")', { id }, res => { if (res.success) { loadGrid(); toastr.success(res.message); } else toastr.error(res.message); }); });
+        }
+    </script>
+}

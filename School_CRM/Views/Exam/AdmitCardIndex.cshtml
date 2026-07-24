@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Generate Admit Cards";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-id-card me-2 text-danger"></i>Admit Card / Hall Ticket Generator</h5>
+            <small class="text-muted">Filter and download admit cards for a class or specific student.</small>
+        </div>
+        <div class="card-body border-bottom">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Exam <span class="text-danger">*</span></label>
+                    <select id="selExam" class="form-select" onchange="loadStudents()">
+                        <option value="">-- Select Exam --</option>
+                        @foreach (var e in ViewBag.Exams) { <option value="@e.ExamId">@e.ExamName (@e.Session.SessionName)</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Class <span class="text-danger">*</span></label>
+                    <select id="selClass" class="form-select" onchange="loadStudents()">
+                        <option value="">-- Class --</option>
+                        @foreach (var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Section</label>
+                    <select id="selSection" class="form-select" onchange="loadStudents()">
+                        <option value="">-- All Sections --</option>
+                        @foreach (var s in ViewBag.Sections) { <option value="@s.SectionId">@s.SectionName</option> }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Student (Optional)</label>
+                    <select id="selStudent" class="form-select">
+                        <option value="0">-- All Students in Class --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="generateAdmitCards()">
+                        <i class="fas fa-print me-1"></i> Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body bg-light text-center py-5">
+            <i class="fas fa-ticket-alt fa-4x text-muted mb-3 opacity-25"></i>
+            <h5 class="text-muted">Ready to Print</h5>
+            <p class="text-muted small">Select Exam and Class, then click Generate to open printable Admit Cards.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        function loadStudents() {
+            const examId = $('#selExam').val();
+            const classId = $('#selClass').val();
+            const sectionId = $('#selSection').val() || 0;
+
+            let ddl = $('#selStudent');
+            ddl.empty().append('<option value="0">-- All Students in Class --</option>');
+
+            if (!examId || !classId) return;
+
+            $.get('@Url.Action("GetStudentsForAdmitCard", "Exam")', { examId, classId, sectionId }, res => {
+                if (res.data && res.data.length > 0) {
+                    res.data.forEach(s => {
+                        ddl.append(`<option value="${s.studentId}">${s.studentName} (${s.rollNo || 'N/A'})</option>`);
+                    });
+                }
+            });
+        }
+
+        function generateAdmitCards() {
+            const examId = $('#selExam').val();
+            const classId = $('#selClass').val();
+            const sectionId = $('#selSection').val() || 0;
+            const studentId = $('#selStudent').val() || 0;
+
+            if (!examId || !classId) {
+                toastr.warning('Please select Exam and Class to generate admit cards.');
+                return;
+            }
+
+            let url = `@Url.Action("AdmitCard", "Exam")?examId=${examId}&classId=${classId}&sectionId=${sectionId}&studentId=${studentId}`;
+            window.open(url, '_blank');
+        }
+    </script>
+}

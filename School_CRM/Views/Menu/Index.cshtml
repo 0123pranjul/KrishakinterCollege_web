@@ -1,0 +1,728 @@
+﻿@{
+    ViewData["Title"] = "Menu Management";
+}
+
+<div class="container-fluid">
+
+    <!-- Stats Cards -->
+    <div class="row mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fs-4 fw-bold" id="statTotal">-</div>
+                        <div class="small">Total Menus</div>
+                    </div>
+                    <i class="fas fa-sitemap fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fs-4 fw-bold" id="statMain">-</div>
+                        <div class="small">Main Menus</div>
+                    </div>
+                    <i class="fas fa-bars fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fs-4 fw-bold" id="statSub">-</div>
+                        <div class="small">Sub Menus</div>
+                    </div>
+                    <i class="fas fa-stream fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fs-4 fw-bold" id="statInactive">-</div>
+                        <div class="small">Inactive</div>
+                    </div>
+                    <i class="fas fa-eye-slash fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card with Tabs -->
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#tabAllMenus">
+                        <i class="fas fa-list me-1"></i>All Menus
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tabMenuTree">
+                        <i class="fas fa-sitemap me-1"></i>Menu Tree
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <div class="tab-content">
+
+                <!-- ── Tab 1: All Menus Table ── -->
+                <div class="tab-pane fade show active" id="tabAllMenus">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="d-flex gap-2">
+                            <select id="filterParent" class="form-select form-select-sm" style="width:180px">
+                                <option value="">All Types</option>
+                                <option value="Main">Main Menu Only</option>
+                                <option value="Sub">Sub Menu Only</option>
+                            </select>
+                            <select id="filterActive" class="form-select form-select-sm" style="width:140px">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="openMenuModal(0)">
+                            <i class="fas fa-plus me-1"></i>Add Menu
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="menuTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Menu ID</th>
+                                    <th>Menu Name</th>
+                                    <th>Parent Menu</th>
+                                    <th>Controller</th>
+                                    <th>Action</th>
+                                    <th>URL</th>
+                                    <th class="text-center">Order</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── Tab 2: Menu Tree View ── -->
+                <div class="tab-pane fade" id="tabMenuTree">
+                    <div class="row">
+                        <!-- Left: Main Menus (Vertical) -->
+                        <div class="col-md-3">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <i class="fas fa-bars me-1"></i>
+                                    <strong>Main Menus</strong>
+                                    <button class="btn btn-sm btn-light float-end py-0 px-2"
+                                            onclick="openMenuModal(0)" title="Add Main Menu">
+                                        <i class="fas fa-plus" style="font-size:.75rem"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body p-0" id="mainMenuList">
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border spinner-border-sm text-primary"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Sub Menus (Horizontal Pills + Table) -->
+                        <div class="col-md-9">
+                            <!-- Sub Menu Pills -->
+                            <div class="card mb-3">
+                                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-angle-double-right me-1 text-primary"></i>
+                                        <strong id="subMenuTitle">Sub Menus</strong>
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            id="btnAddSub" style="display:none"
+                                            onclick="openMenuModalWithParent()">
+                                        <i class="fas fa-plus me-1"></i>Add Sub Menu
+                                    </button>
+                                </div>
+                                <div class="card-body py-2">
+                                    <div id="subMenuPills">
+                                        <span class="text-muted small fst-italic">
+                                            ← Select a main menu to view sub-menus
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sub Menu Detail Table -->
+                            <div class="card" id="subTableCard" style="display:none">
+                                <div class="card-header py-2 bg-light">
+                                    <i class="fas fa-table me-1 text-primary"></i>
+                                    <strong id="subTableTitle">Sub Menu Details</strong>
+                                </div>
+                                <div class="table-responsive">
+                                    <table id="subMenuTable"
+                                           class="table table-bordered table-sm table-hover mb-0">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Name</th>
+                                                <th>Controller / Action</th>
+                                                <th>URL</th>
+                                                <th class="text-center">Order</th>
+                                                <th class="text-center">Status</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="subMenuTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Add / Edit Menu Modal ══ -->
+<div class="modal fade" id="menuModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="menuModalTitle">
+                    <i class="fas fa-plus me-1"></i>Add Menu
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="menuId">
+
+                <div class="row">
+                    <!-- Menu Name -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">
+                            Menu Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="menuName" class="form-control"
+                               placeholder="e.g. HR Management">
+                    </div>
+
+                    <!-- Parent Menu -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">
+                            Parent Menu
+                            <small class="text-muted fw-normal">(leave blank for main menu)</small>
+                        </label>
+                        <select id="parentId" class="form-select">
+                            <option value="">-- None (Main Menu) --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Controller -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Controller Name</label>
+                        <input type="text" id="controllerName" class="form-control"
+                               placeholder="e.g. Employee">
+                    </div>
+                    <!-- Action -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Action Name</label>
+                        <input type="text" id="actionName" class="form-control"
+                               placeholder="e.g. Index">
+                    </div>
+                    <!-- URL -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">URL</label>
+                        <div class="input-group">
+                            <input type="text" id="menuUrl" class="form-control"
+                                   placeholder="/Controller/Action">
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    onclick="autoFillUrl()" title="Auto-fill from Controller/Action">
+                                <i class="fas fa-magic"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Icon -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Icon Class</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i id="iconPreview" class="fas fa-circle"></i>
+                            </span>
+                            <input type="text" id="menuIcon" class="form-control"
+                                   placeholder="e.g. fas fa-users-cog"
+                                   oninput="updateIconPreview(this.value)">
+                        </div>
+                    </div>
+                    <!-- Display Order -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">
+                            Display Order <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" id="displayOrder" class="form-control"
+                               value="1" min="1">
+                    </div>
+                    <!-- Is Active -->
+                    <div class="col-md-4 mb-3 d-flex flex-column justify-content-end pb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox"
+                                   id="isActive" checked
+                                   style="width:42px;height:22px;cursor:pointer">
+                            <label class="form-check-label fw-bold ms-2 pt-1" for="isActive">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URL auto-fill hint -->
+                <div class="alert alert-info py-2 mb-0" id="urlHint" style="display:none">
+                    <i class="fas fa-info-circle me-1"></i>
+                    URL auto-filled from Controller + Action.
+                    You can edit it manually if needed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveMenu()">
+                    <i class="fas fa-save me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let menuTable;
+        let allMenus = [];
+        let activeParent = null;   // currently selected main menu in Tree tab
+
+        $(document).ready(function() {
+        loadMenuTable();
+
+        // Tree tab — lazy load on first open
+        $('a[href="#tabMenuTree"]').on('shown.bs.tab', function() {
+        loadMenuTree();
+        });
+
+        // Filter dropdowns
+        $('#filterParent').on('change', applyFilters);
+        $('#filterActive').on('change', applyFilters);
+
+        // Auto-fill URL when Controller / Action typed
+        $('#controllerName, #actionName').on('input', function() {
+        const c = $('#controllerName').val().trim();
+        const a = $('#actionName').val().trim();
+        if (c && a) {
+        $('#menuUrl').val('/' + c + '/' + a);
+        $('#urlHint').show();
+        }
+        });
+        });
+
+        // ── Apply custom filters ─────────────────────────────
+        function applyFilters() {
+        const typeFilter = $('#filterParent').val();
+        const statusFilter = $('#filterActive').val();
+
+        $.fn.dataTable.ext.search = [];
+
+        $.fn.dataTable.ext.search.push(function(settings, data) {
+        if (settings.nTable.id !== 'menuTable') return true;
+
+        // data[2] = Parent Menu column (blank = main menu)
+        const isMain = data[2].trim() === '' || data[2] === '—';
+        if (typeFilter === 'Main' && !isMain) return false;
+        if (typeFilter === 'Sub' && isMain) return false;
+
+        // data[7] = Status column text
+        const status = data[7].includes('Active') && !data[7].includes('Inactive')
+        ? 'Active' : 'Inactive';
+        if (statusFilter && status !== statusFilter) return false;
+
+        return true;
+        });
+
+        menuTable.draw();
+        }
+
+        // ── Main Menus Table ─────────────────────────────────
+        function loadMenuTable() {
+        if ($.fn.DataTable.isDataTable('#menuTable'))
+        $('#menuTable').DataTable().destroy();
+
+        menuTable = $('#menuTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "Menu")',
+        dataSrc: function(d) {
+        allMenus = d.data || d || [];
+        return allMenus;
+        }
+        },
+        columns: [
+        {
+        data: 'menuId', width: '80px',
+        render: d => `<span class="badge bg-secondary">${d}</span>`
+        },
+        {
+        data: null,
+        render: function(d) {
+        const icon = d.icon
+        ? `<i class="${d.icon} me-1 text-primary"></i>` : '';
+        return `${icon}<strong>${d.menuName}</strong>`;
+        }
+        },
+        {
+        data: null, width: '14%',
+        render: function(d) {
+        if (!d.parentId) return '<span class="text-muted">—</span>';
+        const p = allMenus.find(m => m.menuId === d.parentId);
+        return p
+        ? `<span class="badge bg-light text-dark border">${p.menuName}</span>`
+        : `<span class="badge bg-light text-dark border">#${d.parentId}</span>`;
+        }
+        },
+        {
+        data: 'controllerName', width: '11%',
+        render: d => d ? `<code>${d}</code>` : '<span class="text-muted">—</span>'
+        },
+        {
+        data: 'actionName', width: '11%',
+        render: d => d ? `<code>${d}</code>` : '<span class="text-muted">—</span>'
+        },
+        {
+        data: 'url', width: '16%',
+        render: d => d
+        ? `<small class="text-muted">${d}</small>`
+        : '<span class="text-muted">—</span>'
+        },
+        {
+        data: 'displayOrder', width: '60px', className: 'text-center',
+        render: d => `<span class="badge bg-info text-dark">${d}</span>`
+        },
+        {
+        data: 'isActive', width: '80px', className: 'text-center',
+        render: d => d
+        ? `<span class="badge bg-success">Active</span>`
+        : `<span class="badge bg-danger">Inactive</span>`
+        },
+        {
+        data: null, orderable: false, className: 'text-center', width: '90px',
+        render: (d, t, row) =>
+        `<button class="btn btn-info btn-sm me-1"
+        onclick="openMenuModal(${row.menuId})"
+        title="Edit">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-danger btn-sm"
+        onclick="deleteMenu(${row.menuId}, '${escHtml(row.menuName)}')"
+        title="Delete">
+        <i class="fas fa-trash"></i>
+        </button>`
+        }
+        ],
+        order: [[0, 'asc']],
+        pageLength: 25,
+        language: {
+        emptyTable: "No menu records found",
+        search: "Search:"
+        },
+        drawCallback: function() {
+        const data = this.api().data().toArray();
+        $('#statTotal').text(data.length);
+        $('#statMain').text(data.filter(r => !r.parentId).length);
+        $('#statSub').text(data.filter(r => r.parentId).length);
+        $('#statInactive').text(data.filter(r => !r.isActive).length);
+        }
+        });
+        }
+
+        // ── Menu Tree (Tab 2) ────────────────────────────────
+        function loadMenuTree() {
+        $.get('@Url.Action("GetAll", "Menu")', function(res) {
+        allMenus = res.data || res || [];
+        renderMainMenuList();
+        });
+        }
+
+        function renderMainMenuList() {
+        const mains = allMenus
+        .filter(m => !m.parentId)
+        .sort((a, b) => a.displayOrder - b.displayOrder);
+
+        const container = $('#mainMenuList').empty();
+
+        if (!mains.length) {
+        container.html('<div class="text-center text-muted py-3 small">No main menus</div>');
+        return;
+        }
+
+        mains.forEach(m => {
+        const subCount = allMenus.filter(x => x.parentId === m.menuId).length;
+        const isActive = activeParent === m.menuId;
+        const item = $(`
+        <div class="d-flex align-items-center px-3 py-2 border-bottom
+        ${isActive ? 'bg-primary bg-opacity-10 fw-bold' : ''}
+        menu-tree-item"
+        style="cursor:pointer;border-left:3px solid ${isActive ? '#0d6efd' : 'transparent'} !important;
+        transition:all .15s">
+        <i class="${m.icon || 'fas fa-circle'} me-2 text-primary" style="width:16px"></i>
+        <span class="flex-grow-1" style="font-size:.9rem">${escHtml(m.menuName)}</span>
+        <span class="badge bg-secondary ms-1">${subCount}</span>
+        </div>`);
+        item.on('click', () => selectMainMenu(m.menuId, m.menuName));
+        container.append(item);
+        });
+        }
+
+        function selectMainMenu(parentId, parentName) {
+        activeParent = parentId;
+        renderMainMenuList();   // refresh active highlight
+
+        const children = allMenus
+        .filter(m => m.parentId === parentId)
+        .sort((a, b) => a.displayOrder - b.displayOrder);
+
+        // Pills
+        $('#subMenuTitle').text(`${parentName}  →  Sub Menus`);
+        $('#btnAddSub').show().data('parentId', parentId);
+
+        const pills = $('#subMenuPills').empty();
+        if (!children.length) {
+        pills.html('<span class="text-muted small fst-italic">No sub-menus found</span>');
+        $('#subTableCard').hide();
+        return;
+        }
+
+        children.forEach(c => {
+        const pill = $(`
+        <span class="badge rounded-pill me-2 mb-1 py-2 px-3"
+        style="background:#e8f0fe;color:#0d6efd;border:1.5px solid #c7d7f9;
+        cursor:pointer;font-size:.82rem;font-weight:500">
+        <i class="${c.icon || 'fas fa-circle'} me-1"></i>
+        ${escHtml(c.menuName)}
+        <span class="ms-1 opacity-75">#${c.displayOrder}</span>
+        </span>`);
+        pill.on('click', () => openMenuModal(c.menuId));
+        pills.append(pill);
+        });
+
+        // Sub table
+        $('#subTableTitle').text(`${parentName} — Sub Menu Details`);
+        const tbody = $('#subMenuTableBody').empty();
+        children.forEach(c => {
+        tbody.append(`
+        <tr>
+        <td><span class="badge bg-secondary">${c.menuId}</span></td>
+        <td>
+        <i class="${c.icon || 'fas fa-circle'} me-1 text-primary"></i>
+        <strong>${escHtml(c.menuName)}</strong>
+        </td>
+        <td>
+        ${c.controllerName ? `<code>${c.controllerName}</code>` : ''}
+        ${c.controllerName && c.actionName ? ' / ' : ''}
+        ${c.actionName ? `<code>${c.actionName}</code>` : ''}
+        ${!c.controllerName && !c.actionName ? '<span class="text-muted">—</span>' : ''}
+        </td>
+        <td><small class="text-muted">${c.url || '—'}</small></td>
+        <td class="text-center">
+        <span class="badge bg-info text-dark">${c.displayOrder}</span>
+        </td>
+        <td class="text-center">
+        <span class="badge ${c.isActive ? 'bg-success' : 'bg-danger'}">
+        ${c.isActive ? 'Active' : 'Inactive'}
+        </span>
+        </td>
+        <td class="text-center">
+        <button class="btn btn-info btn-sm me-1"
+        onclick="openMenuModal(${c.menuId})" title="Edit">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-danger btn-sm"
+        onclick="deleteMenu(${c.menuId}, '${escHtml(c.menuName)}')"
+        title="Delete">
+        <i class="fas fa-trash"></i>
+        </button>
+        </td>
+        </tr>`);
+        });
+        $('#subTableCard').show();
+        }
+
+        // Add sub-menu with pre-selected parent
+        function openMenuModalWithParent() {
+        const pid = $('#btnAddSub').data('parentId');
+        openMenuModal(0, pid);
+        }
+
+        // ── Open Add / Edit Modal ────────────────────────────
+        function openMenuModal(id, presetParentId) {
+        // Reset all fields
+        $('#menuId').val(0);
+        $('#menuName').val('');
+        $('#controllerName').val('');
+        $('#actionName').val('');
+        $('#menuUrl').val('');
+        $('#menuIcon').val('');
+        $('#displayOrder').val(1);
+        $('#isActive').prop('checked', true);
+        $('#urlHint').hide();
+        $('#iconPreview').attr('class', 'fas fa-circle');
+
+        // Populate parent dropdown from allMenus
+        const $parent = $('#parentId').empty()
+        .append('<option value="">-- None (Main Menu) --</option>');
+        allMenus
+        .filter(m => !m.parentId)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .forEach(m => {
+        $parent.append(
+        `<option value="${m.menuId}">${escHtml(m.menuName)}</option>`
+        );
+        });
+
+        if (presetParentId) $('#parentId').val(presetParentId);
+
+        $('#menuModalTitle').html(
+        `<i class="fas fa-${id ? 'edit' : 'plus'} me-1"></i>${id ? 'Edit' : 'Add'} Menu`
+        );
+
+        if (id > 0) {
+        $.get('@Url.Action("GetById", "Menu")/' + id, function(data) {
+        if (data.error) { toastr.error('Menu not found!'); return; }
+        $('#menuId').val(data.menuId);
+        $('#menuName').val(data.menuName);
+        $('#controllerName').val(data.controllerName || '');
+        $('#actionName').val(data.actionName || '');
+        $('#menuUrl').val(data.url || '');
+        $('#menuIcon').val(data.icon || '');
+        $('#displayOrder').val(data.displayOrder);
+        $('#isActive').prop('checked', data.isActive);
+        $('#parentId').val(data.parentId || '');
+        updateIconPreview(data.icon);
+        });
+        }
+
+        new bootstrap.Modal(document.getElementById('menuModal')).show();
+        }
+
+        // ── Icon preview ─────────────────────────────────────
+        function updateIconPreview(cls) {
+        $('#iconPreview').attr('class', cls || 'fas fa-circle');
+        }
+
+        // ── Manual auto-fill URL button ──────────────────────
+        function autoFillUrl() {
+        const c = $('#controllerName').val().trim();
+        const a = $('#actionName').val().trim();
+        if (!c || !a) { toastr.warning('Enter Controller and Action first!'); return; }
+        $('#menuUrl').val('/' + c + '/' + a);
+        $('#urlHint').show();
+        }
+
+        // ── Save ─────────────────────────────────────────────
+        function saveMenu() {
+        const name = $('#menuName').val().trim();
+        const order = parseInt($('#displayOrder').val()) || 0;
+
+        if (!name) { toastr.warning('Menu name is required!'); return; }
+        if (order < 1) { toastr.warning('Display order must be ≥ 1!'); return; }
+
+        const payload = {
+        menuId: parseInt($('#menuId').val()) || 0,
+        parentId: parseInt($('#parentId').val()) || null,
+        menuName: name,
+        controllerName: $('#controllerName').val().trim() || null,
+        actionName: $('#actionName').val().trim() || null,
+        url: $('#menuUrl').val().trim() || null,
+        icon: $('#menuIcon').val().trim() || null,
+        displayOrder: order,
+        isActive: $('#isActive').is(':checked')
+        };
+
+        $.ajax({
+        url: '@Url.Action("Save", "Menu")',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function(res) {
+        if (res.success) {
+        toastr.success(res.message || 'Saved successfully!');
+        bootstrap.Modal.getInstance(
+        document.getElementById('menuModal')).hide();
+        menuTable.ajax.reload();
+        // Refresh tree if visible
+        if ($('#tabMenuTree').hasClass('active')) loadMenuTree();
+        } else {
+        toastr.error(res.message || 'Save failed!');
+        }
+        },
+        error: function() { toastr.error('Error saving menu!'); }
+        });
+        }
+
+        // ── Delete ───────────────────────────────────────────
+        function deleteMenu(id, name) {
+        Swal.fire({
+        title: 'Delete Menu?',
+        html: `Delete <strong>${name}</strong>?<br>
+        <small class="text-muted">Sub-menus must be deleted first.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, Delete!'
+        }).then(res => {
+        if (!res.isConfirmed) return;
+        $.ajax({
+        url: '@Url.Action("Delete", "Menu")/' + id,
+        type: 'POST',
+        success: function(r) {
+        if (r.success) {
+        toastr.success(r.message || 'Deleted!');
+        menuTable.ajax.reload();
+        if ($('#tabMenuTree').hasClass('active')) loadMenuTree();
+        } else {
+        toastr.error(r.message || 'Delete failed!');
+        }
+        },
+        error: function() { toastr.error('Error deleting!'); }
+        });
+        });
+        }
+
+        // ── Util ─────────────────────────────────────────────
+        function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+        }
+    </script>
+}

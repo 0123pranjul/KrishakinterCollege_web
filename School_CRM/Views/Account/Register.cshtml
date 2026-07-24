@@ -1,0 +1,498 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Register New User";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .profile-card {
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background: #fbfbfb;
+    }
+    .profile-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        background: #ffffff;
+        border-color: rgba(0, 123, 255, 0.25);
+    }
+    .form-switch .form-check-input {
+        width: 2.8em;
+        height: 1.4em;
+        cursor: pointer;
+    }
+    .sliding-section {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+        opacity: 0;
+    }
+    .sliding-section.show {
+        max-height: 1000px;
+        opacity: 1;
+        transition: max-height 0.5s ease-in, opacity 0.4s ease-in;
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: none;
+    }
+    .form-control, .form-select {
+        border-left: none;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #ced4da;
+        box-shadow: none;
+    }
+    .input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border-radius: 0.375rem;
+    }
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control,
+    .input-group:focus-within .form-select {
+        border-color: #86b7fe;
+    }
+</style>
+
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-user-plus me-2 text-primary"></i>Register New User</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+                <li class="breadcrumb-item"><a asp-action="UserList">User Management</a></li>
+                <li class="breadcrumb-item active">Register</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="UserList" class="btn btn-outline-secondary">
+        <i class="fas fa-list me-1"></i> View All Users
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-md-11">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i>Create User Account</h5>
+                <small class="opacity-75">Fill in the details below to create a new user and optional linked profiles</small>
+            </div>
+            <div class="card-body p-4">
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Please fix the errors below:</strong>
+                        <div asp-validation-summary="All" class="mt-1 small"></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="Register" method="post" id="registerForm">
+                    @Html.AntiForgeryToken()
+
+                    @* -- Section 1: Account Info -- *@
+                    <h6 class="text-muted fw-semibold mb-3 border-bottom pb-2">
+                        <i class="fas fa-id-card me-1"></i> Account Information
+                    </h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Username" class="form-label fw-semibold">
+                                Username <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input asp-for="Username" class="form-control" placeholder="e.g. john.doe" autocomplete="off" id="usernameField" />
+                            </div>
+                            <span asp-validation-for="Username" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" placeholder="user@school.com" autocomplete="off" id="emailField" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label fw-semibold">
+                                Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input asp-for="Password" class="form-control" placeholder="Min. 6 characters" id="passwordField" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('passwordField', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold">
+                                Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Re-enter password" id="confirmPasswordField" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPasswordField', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    @* -- Section 2: Role & Link -- *@
+                    <h6 class="text-muted fw-semibold mb-3 border-bottom pb-2">
+                        <i class="fas fa-user-tag me-1"></i> Role & Existing Profile Link
+                    </h6>
+
+                    <div class="mb-3">
+                        <label asp-for="RoleId" class="form-label fw-semibold">
+                            Assign Role <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                            <select asp-for="RoleId" class="form-select" id="roleSelect"
+                                    asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
+                                <option value="">-- Select Role --</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="RoleId" class="text-danger small"></span>
+                    </div>
+
+                    @* Dynamic linked entity section *@
+                    <div id="linkedEntitySection" class="mb-4" style="display:none;">
+                        <label class="form-label fw-semibold" id="linkedEntityLabel">
+                            Link to <span id="linkedEntityType">Entity</span> <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text" id="linkedEntityIcon"><i class="fas fa-link"></i></span>
+                            <select class="form-select" id="linkedEntitySelect" name="_linkedEntitySelect">
+                                <option value="">-- Loading... --</option>
+                            </select>
+                        </div>
+                        <div class="form-text text-muted" id="linkedEntityHint"></div>
+
+                        @* Hidden fields that actually get submitted *@
+                        <input type="hidden" asp-for="StudentId" id="hiddenStudentId" />
+                        <input type="hidden" asp-for="TeacherId" id="hiddenTeacherId" />
+                        <input type="hidden" asp-for="EmpId"     id="hiddenEmpId" />
+                    </div>
+
+                    @* Info box for SuperAdmin / roles with no entity *@
+                    <div id="noEntityInfo" class="alert alert-info d-flex align-items-center mb-4" style="display:none !important;">
+                        <i class="fas fa-info-circle me-2 fs-5"></i>
+                        <div>This role does not require linking to a Student, Teacher, or Employee record.</div>
+                    </div>
+
+
+                    @* -- Section 3: Unified Profile Creation -- *@
+                    <h6 class="text-muted fw-semibold mb-3 border-bottom pb-2 mt-4">
+                        <i class="fas fa-folder-plus me-1"></i> Multi-Table Registration (Create Profiles Inline)
+                    </h6>
+                    <p class="text-muted small mb-3">You can create corresponding profiles in other tables at the same time. Toggle them below if needed.</p>
+
+                    <div class="row g-4 mb-4">
+                        <!-- Teacher Profile Card -->
+                        <div class="col-md-6">
+                            <div class="profile-card p-3 h-100">
+                                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
+                                    <label class="form-check-label fw-bold text-primary" for="toggleCreateTeacher">
+                                        <i class="fas fa-chalkboard-teacher me-2"></i> Create Teacher Profile
+                                    </label>
+                                    <input type="checkbox" asp-for="CreateTeacher" class="form-check-input" id="toggleCreateTeacher" role="switch" />
+                                </div>
+                                
+                                <div id="teacherFieldsSection" class="sliding-section">
+                                    <div class="pt-2 border-top">
+                                        <div class="mb-3">
+                                            <label asp-for="TeacherName" class="form-label fw-semibold">Teacher Name <span class="text-danger">*</span></label>
+                                            <input asp-for="TeacherName" class="form-control" placeholder="Full Name" id="teacherNameField" />
+                                            <span asp-validation-for="TeacherName" class="text-danger small"></span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label asp-for="TeacherMobileNo" class="form-label fw-semibold">Mobile No</label>
+                                            <input asp-for="TeacherMobileNo" class="form-control" placeholder="Mobile Number" maxlength="15" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label asp-for="TeacherEmail" class="form-label fw-semibold">Email Address</label>
+                                            <input asp-for="TeacherEmail" class="form-control" type="email" placeholder="email@school.com" id="teacherEmailField" />
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="TeacherDesignation" class="form-label fw-semibold">Designation</label>
+                                                <select asp-for="TeacherDesignation" class="form-select">
+                                                    <option value="">-- Select --</option>
+                                                    <option>Principal</option>
+                                                    <option>Vice Principal</option>
+                                                    <option>PGT</option>
+                                                    <option>TGT</option>
+                                                    <option>PRT</option>
+                                                    <option>Lecturer</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="TeacherJoiningDate" class="form-label fw-semibold">Joining Date</label>
+                                                <input asp-for="TeacherJoiningDate" class="form-control" type="date" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Profile Card -->
+                        <div class="col-md-6">
+                            <div class="profile-card p-3 h-100">
+                                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
+                                    <label class="form-check-label fw-bold text-success" for="toggleCreateEmployee">
+                                        <i class="fas fa-briefcase me-2"></i> Create Employee Profile
+                                    </label>
+                                    <input type="checkbox" asp-for="CreateEmployee" class="form-check-input" id="toggleCreateEmployee" role="switch" />
+                                </div>
+
+                                <div id="employeeFieldsSection" class="sliding-section">
+                                    <div class="pt-2 border-top">
+                                        <div class="row g-2">
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="EmployeeCode" class="form-label fw-semibold">Employee Code</label>
+                                                <input asp-for="EmployeeCode" class="form-control" placeholder="e.g. EMP001" />
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="EmployeeName" class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                                                <input asp-for="EmployeeName" class="form-control" placeholder="Full Name" id="employeeNameField" />
+                                                <span asp-validation-for="EmployeeName" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="EmployeeDesignation" class="form-label fw-semibold">Designation</label>
+                                                <input asp-for="EmployeeDesignation" class="form-control" placeholder="e.g. Accountant" />
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label asp-for="EmployeeDepartment" class="form-label fw-semibold">Department</label>
+                                                <input asp-for="EmployeeDepartment" class="form-control" placeholder="e.g. Finance" />
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label asp-for="EmployeeBasicSalary" class="form-label fw-semibold">Basic Salary (₹)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">₹</span>
+                                                <input asp-for="EmployeeBasicSalary" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <a asp-action="UserList" class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                            <i class="fas fa-user-plus me-1"></i> Create User
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const roleSelect = document.getElementById('roleSelect');
+        const linkedSection = document.getElementById('linkedEntitySection');
+        const noEntityInfo = document.getElementById('noEntityInfo');
+        const linkedEntitySelect = document.getElementById('linkedEntitySelect');
+        const linkedEntityLabel = document.getElementById('linkedEntityType');
+        const linkedEntityIcon = document.getElementById('linkedEntityIcon');
+        const linkedEntityHint = document.getElementById('linkedEntityHint');
+
+        const hiddenStudent = document.getElementById('hiddenStudentId');
+        const hiddenTeacher = document.getElementById('hiddenTeacherId');
+        const hiddenEmp     = document.getElementById('hiddenEmpId');
+
+        const toggleCreateTeacher = document.getElementById('toggleCreateTeacher');
+        const teacherFieldsSection = document.getElementById('teacherFieldsSection');
+        const toggleCreateEmployee = document.getElementById('toggleCreateEmployee');
+        const employeeFieldsSection = document.getElementById('employeeFieldsSection');
+
+        const usernameField = document.getElementById('usernameField');
+        const emailField = document.getElementById('emailField');
+        const teacherNameField = document.getElementById('teacherNameField');
+        const teacherEmailField = document.getElementById('teacherEmailField');
+        const employeeNameField = document.getElementById('employeeNameField');
+
+        // Roles that need entity linking
+        const entityRoles = {
+            'student':   { type: 'Student',  icon: 'fas fa-user-graduate', hint: 'Select the student this account belongs to' },
+            'teacher':   { type: 'Teacher',  icon: 'fas fa-chalkboard-teacher', hint: 'Select the teacher this account belongs to' },
+            'principal': { type: 'Teacher',  icon: 'fas fa-chalkboard-teacher', hint: 'Select the teacher/principal record to link' },
+            'employee':  { type: 'Employee', icon: 'fas fa-briefcase', hint: 'Select the employee this account belongs to' },
+            'admin':     { type: 'Employee', icon: 'fas fa-briefcase', hint: 'Select the employee record for this admin' },
+        };
+
+        // Populate fields based on Username / Email inputs dynamically if they create new profile
+        usernameField.addEventListener('input', function() {
+            if (toggleCreateTeacher.checked && !teacherNameField.value) {
+                teacherNameField.value = this.value;
+            }
+            if (toggleCreateEmployee.checked && !employeeNameField.value) {
+                employeeNameField.value = this.value;
+            }
+        });
+
+        emailField.addEventListener('input', function() {
+            if (toggleCreateTeacher.checked && !teacherEmailField.value) {
+                teacherEmailField.value = this.value;
+            }
+        });
+
+        roleSelect.addEventListener('change', function () {
+            handleRoleAndLinkingVisibility();
+        });
+
+        function handleRoleAndLinkingVisibility() {
+            const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text?.toLowerCase() ?? '';
+            clearHiddenFields();
+
+            if (!roleSelect.value) {
+                linkedSection.style.display = 'none';
+                noEntityInfo.style.display  = 'none';
+                return;
+            }
+
+            const config = entityRoles[selectedText];
+            if (config) {
+                // If creating teacher new is selected and role is teacher, hide linking dropdown
+                if ((selectedText === 'teacher' || selectedText === 'principal') && toggleCreateTeacher.checked) {
+                    linkedSection.style.display = 'none';
+                    noEntityInfo.style.display  = 'none';
+                    return;
+                }
+                // If creating employee new is selected and role is employee/admin, hide linking dropdown
+                if ((selectedText === 'employee' || selectedText === 'admin') && toggleCreateEmployee.checked) {
+                    linkedSection.style.display = 'none';
+                    noEntityInfo.style.display  = 'none';
+                    return;
+                }
+
+                linkedSection.style.display = 'block';
+                noEntityInfo.style.display  = 'none';
+                linkedEntityLabel.textContent = config.type;
+                linkedEntityIcon.innerHTML = `<i class="${config.icon}"></i>`;
+                linkedEntityHint.textContent = config.hint;
+                loadEntities(selectedText);
+            } else {
+                linkedSection.style.display = 'none';
+                noEntityInfo.style.display  = 'flex';
+            }
+        }
+
+        // Setup switch toggles
+        toggleCreateTeacher.addEventListener('change', function() {
+            if (this.checked) {
+                teacherFieldsSection.classList.add('show');
+                // Default Name/Email from Account details if not filled
+                if (!teacherNameField.value) teacherNameField.value = usernameField.value;
+                if (!teacherEmailField.value) teacherEmailField.value = emailField.value;
+            } else {
+                teacherFieldsSection.classList.remove('show');
+            }
+            handleRoleAndLinkingVisibility();
+        });
+
+        toggleCreateEmployee.addEventListener('change', function() {
+            if (this.checked) {
+                employeeFieldsSection.classList.add('show');
+                if (!employeeNameField.value) employeeNameField.value = usernameField.value;
+            } else {
+                employeeFieldsSection.classList.remove('show');
+            }
+            handleRoleAndLinkingVisibility();
+        });
+
+        // Initialize state on page load (e.g. on validation failures)
+        window.addEventListener('DOMContentLoaded', () => {
+            if (toggleCreateTeacher.checked) {
+                teacherFieldsSection.classList.add('show');
+            }
+            if (toggleCreateEmployee.checked) {
+                employeeFieldsSection.classList.add('show');
+            }
+            handleRoleAndLinkingVisibility();
+        });
+
+        linkedEntitySelect.addEventListener('change', function () {
+            clearHiddenFields();
+            const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text?.toLowerCase() ?? '';
+            const val = parseInt(this.value) || null;
+
+            if (selectedText === 'student') {
+                hiddenStudent.value = val ?? '';
+            } else if (selectedText === 'teacher' || selectedText === 'principal') {
+                hiddenTeacher.value = val ?? '';
+            } else if (selectedText === 'employee' || selectedText === 'admin') {
+                hiddenEmp.value = val ?? '';
+            }
+        });
+
+        function clearHiddenFields() {
+            hiddenStudent.value = '';
+            hiddenTeacher.value = '';
+            hiddenEmp.value     = '';
+        }
+
+        async function loadEntities(roleName) {
+            linkedEntitySelect.innerHTML = '<option value="">-- Loading... --</option>';
+            linkedEntitySelect.disabled = true;
+
+            try {
+                const res = await fetch(`/Account/GetLinkedEntities?roleName=${encodeURIComponent(roleName)}`);
+                const data = await res.json();
+
+                linkedEntitySelect.innerHTML = '<option value="">-- Select --</option>';
+                if (data.length === 0) {
+                    linkedEntitySelect.innerHTML = '<option value="">No unlinked records found</option>';
+                } else {
+                    data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = item.name;
+                        linkedEntitySelect.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                linkedEntitySelect.innerHTML = '<option value="">Error loading data</option>';
+            } finally {
+                linkedEntitySelect.disabled = false;
+            }
+        }
+
+        function togglePassword(fieldId, btn) {
+            const field = document.getElementById(fieldId);
+            const icon  = btn.querySelector('i');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+}

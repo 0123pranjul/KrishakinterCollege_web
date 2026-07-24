@@ -1,0 +1,320 @@
+﻿@{
+    ViewData["Title"] = "Student Fee Override";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-hand-holding-usd me-2 text-primary"></i>Student Fee Override
+                    </h3>
+                    <button class="btn btn-sm btn-primary" onclick="loadOverrideModal(0)">
+                        <i class="fas fa-plus"></i> Add Override
+                    </button>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="card-body border-bottom py-2">
+                    <div class="alert alert-warning py-2 mb-0 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Fee Override</strong> — Jab kisi student ki fee baaki class se alag ho (concession, scholarship, special case) tab yahan custom amount set karo. Yeh amount FeeStructure ki default amount ko override karega.
+                    </div>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="card-body border-bottom pb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Filter by Student</label>
+                            <input type="text" id="filterStudent" class="form-control form-control-sm"
+                                   placeholder="Search student name..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Filter by Fee Type</label>
+                            <select id="filterFeeType" class="form-select form-select-sm">
+                                <option value="">All Fee Types</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-redo"></i> Reset Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="overrideTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student Name</th>
+                                    <th>Roll No</th>
+                                    <th>Fee Type</th>
+                                    <th>Frequency</th>
+                                    <th>Override Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary Footer -->
+                <div class="card-footer bg-light">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <small class="text-muted">Total Overrides</small>
+                            <h5 class="mb-0 text-primary" id="summaryTotal">0</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Monthly Overrides</small>
+                            <h5 class="mb-0 text-success" id="summaryMonthly">0</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">One Time Overrides</small>
+                            <h5 class="mb-0 text-warning" id="summaryOneTime">0</h5>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="overrideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus me-2"></i>Add Fee Override
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="overrideModalBody">
+                @* Content loaded dynamically via AJAX *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Override Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+        loadDataTable();
+        });
+
+        // ── DataTable ─────────────────────────────────────────────────────────
+        function loadDataTable() {
+        table = $('#overrideTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "StudentFeeOverride")',
+        type: 'GET',
+        dataSrc: function (json) {
+        loadFilterDropdowns(json.data);
+        updateSummary(json.data);
+        return json.data;
+        }
+        },
+        columns: [
+        { data: 'id',          width: '5%',  className: 'text-center' },
+        { data: 'studentName', width: '22%' },
+        { data: 'rollNo',      width: '8%',  className: 'text-center' },
+        { data: 'feeName',     width: '18%' },
+        {
+        data: 'isRecurring', width: '10%', className: 'text-center',
+        render: function (data) {
+        return data === 'Monthly'
+        ? '<span class="badge bg-primary">Monthly</span>'
+        : '<span class="badge bg-secondary">One Time</span>';
+        }
+        },
+        {
+        data: 'amount', width: '12%', className: 'text-end fw-semibold',
+        render: function (data) {
+        return '<span class="text-success">' + data + '</span>';
+        }
+        },
+        {
+        data: 'status', width: '8%', className: 'text-center',
+        render: function (data) {
+        return data === 'Active'
+        ? '<span class="badge bg-success">Active</span>'
+        : '<span class="badge bg-danger">Inactive</span>';
+        }
+        },
+        {
+        data: 'id', width: '17%', className: 'text-center',
+        render: function (data) {
+        return `<div class="btn-group btn-group-sm">
+        <button class="btn btn-info edit-btn" title="Edit" data-id="${data}">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-success view-btn" title="View" data-id="${data}">
+        <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}">
+        <i class="fas fa-trash"></i>
+        </button>
+        </div>`;
+        }
+        }
+        ],
+        language: { emptyTable: "No fee overrides found" },
+        order: [[1, 'asc']],
+        drawCallback: function () {
+        if (typeof table !== 'undefined' && table) {
+        var filteredData = table.rows({ filter: 'applied' }).data().toArray();
+        updateSummary(filteredData);
+        }
+        },
+        initComplete: function () {
+        // Student name search
+        $('#filterStudent').on('keyup', function () {
+        table.column(1).search($(this).val()).draw();
+        });
+        // FeeType dropdown filter
+        $('#filterFeeType').on('change', function () {
+        table.column(3).search($(this).val()).draw();
+        });
+        }
+        });
+        }
+
+        // ── Load filter dropdowns ─────────────────────────────────────────────
+        function loadFilterDropdowns(data) {
+        var feeTypes = [...new Map(data.map(d => [d.feeName, d])).values()];
+        feeTypes.forEach(d => $('#filterFeeType').append(
+        `<option value="${d.feeName}">${d.feeName}</option>`
+        ));
+        }
+
+        function resetFilters() {
+        $('#filterStudent').val('');
+        $('#filterFeeType').val('');
+        table.column(1).search('').column(3).search('').draw();
+        }
+
+        // ── Summary ───────────────────────────────────────────────────────────
+        function updateSummary(data) {
+        $('#summaryTotal')  .text(data.length);
+        $('#summaryMonthly').text(data.filter(d => d.isRecurring === 'Monthly').length);
+        $('#summaryOneTime').text(data.filter(d => d.isRecurring === 'One Time').length);
+        }
+
+        // ── Load Modal ────────────────────────────────────────────────────────
+        function loadOverrideModal(id) {
+        $.ajax({
+        url: '@Url.Action("CreateOrEdit", "StudentFeeOverride")/' + id,
+        type: 'GET',
+        success: function (data) {
+        $('#overrideModalBody').html(data);
+        $('#modalTitle').html(id == 0
+        ? '<i class="fas fa-plus me-2"></i>Add Fee Override'
+        : '<i class="fas fa-edit me-2"></i>Edit Fee Override');
+
+        var form = $('#overrideForm');
+        form.removeData('validator');
+        form.removeData('unobtrusiveValidation');
+        $.validator.unobtrusive.parse(form);
+
+        $('#overrideModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load form!'); }
+        });
+        }
+
+        // ── Buttons ───────────────────────────────────────────────────────────
+        $(document).on('click', '.edit-btn', function () {
+        loadOverrideModal($(this).data('id'));
+        });
+
+        $(document).on('click', '.view-btn', function () {
+        $.ajax({
+        url: '@Url.Action("View", "StudentFeeOverride")/' + $(this).data('id'),
+        type: 'GET',
+        success: function (data) {
+        $('#viewModalContent').html(data);
+        $('#viewModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load details!'); }
+        });
+        });
+
+        $(document).on('click', '.delete-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({
+        title: 'Remove Override?',
+        text: 'Student ki custom fee override remove ho jaayegi!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post('@Url.Action("Delete", "StudentFeeOverride")', { id: id }, function (data) {
+        if (data.success) {
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+        });
+
+        $(document).on('click', '#btnSave', function () {
+        var form = $('#overrideForm');
+        if (form.valid()) {
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function (data) {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Override');
+        if (data.success) {
+        $('#overrideModal').modal('hide');
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+    </script>
+}

@@ -1,0 +1,135 @@
+@model School_CRM.Models.DTOs.FinePolicyDto
+@{
+    ViewData["Title"] = "Create Fine Policy";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-plus-circle text-primary me-2"></i>Create Fine Policy</h2>
+            <small class="text-muted">Define library rules and fine structure</small>
+        </div>
+        <a asp-action="Policy" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <form asp-action="CreatePolicy" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Policy Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="PolicyName" class="form-label fw-semibold">Policy Name <span class="text-danger">*</span></label>
+                            <input asp-for="PolicyName" class="form-control" placeholder="e.g. Default Policy 2024" />
+                            <span asp-validation-for="PolicyName" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-clock me-2 text-warning"></i>Overdue Fine</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="PerDayFine" class="form-label fw-semibold">Per Day Fine (₹)</label>
+                                <input asp-for="PerDayFine" type="number" step="0.01" class="form-control" />
+                                <span asp-validation-for="PerDayFine" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="GracePeriodDays" class="form-label fw-semibold">Grace Period (days)</label>
+                                <input asp-for="GracePeriodDays" type="number" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="MaxOverdueFine" class="form-label fw-semibold">Max Overdue Fine (₹)</label>
+                                <input asp-for="MaxOverdueFine" type="number" step="0.01" class="form-control" placeholder="Leave empty for no cap" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-book me-2 text-info"></i>Issue Limits</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="MaxBooksForStudent" class="form-label fw-semibold">Student Max Books</label>
+                                <input asp-for="MaxBooksForStudent" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="MaxBooksForTeacher" class="form-label fw-semibold">Teacher Max Books</label>
+                                <input asp-for="MaxBooksForTeacher" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="IssueDaysForStudent" class="form-label fw-semibold">Student Issue Days</label>
+                                <input asp-for="IssueDaysForStudent" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="IssueDaysForTeacher" class="form-label fw-semibold">Teacher Issue Days</label>
+                                <input asp-for="IssueDaysForTeacher" type="number" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Damage & Lost Fines</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="DamageFineType" class="form-label fw-semibold">Damage Fine Type</label>
+                                <select asp-for="DamageFineType" class="form-select">
+                                    <option value="Percentage">Percentage</option>
+                                    <option value="Fixed">Fixed Amount</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DamageFineValue" class="form-label fw-semibold">Damage Fine Value</label>
+                                <input asp-for="DamageFineValue" type="number" step="0.01" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="LostFineType" class="form-label fw-semibold">Lost Fine Type</label>
+                                <select asp-for="LostFineType" class="form-select">
+                                    <option value="BookPrice">Book Price</option>
+                                    <option value="Fixed">Fixed Amount</option>
+                                    <option value="Multiplier">Multiplier</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="LostFineValue" class="form-label fw-semibold">Lost Fine Value</label>
+                                <input asp-for="LostFineValue" type="number" step="0.01" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Creating a new policy will deactivate all existing policies. Only one policy can be active at a time.
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-save me-2"></i>Create & Activate Policy
+                    </button>
+                    <a asp-action="Policy" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

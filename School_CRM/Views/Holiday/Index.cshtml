@@ -1,0 +1,627 @@
+﻿@{
+    ViewData["Title"] = "Holiday Management";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+}
+
+<div class="container-fluid">
+
+    <!-- Year + Month Filter Row -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="mb-0 fw-bold">Year:</label>
+                    <select id="filterYear" class="form-select form-select-sm"
+                            style="width:100px">
+                        @for (int y = DateTime.Today.Year + 1;
+                                  y >= DateTime.Today.Year - 2; y--)
+                        {
+                            if (y == DateTime.Today.Year)
+                            {
+                                <option value="@y" selected>@y</option>
+                            }
+                            else
+                            {
+                                <option value="@y">@y</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="mb-0 fw-bold">Month:</label>
+                    <select id="filterMonth" class="form-select form-select-sm"
+                            style="width:130px">
+                        <option value="">All Months</option>
+                        @{
+                            string[] months = {
+                                "01-January","02-February","03-March",
+                                "04-April","05-May","06-June",
+                                "07-July","08-August","09-September",
+                                "10-October","11-November","12-December"
+                            };
+                            foreach (var m in months)
+                            {
+                                var num  = m.Split('-')[0];
+                                var name = m.Split('-')[1];
+                                var sel  = num == DateTime.Today.Month
+                                               .ToString("D2") ? "selected" : "";
+                                <option value="@num" @@sel>@name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="loadHolidays()">
+                    <i class="fas fa-search me-1"></i>Load
+                </button>
+                @if (isAdmin)
+                {
+                    <div class="ms-auto d-flex gap-2">
+                        <button class="btn btn-warning btn-sm"
+                                onclick="openBulkModal()">
+                            <i class="fas fa-calendar-plus me-1"></i>Add Bulk Holidays
+                        </button>
+                        <button class="btn btn-success btn-sm"
+                                onclick="openHolidayModal(0)">
+                            <i class="fas fa-plus me-1"></i>Add Holiday
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- ── Left: Holiday Table ── -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between
+                            align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                        Holiday List
+                    </h5>
+                    <span class="badge bg-primary" id="totalCount">0 Holidays</span>
+                </div>
+                <div class="card-body">
+                    <table id="holidayTable"
+                           class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Holiday Name</th>
+                                <th>Month</th>
+                                @if (isAdmin) { <th class="text-center">Actions</th> }
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Right: Month Summary ── -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2 text-success"></i>
+                        Month-wise Summary
+                    </h5>
+                </div>
+                <div class="card-body p-2">
+                    <div id="monthSummary"></div>
+                </div>
+            </div>
+
+            <!-- Upcoming Holidays -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2 text-warning"></i>
+                        Upcoming Holidays
+                    </h5>
+                </div>
+                <div class="card-body p-2">
+                    <div id="upcomingList">
+                        <div class="text-muted text-center py-2">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══ Add/Edit Modal ══ -->
+<div class="modal fade" id="holidayModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="holidayModalTitle">Add Holiday</h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="holidayId">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Date <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" id="holidayDate" class="form-control">
+                    <div id="dayDisplay" class="text-muted small mt-1"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Holiday Name <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="holidayName" class="form-control"
+                           placeholder="e.g. Diwali, Republic Day...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success"
+                        onclick="saveHoliday()">
+                    <i class="fas fa-save me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Bulk Add Modal ══ -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Bulk Add Holidays</h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Select year aur common Indian holidays auto-fill honge.
+                    Uncheck karo jo nahi chahiye.
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Year</label>
+                        <select id="bulkYear" class="form-select"
+                                onchange="loadPresetHolidays()">
+                            @for (int y = DateTime.Today.Year + 1;
+                                      y >= DateTime.Today.Year - 1; y--)
+                            {
+                                if (y == DateTime.Today.Year)
+                                {
+                                    <option value="@y" selected>@y</option>
+                                }
+                                else
+                                {
+                                    <option value="@y">@y</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end gap-2">
+                        <button class="btn btn-outline-primary btn-sm"
+                                onclick="checkAll(true)">
+                            Check All
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                onclick="checkAll(false)">
+                            Uncheck All
+                        </button>
+                    </div>
+                </div>
+                <div id="presetHolidaysList"
+                     style="max-height:380px;overflow-y:auto"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning"
+                        onclick="saveBulkHolidays()">
+                    <i class="fas fa-calendar-plus me-1"></i>Add Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        .month-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .month-bar:hover { background: var(--bs-light); }
+        .month-bar .bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #4361ee;
+            transition: width 0.3s;
+        }
+        .upcoming-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        .upcoming-item .date-box {
+            min-width: 42px;
+            text-align: center;
+            background: #4361ee;
+            color: white;
+            border-radius: 6px;
+            padding: 2px 4px;
+            font-size: 0.75rem;
+        }
+    </style>
+
+    <script>
+        const isAdmin = @Json.Serialize(isAdmin);
+        let holidayTable;
+
+        // Indian holidays preset
+        const indianHolidays = [
+            { month: '01', day: '01', name: "New Year's Day" },
+            { month: '01', day: '26', name: 'Republic Day' },
+            { month: '03', day: '25', name: 'Holi' },
+            { month: '04', day: '14', name: 'Dr. Ambedkar Jayanti' },
+            { month: '04', day: '18', name: 'Good Friday' },
+            { month: '05', day: '01', name: 'Labour Day' },
+            { month: '08', day: '15', name: 'Independence Day' },
+            { month: '08', day: '27', name: 'Janmashtami' },
+            { month: '10', day: '02', name: 'Gandhi Jayanti' },
+            { month: '10', day: '02', name: 'Dussehra' },
+            { month: '10', day: '20', name: 'Diwali' },
+            { month: '11', day: '05', name: 'Bhai Dooj' },
+            { month: '11', day: '15', name: 'Guru Nanak Jayanti' },
+            { month: '12', day: '25', name: 'Christmas' }
+        ];
+
+        $(document).ready(function () {
+            loadHolidays();
+            loadMonthSummary();
+            loadUpcoming();
+
+            $('#holidayDate').on('change', function () {
+                const d = new Date(this.value);
+                if (!isNaN(d)) {
+                    const days = ['Sunday','Monday','Tuesday','Wednesday',
+                                  'Thursday','Friday','Saturday'];
+                    $('#dayDisplay').text('Day: ' + days[d.getDay()]);
+                }
+            });
+        });
+
+        // ── Load Holiday Table ───────────────────────────────
+        function loadHolidays() {
+            const year  = $('#filterYear').val();
+            const month = $('#filterMonth').val();
+            const monthYear = month ? `${year}-${month}` : '';
+
+            if ($.fn.DataTable.isDataTable('#holidayTable'))
+                $('#holidayTable').DataTable().destroy();
+
+            let cols = [
+                { data: 'holidayDate', width: '15%' },
+                {
+                    data: 'dayName', width: '12%',
+                    render: d => {
+                        const weekend = ['Saturday','Sunday'];
+                        const cls = weekend.includes(d)
+                            ? 'text-danger fw-bold' : '';
+                        return `<span class="${cls}">${d}</span>`;
+                    }
+                },
+                {
+                    data: 'holidayName', width: '40%',
+                    render: d =>
+                        `<i class="fas fa-star text-warning me-1"
+                             style="font-size:0.7rem"></i>${d}`
+                },
+                {
+                    data: 'monthYear', width: '15%',
+                    render: d => {
+                        if (!d) return '';
+                        const [y, m] = d.split('-');
+                        const mn = new Date(y, m-1).toLocaleString(
+                            'default', { month: 'short' });
+                        return `<span class="badge bg-primary">${mn} ${y}</span>`;
+                    }
+                }
+            ];
+
+            if (isAdmin) {
+                cols.push({
+                    data: null, orderable: false,
+                    className: 'text-center', width: '12%',
+                    render: (d, t, row) => `
+                        <button class="btn btn-info btn-sm me-1"
+                                onclick="openHolidayModal(${row.id})">
+                            <i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger btn-sm"
+                                onclick="deleteHoliday(${row.id})">
+                            <i class="fas fa-trash"></i></button>`
+                });
+            }
+
+            holidayTable = $('#holidayTable').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetAll","Holiday")',
+                    data: { monthYear },
+                    dataSrc: d => d.data || []
+                },
+                columns: cols,
+                order: [[0, 'asc']],
+                pageLength: 20,
+                language: {
+                    emptyTable: "No holidays found",
+                    search: "Search:"
+                },
+                drawCallback: function () {
+                    const count = this.api().data().count();
+                    $('#totalCount').text(`${count} Holiday${count !== 1 ? 's' : ''}`);
+                }
+            });
+        }
+
+        // ── Month Summary ────────────────────────────────────
+        function loadMonthSummary() {
+            const year = $('#filterYear').val();
+            $.get('@Url.Action("GetMonthSummary","Holiday")',
+                  { year }, function (res) {
+                const max = Math.max(...res.data.map(m => m.count), 1);
+                let html  = '';
+                res.data.forEach(m => {
+                    const w   = m.count > 0
+                        ? Math.round((m.count / max) * 100) : 0;
+                    const cls = m.count > 0 ? '' : 'text-muted';
+                    html += `
+                        <div class="month-bar"
+                             onclick="filterByMonth('${m.monthYear}')">
+                            <div style="min-width:32px;font-size:0.8rem"
+                                 class="${cls}">${m.month}</div>
+                            <div style="flex:1">
+                                <div class="bar" style="width:${w}%"></div>
+                            </div>
+                            <div style="min-width:20px;font-size:0.8rem;
+                                        text-align:right" class="${cls}">
+                                ${m.count}
+                            </div>
+                        </div>`;
+                });
+                $('#monthSummary').html(html);
+            });
+        }
+
+        function filterByMonth(monthYear) {
+            const [y, m] = monthYear.split('-');
+            $('#filterYear').val(y);
+            $('#filterMonth').val(m);
+            loadHolidays();
+        }
+
+        // ── Upcoming Holidays ────────────────────────────────
+        function loadUpcoming() {
+            $.get('@Url.Action("GetAll","Holiday")', {}, function (res) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const upcoming = (res.data || [])
+                    .filter(h => h.holidayDate && new Date(h.holidayDate) >= today)
+                    .slice(0, 5);
+
+                if (!upcoming.length) {
+                    $('#upcomingList').html(
+                        '<div class="text-muted text-center py-2 small">' +
+                        'No upcoming holidays</div>');
+                    return;
+                }
+
+                let html = '';
+                upcoming.forEach(h => {
+                    const d   = new Date(h.holidayDate);
+                    const day = d.toLocaleString('default', { weekday: 'short' });
+                    const dt  = d.getDate();
+                    const mon = d.toLocaleString('default', { month: 'short' });
+                    html += `
+                        <div class="upcoming-item">
+                            <div class="date-box">
+                                <div>${dt}</div>
+                                <div>${mon}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.85rem;font-weight:500">
+                                    ${h.holidayName}</div>
+                                <div class="text-muted" style="font-size:0.75rem">
+                                    ${day}</div>
+                            </div>
+                        </div>`;
+                });
+                $('#upcomingList').html(html);
+            });
+        }
+
+        // ── Add/Edit Modal ───────────────────────────────────
+        function openHolidayModal(id) {
+            $('#holidayId').val(0);
+            $('#holidayDate').val('');
+            $('#holidayName').val('');
+            $('#dayDisplay').text('');
+            $('#holidayModalTitle').text(id === 0 ? 'Add Holiday' : 'Edit Holiday');
+
+            if (id > 0) {
+                $.get('@Url.Action("GetById","Holiday")/' + id, function (data) {
+                    $('#holidayId').val(data.id);
+                    $('#holidayDate').val(data.holidayDate);
+                    $('#holidayName').val(data.holidayName);
+                    $('#holidayDate').trigger('change');
+                });
+            }
+            new bootstrap.Modal(document.getElementById('holidayModal')).show();
+        }
+
+        function saveHoliday() {
+            const date = $('#holidayDate').val();
+            const name = $('#holidayName').val().trim();
+
+            if (!date) { toastr.warning('Select date!'); return; }
+            if (!name) { toastr.warning('Enter holiday name!'); return; }
+
+            $.ajax({
+                url: '@Url.Action("Save","Holiday")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    id:          parseInt($('#holidayId').val()) || 0,
+                    holidayDate: date,
+                    holidayName: name
+                }),
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        bootstrap.Modal.getInstance(
+                            document.getElementById('holidayModal')).hide();
+                        loadHolidays();
+                        loadMonthSummary();
+                        loadUpcoming();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function () { toastr.error('Error saving!'); }
+            });
+        }
+
+        function deleteHoliday(id) {
+            Swal.fire({
+                title: 'Delete Holiday?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Delete!'
+            }).then(res => {
+                if (!res.isConfirmed) return;
+                $.ajax({
+                    url: '@Url.Action("Delete","Holiday")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(id),
+                    success: function (r) {
+                        if (r.success) {
+                            toastr.success(r.message);
+                            loadHolidays();
+                            loadMonthSummary();
+                            loadUpcoming();
+                        } else {
+                            toastr.error(r.message);
+                        }
+                    }
+                });
+            });
+        }
+
+        // ── Bulk Add ─────────────────────────────────────────
+        function openBulkModal() {
+            loadPresetHolidays();
+            new bootstrap.Modal(document.getElementById('bulkModal')).show();
+        }
+
+        function loadPresetHolidays() {
+            const year = $('#bulkYear').val();
+            let html   = '<div class="row g-2">';
+
+            indianHolidays.forEach((h, i) => {
+                const dateStr = `${year}-${h.month}-${h.day}`;
+                const d       = new Date(dateStr);
+                const dayName = d.toLocaleString('default', { weekday: 'short' });
+                const mon     = d.toLocaleString('default', { month: 'short' });
+
+                html += `
+                    <div class="col-md-6">
+                        <div class="form-check border rounded p-2">
+                            <input class="form-check-input bulk-check"
+                                   type="checkbox"
+                                   id="bh${i}"
+                                   value="${dateStr}"
+                                   data-name="${h.name}"
+                                   checked>
+                            <label class="form-check-label w-100"
+                                   for="bh${i}">
+                                <div class="d-flex justify-content-between">
+                                    <span>${h.name}</span>
+                                    <span class="text-muted small">
+                                        ${h.day} ${mon} (${dayName})
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>`;
+            });
+
+            html += '</div>';
+            $('#presetHolidaysList').html(html);
+        }
+
+        function checkAll(val) {
+            $('.bulk-check').prop('checked', val);
+        }
+
+        function saveBulkHolidays() {
+            const selected = [];
+            $('.bulk-check:checked').each(function () {
+                selected.push({
+                    holidayDate: $(this).val(),
+                    holidayName: $(this).data('name')
+                });
+            });
+
+            if (!selected.length) {
+                toastr.warning('Select at least one holiday!');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("BulkAdd","Holiday")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ holidays: selected }),
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        bootstrap.Modal.getInstance(
+                            document.getElementById('bulkModal')).hide();
+                        loadHolidays();
+                        loadMonthSummary();
+                        loadUpcoming();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function () { toastr.error('Error!'); }
+            });
+        }
+    </script>
+}

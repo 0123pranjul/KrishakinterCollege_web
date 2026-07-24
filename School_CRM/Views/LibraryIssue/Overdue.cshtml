@@ -1,0 +1,102 @@
+@model List<School_CRM.Models.DTOs.OverdueItemDto>
+@{
+    ViewData["Title"] = "Overdue Books";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-clock text-danger me-2"></i>Overdue Books</h2>
+            <small class="text-muted">@Model.Count overdue issue(s) found</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="fas fa-print me-1"></i>Print
+            </button>
+            <a asp-action="Return" class="btn btn-success"><i class="fas fa-undo me-1"></i>Return Book</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="overdueTable">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>#</th>
+                            <th>Member</th>
+                            <th>Type</th>
+                            <th>Book Title</th>
+                            <th>Due Date</th>
+                            <th>Overdue Days</th>
+                            <th>Est. Fine</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3 d-block"></i>
+                                    No overdue books! All books are returned on time.
+                                </td>
+                            </tr>
+                        }
+                        @{int sno = 1;}
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@sno++</td>
+                                <td class="fw-semibold">@item.MemberName</td>
+                                <td>
+                                    <span class="badge @(item.UserType == "Student" ? "bg-info" : "bg-secondary")">
+                                        @item.UserType
+                                    </span>
+                                </td>
+                                <td>@item.BookTitle</td>
+                                <td class="text-danger fw-semibold">@item.DueDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="badge @(item.OverdueDays > 30 ? "bg-danger" : item.OverdueDays > 14 ? "bg-warning text-dark" : "bg-secondary")">
+                                        @item.OverdueDays days
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-danger">₹@item.EstimatedFine.ToString("F2")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Return" class="btn btn-outline-success" title="Return">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
+                                        <a asp-action="MarkLost" asp-route-issueId="@item.IssueId"
+                                           class="btn btn-outline-danger" title="Mark Lost">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (Model.Any())
+        {
+            <div class="card-footer bg-white border-top py-3">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Total Overdue:</strong> @Model.Count books
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Est. Fine:</strong>
+                        <span class="text-danger fw-bold">₹@Model.Sum(x => x.EstimatedFine).ToString("F2")</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

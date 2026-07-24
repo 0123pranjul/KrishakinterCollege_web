@@ -1,0 +1,171 @@
+@model List<object>
+@{
+    ViewData["Title"] = "Inventory Reports";
+    string tab      = ViewBag.Tab ?? "stock";
+    DateTime from   = ViewBag.FromDate;
+    DateTime to     = ViewBag.ToDate;
+    int? categoryId = ViewBag.CategoryId;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-boxes text-dark me-2"></i>Inventory Reports</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Reports</a>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        @foreach (var (t, label, icon) in new[] { ("stock","Stock Status","fa-list"), ("lowstock","Low Stock","fa-exclamation-triangle"), ("grn","Purchase (GRN)","fa-truck"), ("sales","Sales","fa-receipt") })
+        {
+            <li class="nav-item">
+                <a class="nav-link @(tab == t ? "active" : "")"
+                   asp-action="Inventory" asp-route-tab="@t">
+                    <i class="fas @icon me-1"></i>@label
+                </a>
+            </li>
+        }
+    </ul>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="tab" value="@tab" />
+                @if (tab == "stock" || tab == "lowstock")
+                {
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Category</label>
+                        <select name="categoryId" class="form-select" asp-items="ViewBag.Categories">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                }
+                @if (tab == "grn" || tab == "sales")
+                {
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">From Date</label>
+                        <input type="date" name="fromDate" class="form-control" value="@from.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">To Date</label>
+                        <input type="date" name="toDate" class="form-control" value="@to.ToString("yyyy-MM-dd")" />
+                    </div>
+                }
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (tab == "stock" || tab == "lowstock")
+    {
+        var products = Model.Cast<School_CRM.Models.InvProduct>().ToList();
+        if (tab == "stock")
+        {
+            <div class="card border-0 shadow-sm bg-dark text-white mb-3">
+                <div class="card-body text-center py-2">
+                    <strong>Total Stock Value: ₹@ViewBag.TotalStockValue?.ToString("F2")</strong>
+                </div>
+            </div>
+        }
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Code</th><th>Product</th><th>Category</th><th>Unit</th><th class="text-center">Stock</th><th class="text-center">Reorder</th><th>Status</th>@if(tab=="stock"){<th class="text-end">Stock Value</th>}</tr>
+                        </thead>
+                        <tbody>
+                            @if (!products.Any()) { <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var p in products)
+                            {
+                                string statusBadge = p.CurrentStock == 0 ? "bg-danger" : p.CurrentStock <= p.ReorderLevel ? "bg-warning text-dark" : "bg-success";
+                                string statusText  = p.CurrentStock == 0 ? "Out of Stock" : p.CurrentStock <= p.ReorderLevel ? "Low Stock" : "In Stock";
+                                <tr class="@(p.CurrentStock == 0 ? "table-danger" : p.CurrentStock <= p.ReorderLevel ? "table-warning" : "")">
+                                    <td><code class="small">@p.ProductCode</code></td>
+                                    <td class="fw-semibold">@p.ProductName</td>
+                                    <td>@p.Category?.CategoryName</td>
+                                    <td>@p.Unit?.UnitShort</td>
+                                    <td class="text-center fw-bold">@p.CurrentStock</td>
+                                    <td class="text-center text-muted">@p.ReorderLevel</td>
+                                    <td><span class="badge @statusBadge">@statusText</span></td>
+                                    @if (tab == "stock") { <td class="text-end">₹@((p.CurrentStock * p.CostPrice).ToString("F2"))</td> }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else if (tab == "grn")
+    {
+        var receipts = Model.Cast<School_CRM.Models.InvStockReceipt>().ToList();
+        <div class="card border-0 shadow-sm bg-primary text-white mb-3">
+            <div class="card-body text-center py-2">
+                <strong>Total GRN Value: ₹@ViewBag.TotalGRN?.ToString("F2")</strong>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>GRN No.</th><th>Supplier</th><th>Receipt Date</th><th>Invoice No.</th><th>Status</th><th class="text-end">Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!receipts.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var r in receipts)
+                            {
+                                <tr>
+                                    <td><code>@r.Grnnumber</code></td>
+                                    <td>@r.Supplier?.SupplierName</td>
+                                    <td>@r.ReceiptDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@(r.InvoiceNo ?? "-")</td>
+                                    <td><span class="badge bg-success">@r.Status</span></td>
+                                    <td class="text-end fw-bold">₹@r.TotalAmount.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        var sales = Model.Cast<School_CRM.Models.InvSaleTransaction>().ToList();
+        <div class="card border-0 shadow-sm bg-success text-white mb-3">
+            <div class="card-body text-center py-2">
+                <strong>Total Sales: ₹@ViewBag.TotalSales?.ToString("F2")</strong>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Bill No.</th><th>Customer</th><th>Type</th><th>Date</th><th>Payment</th><th>Status</th><th class="text-end">Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!sales.Any()) { <tr><td colspan="7" class="text-center text-muted py-4">No records found.</td></tr> }
+                            @foreach (var s in sales)
+                            {
+                                <tr>
+                                    <td><code>@s.BillNumber</code></td>
+                                    <td>@(s.CustomerName ?? $"{s.CustomerType} #{s.CustomerId}")</td>
+                                    <td><span class="badge bg-light text-dark border">@s.CustomerType</span></td>
+                                    <td>@s.SaleDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.PaymentMode</td>
+                                    <td><span class="badge @(s.IsPaid ? "bg-success" : "bg-danger")">@(s.IsPaid ? "Paid" : "Pending")</span></td>
+                                    <td class="text-end fw-bold">₹@s.TotalAmount.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

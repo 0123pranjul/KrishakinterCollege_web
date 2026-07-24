@@ -1,0 +1,89 @@
+@{ ViewData["Title"] = "Event Calendar"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-calendar-alt text-primary me-2"></i>Event Calendar</h2>
+            <small class="text-muted">School events, holidays, exams</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-list me-1"></i>List View</a>
+            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Event</a>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        @{
+            var legend = new[] {
+                ("Holiday","#e74c3c"), ("Exam","#e67e22"), ("PTM","#3498db"),
+                ("Function","#9b59b6"), ("Sports","#27ae60"), ("Workshop","#1abc9c"),
+                ("Meeting","#34495e"), ("Other","#95a5a6")
+            };
+        }
+        @foreach (var (label, color) in legend)
+        {
+            <span class="badge" style="background-color:@color">@label</span>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Event detail modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" id="eventModalHeader">
+                <h5 class="modal-title" id="eventModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left:   'prev,next today',
+                center: 'title',
+                right:  'dayGridMonth,timeGridWeek,listMonth'
+            },
+            height: 'auto',
+            events: function (info, success, failure) {
+                fetch(`/Communication/Event/CalendarJson?start=${info.startStr.substring(0,10)}&end=${info.endStr.substring(0,10)}`)
+                    .then(r => r.json())
+                    .then(success)
+                    .catch(failure);
+            },
+            eventClick: function (info) {
+                const e = info.event;
+                const p = e.extendedProps;
+                document.getElementById('eventModalTitle').textContent = e.title;
+                document.getElementById('eventModalHeader').style.backgroundColor = e.backgroundColor;
+                document.getElementById('eventModalHeader').style.color = '#fff';
+                document.getElementById('eventModalBody').innerHTML = `
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="fw-semibold">Type</td><td>${p.eventType || '-'}</td></tr>
+                        <tr><td class="fw-semibold">Date</td><td>${e.startStr} ${e.endStr ? '→ ' + e.endStr : ''}</td></tr>
+                        ${p.venue ? `<tr><td class="fw-semibold">Venue</td><td>${p.venue}</td></tr>` : ''}
+                        ${p.startTime ? `<tr><td class="fw-semibold">Time</td><td>${p.startTime} - ${p.endTime || ''}</td></tr>` : ''}
+                        ${p.description ? `<tr><td class="fw-semibold">Details</td><td>${p.description}</td></tr>` : ''}
+                    </table>`;
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
+            }
+        });
+        cal.render();
+    });
+</script>
+}

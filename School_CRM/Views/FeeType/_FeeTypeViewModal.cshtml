@@ -1,0 +1,101 @@
+@model School_CRM.Models.TblFeeType
+
+<div class="row g-3">
+
+    <!-- Fee Type Info Card -->
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-tag me-2"></i>Fee Type Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">Fee Type ID</small>
+                        <p class="fw-semibold mb-1">@Model.FeeTypeId</p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Fee Name</small>
+                        <p class="fw-semibold mb-1">@(Model.FeeName ?? "-")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Fee Frequency</small>
+                        <p class="mb-1">
+                            @if (Model.IsRecurring == true)
+                            {
+                                <span class="badge bg-primary">Monthly (Recurring)</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">One Time</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Status</small>
+                        <p class="mb-1">
+                            @if (Model.IsActive == true)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactive</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-3 mt-2">
+                        <small class="text-muted">Created Date</small>
+                        <p class="fw-semibold mb-1">
+                            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy hh:mm tt") : "-")
+                        </p>
+                    </div>
+                    @if (Model.UpdatedDate.HasValue)
+                    {
+                        <div class="col-md-3 mt-2">
+                            <small class="text-muted">Last Updated</small>
+                            <p class="fw-semibold mb-1">
+                                @Model.UpdatedDate.Value.ToString("dd-MM-yyyy hh:mm tt")
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Counts -->
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-primary mb-1">@Model.TblFeeStructures.Count</h4>
+                <small class="text-muted">Fee Structures</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-success mb-1">@Model.TblFeeCollectionDetails.Count</h4>
+                <small class="text-muted">Collections</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-warning mb-1">@Model.TblStudentExtraCharges.Count</h4>
+                <small class="text-muted">Extra Charges</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-info mb-1">@Model.TblStudentFeeOverrides.Count</h4>
+                <small class="text-muted">Fee Overrides</small>
+            </div>
+        </div>
+    </div>
+
+</div>

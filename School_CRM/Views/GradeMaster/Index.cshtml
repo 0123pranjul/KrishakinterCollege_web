@@ -1,0 +1,97 @@
+@{
+    ViewData["Title"] = "Grade Master";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom py-3">
+            <div>
+                <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-star me-2 text-warning"></i>Grade Master</h5>
+                <small class="text-muted">Configure grading scale for report cards</small>
+            </div>
+            <button class="btn btn-warning btn-sm px-3 text-dark" onclick="loadModal(0)">
+                <i class="fas fa-plus me-1"></i> Add Grade
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="gradeTable" class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="8%">#</th>
+                            <th width="12%" class="text-center">Grade</th>
+                            <th width="12%" class="text-center">Min %</th>
+                            <th width="12%" class="text-center">Max %</th>
+                            <th width="12%" class="text-center">Grade Point</th>
+                            <th>Remark</th>
+                            <th width="10%" class="text-center">Status</th>
+                            <th width="10%" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="gradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-star me-2"></i>Add Grade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="gradeModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let table;
+        $(document).ready(() => {
+            table = $('#gradeTable').DataTable({
+                ajax: { url: '@Url.Action("GetAll","GradeMaster")', type: 'GET', dataSrc: 'data' },
+                columns: [
+                    { data: 'gradeId', className: 'text-center' },
+                    { data: 'gradeName', className: 'text-center fw-bold fs-5' },
+                    { data: 'minPercent', className: 'text-center' },
+                    { data: 'maxPercent', className: 'text-center' },
+                    { data: 'gradePoint', className: 'text-center fw-semibold' },
+                    { data: 'remark', render: d => d || '<span class="text-muted">-</span>' },
+                    { data: 'status', className: 'text-center', render: d => d === 'Active' ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>' },
+                    {
+                        data: 'gradeId', className: 'text-center', orderable: false,
+                        render: id => `<button class="btn btn-sm btn-outline-primary me-1" onclick="loadModal(${id})"><i class="fas fa-edit"></i></button>
+                                       <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord(${id})"><i class="fas fa-trash"></i></button>`
+                    }
+                ]
+            });
+        });
+
+        function loadModal(id) {
+            $('#modalTitle').html(id === 0 ? '<i class="fas fa-plus me-2"></i>Add Grade' : '<i class="fas fa-edit me-2"></i>Edit Grade');
+            $.get('@Url.Action("CreateOrEdit","GradeMaster")', { id }, html => {
+                $('#gradeModalBody').html(html);
+                $('#gradeModal').modal('show');
+                $('#btnSave').off('click').on('click', () => {
+                    $.post($('#gradeForm').attr('action'), $('#gradeForm').serialize(), res => {
+                        if (res.success) { $('#gradeModal').modal('hide'); table.ajax.reload(); toastr.success(res.message); }
+                        else toastr.error(res.message);
+                    });
+                });
+            });
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({ title: 'Delete Grade?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes!' })
+                .then(r => { if (r.isConfirmed) $.post('@Url.Action("Delete","GradeMaster")', { id }, res => { if (res.success) { table.ajax.reload(); toastr.success(res.message); } else toastr.error(res.message); }); });
+        }
+    </script>
+}

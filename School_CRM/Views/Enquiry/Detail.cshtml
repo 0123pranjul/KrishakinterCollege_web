@@ -1,0 +1,561 @@
+﻿@model School_CRM.Models.TblEnquiry
+@{
+    ViewData["Title"] = "Enquiry Detail";
+}
+
+<div class="container-fluid">
+    <div class="row g-3">
+
+        <!-- ── LEFT: Enquiry Info ── -->
+        <div class="col-lg-8">
+
+            <!-- Basic Info Card -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header d-flex justify-content-between
+                    align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-user me-2 text-primary"></i>
+                        Enquiry #@Model.EnquiryId
+                    </h5>
+                    <div class="d-flex gap-2">
+                        @{
+                            var statusMap = new Dictionary<string, (string, string)>
+                            {
+                                ["New"] = ("#dbeafe", "#1e3a8a"),
+                                ["FollowUp"] = ("#fef3c7", "#78350f"),
+                                ["Interested"] = ("#d1fae5", "#065f46"),
+                                ["NotInterested"] = ("#fee2e2", "#7f1d1d"),
+                                ["Converted"] = ("#ede9fe", "#4c1d95")
+                            };
+                            var (sbg, sclr) =
+                                statusMap.GetValueOrDefault(
+                                    Model.Status ?? "",
+                                    ("#f1f5f9", "#475569"));
+                        }
+                        <span class="badge px-3 py-2"
+                              style="background:@sbg;color:@sclr;
+                            font-size:0.85rem">
+                            @Model.Status
+                        </span>
+                        @if (Model.Status != "Converted")
+                        {
+                            <a href="/Enquiry/ConvertToAdmission/@Model.EnquiryId"
+                                   class="btn btn-success btn-sm">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                Convert to Admission
+                            </a>
+                        }
+                        <a href="/Enquiry/Index"
+                               class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted small fw-bold
+                                text-uppercase mb-2">
+                                Student Information
+                            </h6>
+                            <table class="table table-sm
+                                table-borderless">
+                                <tr>
+                                    <td class="text-muted"
+                                        style="width:40%">
+                                        Name
+                                    </td>
+                                    <td class="fw-bold">
+                                        @Model.StudentName
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">DOB</td>
+                                    <td>@Model.DateOfBirth?.ToString("dd-MM-yyyy")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Gender</td>
+                                    <td>@Model.Gender</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Class</td>
+                                    <td>
+                                        @Model.InterestedClass?.ClassName
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Session</td>
+                                    <td>@Model.Session?.SessionName</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted small fw-bold
+                                text-uppercase mb-2">
+                                Parent / Contact
+                            </h6>
+                            <table class="table table-sm
+                                table-borderless">
+                                <tr>
+                                    <td class="text-muted"
+                                        style="width:40%">
+                                        Parent
+                                    </td>
+                                    <td class="fw-bold">
+                                        @Model.ParentName
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Mobile</td>
+                                    <td class="text-primary fw-bold">
+                                        @Model.MobileNo
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Alt Mobile</td>
+                                    <td>@Model.AlternateMobile</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Email</td>
+                                    <td>@Model.Email</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">City</td>
+                                    <td>@Model.City</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Source</td>
+                                    <td>@Model.Source</td>
+                                </tr>
+                            </table>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Address))
+                        {
+                            <div class="col-12">
+                                <div class="p-2 rounded"
+                                     style="background:#f8f9fa">
+                                    <span class="text-muted small">
+                                        Address:
+                                    </span>
+                                    @Model.Address
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Follow Up List -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header d-flex justify-content-between
+                    align-items-center">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-phone me-2 text-warning"></i>
+                        Follow Up History
+                        <span class="badge bg-secondary ms-1">
+                            @Model.TblEnquiryFollowUps.Count
+                        </span>
+                    </h6>
+                    <button class="btn btn-warning btn-sm"
+                            onclick="showFollowUpModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Follow Up
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.TblEnquiryFollowUps.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-phone-slash fa-2x
+                            mb-2 opacity-50"></i>
+                            <div class="small">No follow-ups yet</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="timeline p-3">
+                            @foreach (var fu in
+                                Model.TblEnquiryFollowUps)
+                            {
+                                var (fubg, fuclr) = fu.Status switch
+                                {
+                                    "Interested" =>
+                                        ("#d1fae5", "#065f46"),
+                                    "Not Responding" =>
+                                        ("#fee2e2", "#7f1d1d"),
+                                    "Visit Scheduled" =>
+                                        ("#dbeafe", "#1e3a8a"),
+                                    _ => ("#fef3c7", "#78350f")
+                                };
+                                <div class="d-flex gap-3 mb-3">
+                                    <div style="width:10px;
+                                        flex-shrink:0;
+                                        position:relative">
+                                        <div style="width:10px;
+                                            height:10px;
+                                            border-radius:50%;
+                                            background:@fuclr;
+                                            margin-top:4px">
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="d-flex gap-2
+                                            align-items-center
+                                            mb-1 flex-wrap">
+                                            <span class="badge px-2"
+                                                  style="background:@fubg;
+                                                color:@fuclr">
+                                                @fu.Status
+                                            </span>
+                                            <span class="text-muted small">
+                                                @fu.FollowUpDate?
+                                                .ToString("dd MMM yyyy HH:mm")
+                                            </span>
+                                            @if (fu.NextFollowUpDate
+                                                    .HasValue)
+                                            {
+                                                <span class="text-primary small">
+                                                    <i class="fas fa-calendar-alt me-1"></i>
+                                                    Next: @fu.NextFollowUpDate
+                                                    .Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                        </div>
+                                        <div class="small"
+                                             style="color:#444">
+                                            @fu.Remarks
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between
+                    align-items-center">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-file me-2 text-info"></i>
+                        Documents
+                    </h6>
+                    <button class="btn btn-info btn-sm"
+                            onclick="showDocModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Document
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (!Model.TblEnquiryDocuments.Any())
+                    {
+                        <div class="text-center text-muted py-3 small">
+                            No documents added
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-2">
+                            @foreach (var doc in
+                                Model.TblEnquiryDocuments)
+                            {
+                                <div class="col-md-4">
+                                    <div class="p-2 rounded border d-flex
+                                        align-items-center gap-2">
+                                        <i class="fas fa-file-alt
+                                        text-primary"></i>
+                                        <div class="flex-1">
+                                            <div class="small fw-bold">
+                                                @doc.DocumentType
+                                            </div>
+                                            <a href="@doc.DocumentUrl"
+                                                   target="_blank"
+                                                   class="text-primary"
+                                                   style="font-size:0.72rem">
+                                                View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ── RIGHT: Quick Actions ── -->
+        <div class="col-lg-4">
+
+            <!-- Quick Status Update -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-edit me-2 text-primary"></i>
+                        Update Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var (st, bg, icon) in new[] {
+                            ("Interested","btn-outline-success","fa-thumbs-up"),
+                            ("FollowUp","btn-outline-warning","fa-phone"),
+                            ("NotInterested","btn-outline-danger","fa-thumbs-down"),
+                        })
+                        {
+                            <button class="btn @bg btn-sm"
+                                    onclick="quickStatus('@st')">
+                                <i class="fas @icon me-1"></i>
+                                Mark @st
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enquiry Meta -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Enquiry Info
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted small">Enquiry ID</td>
+                            <td class="fw-bold">
+                                #@Model.EnquiryId
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Date</td>
+                            <td>@Model.EnquiryDate?.ToString("dd-MM-yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Source</td>
+                            <td>@Model.Source</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Status</td>
+                            <td>@Model.Status</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Remarks</td>
+                            <td>@Model.Remarks</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.Status != "Converted")
+            {
+                <a href="/Enquiry/ConvertToAdmission/@Model.EnquiryId"
+                       class="btn btn-success w-100 py-3">
+                    <i class="fas fa-user-graduate fa-lg me-2"></i>
+                    Convert to Admission
+                </a>
+            }
+            else
+            {
+                <div class="alert alert-success text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <div class="fw-bold">Converted to Admission</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Follow Up Modal -->
+<div class="modal fade" id="followUpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold">Add Follow Up</h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Follow Up Status
+                    </label>
+                    <select id="fuStatus" class="form-select">
+                        <option>Called</option>
+                        <option>Not Responding</option>
+                        <option>Interested</option>
+                        <option>Visit Scheduled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Update Enquiry Status
+                    </label>
+                    <select id="fuEnquiryStatus" class="form-select">
+                        <option value="FollowUp">FollowUp</option>
+                        <option value="Interested">Interested</option>
+                        <option value="NotInterested">NotInterested</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Next Follow Up Date
+                    </label>
+                    <input type="datetime-local"
+                           id="fuNextDate" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Remarks</label>
+                    <textarea id="fuRemarks" class="form-control"
+                          rows="3"
+                              placeholder="What was discussed...">
+                    </textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-warning fw-bold"
+                        onclick="saveFollowUp()">
+                    <i class="fas fa-save me-1"></i>Save Follow Up
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Modal -->
+<div class="modal fade" id="docModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title fw-bold">Add Document</h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Document Type
+                    </label>
+                    <select id="docType" class="form-select">
+                        <option>Birth Certificate</option>
+                        <option>Transfer Certificate</option>
+                        <option>Previous Report Card</option>
+                        <option>Aadhaar Card</option>
+                        <option>Passport Photo</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Document URL / Path
+                    </label>
+                    <input type="text" id="docUrl"
+                           class="form-control"
+                           placeholder="https://... or file path">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-info text-white"
+                        onclick="saveDocument()">
+                    <i class="fas fa-save me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        const enquiryId = @Model.EnquiryId;
+
+        function showFollowUpModal() {
+        new bootstrap.Modal(
+        document.getElementById('followUpModal')).show();
+        }
+
+        function showDocModal() {
+        new bootstrap.Modal(
+        document.getElementById('docModal')).show();
+        }
+
+        function saveFollowUp() {
+        const remarks = $('#fuRemarks').val().trim();
+        if (!remarks) {
+        toastr.warning('Enter remarks!'); return;
+        }
+
+        $.ajax({
+        url: '@Url.Action("AddFollowUp", "Enquiry")',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+        enquiryId,
+        status:          $('#fuStatus').val(),
+        enquiryStatus:   $('#fuEnquiryStatus').val(),
+        nextFollowUpDate: $('#fuNextDate').val() || null,
+        remarks
+        }),
+        success: r => {
+        if (r.success) {
+        toastr.success(r.message);
+        setTimeout(() => location.reload(), 1000);
+        } else toastr.error(r.message);
+        }
+        });
+        }
+
+        function saveDocument() {
+        const url = $('#docUrl').val().trim();
+        if (!url) {
+        toastr.warning('Enter document URL!'); return;
+        }
+
+        $.ajax({
+        url: '@Url.Action("AddDocument", "Enquiry")',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+        enquiryId,
+        documentType: $('#docType').val(),
+        documentUrl:  url
+        }),
+        success: r => {
+        if (r.success) {
+        toastr.success(r.message);
+        setTimeout(() => location.reload(), 800);
+        } else toastr.error(r.message);
+        }
+        });
+        }
+
+        function quickStatus(status) {
+        $.ajax({
+        url: '@Url.Action("UpdateStatus", "Enquiry")',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ enquiryId, status }),
+        success: r => {
+        if (r.success) {
+        toastr.success(r.message);
+        setTimeout(() => location.reload(), 800);
+        } else toastr.error(r.message);
+        }
+        });
+        }
+    </script>
+}

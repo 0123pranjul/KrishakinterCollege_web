@@ -1,0 +1,28 @@
+@* ═══════════════════════════════════════════════════════════
+   _DashboardQuickActions.cshtml  —  Premium Glass Action Buttons
+   ═══════════════════════════════════════════════════════════ *@
+
+<p class="section-label"><i class="fas fa-bolt me-2"></i>Quick Actions</p>
+<div class="row g-2 mb-4">
+    @{
+        var actions = new[]
+        {
+            ("/Store/Sale/Create",                  "fas fa-cash-register", "New Bill",          "#1e40af"),
+            ("/Library/Issue/Create",               "fas fa-book",          "Issue Book",        "#0d9488"),
+            ("/Assets/Issue/Create",                "fas fa-laptop",        "Issue Asset",       "#4f46e5"),
+            ("/Communication/Announcement/Create",  "fas fa-bullhorn",      "Announcement",      "#1e40af"),
+            ("/Store/StockReceipt/Create",          "fas fa-truck",         "Receive Stock",     "#16a34a"),
+            ("/Communication/Calendar",             "fas fa-calendar-alt",  "Event Calendar",    "#d97706"),
+            ("/Reports/PendingFees",                "fas fa-rupee-sign",    "Pending Fees",      "#dc2626"),
+            ("/Reports/Library",                    "fas fa-chart-bar",     "Library Report",    "#0d9488"),
+        };
+    }
+    @foreach (var (url, icon, label, color) in actions)
+    {
+        <div class="col-xl-3 col-md-4 col-6 fade-up">
+            <a href="@url" class="quick-action-btn">
+                <i class="@icon me-2" style="color:@color;"></i>@label
+            </a>
+        </div>
+    }
+</div>

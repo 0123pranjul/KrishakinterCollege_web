@@ -1,0 +1,101 @@
+@* ═══════════════════════════════════════════════════════════
+   _DashboardActivity.cshtml  —  Premium Recent Activity Section
+   ═══════════════════════════════════════════════════════════ *@
+@{
+    var recentBills = ViewBag.RecentBills as List<School_CRM.Models.InvSaleTransaction> ?? new();
+    var recentAnn   = ViewBag.RecentAnnouncements as List<School_CRM.Models.CommAnnouncement> ?? new();
+}
+
+<p class="section-label"><i class="fas fa-clock me-2"></i>Recent Activity</p>
+<div class="row g-3 mb-4">
+
+    <!-- Recent Store Bills -->
+    <div class="col-xl-7 fade-up">
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <span><i class="fas fa-receipt me-2 text-success"></i>Recent Store Bills</span>
+                <a href="/Store/Sale/Index" class="btn-link-sm">View All</a>
+            </div>
+            <div class="dash-card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0 align-middle">
+                        <thead>
+                            <tr class="table-light">
+                                <th class="ps-3">Bill No.</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                                <th class="pe-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!recentBills.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-inbox me-2 opacity-50"></i>No bills yet</td></tr>
+                            }
+                            @foreach (var b in recentBills)
+                            {
+                                <tr>
+                                    <td class="ps-3"><code class="small" style="color:#1e40af;background:rgba(30,64,175,0.06);padding:2px 6px;border-radius:4px;">@b.BillNumber</code></td>
+                                    <td class="small fw-semibold">@(b.CustomerName ?? b.CustomerType)</td>
+                                    <td class="small text-muted">@b.SaleDate.ToString("dd/MM/yy")</td>
+                                    <td class="text-end fw-bold small" style="color:#16a34a;">₹@b.TotalAmount.ToString("N0")</td>
+                                    <td class="pe-3">
+                                        @if (b.IsPaid)
+                                        {
+                                            <span class="badge rounded-pill" style="background:rgba(22,163,74,0.1);color:#16a34a;padding:4px 10px;font-size:.7rem;">Paid</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill" style="background:rgba(220,38,38,0.1);color:#dc2626;padding:4px 10px;font-size:.7rem;">Due</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="col-xl-5 fade-up">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-bullhorn me-2 text-primary"></i>Recent Announcements</span>
+                <a href="/Communication/Announcements" class="btn-link-sm">View All</a>
+            </div>
+            <div class="dash-card-body">
+                @if (!recentAnn.Any())
+                {
+                    <div class="text-center text-muted py-4"><i class="fas fa-bullhorn me-2 opacity-50"></i>No announcements</div>
+                }
+                @foreach (var ann in recentAnn)
+                {
+                    <div class="ann-item mb-3">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="small fw-bold text-dark">@ann.Title</div>
+                            @if (ann.Priority == "Emergency")
+                            {
+                                <span class="badge rounded-pill flex-shrink-0" style="background:rgba(220,38,38,0.1);color:#dc2626;padding:4px 10px;font-size:.68rem;">Emergency</span>
+                            }
+                            else if (ann.Priority == "High")
+                            {
+                                <span class="badge rounded-pill flex-shrink-0" style="background:rgba(217,119,6,0.1);color:#d97706;padding:4px 10px;font-size:.68rem;">High</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill flex-shrink-0" style="background:rgba(30,64,175,0.1);color:#1e40af;padding:4px 10px;font-size:.68rem;">@ann.Priority</span>
+                            }
+                        </div>
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-calendar-alt me-1"></i>@ann.PublishAt.ToString("dd MMM yyyy")
+                            &nbsp;·&nbsp; <i class="fas fa-users me-1"></i>@ann.TargetType
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

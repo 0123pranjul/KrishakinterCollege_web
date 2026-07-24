@@ -1,0 +1,92 @@
+@model School_CRM.Models.TblStudent
+
+<div class="row g-3">
+
+    <!-- Student Info Card -->
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">Student ID</small>
+                        <p class="fw-semibold mb-1">@Model.StudentId</p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Student Name</small>
+                        <p class="fw-semibold mb-1">@(Model.StudentName ?? "-")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Roll No</small>
+                        <p class="fw-semibold mb-1">@(Model.RollNo ?? "-")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Status</small>
+                        <p class="mb-1">
+                            @if (Model.IsActive == true)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactive</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-3 mt-2">
+                        <small class="text-muted">Created Date</small>
+                        <p class="fw-semibold mb-1">
+                            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy hh:mm tt") : "-")
+                        </p>
+                    </div>
+                    @if (Model.UpdatedDate.HasValue)
+                    {
+                        <div class="col-md-3 mt-2">
+                            <small class="text-muted">Last Updated</small>
+                            <p class="fw-semibold mb-1">
+                                @Model.UpdatedDate.Value.ToString("dd-MM-yyyy hh:mm tt")
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Counts -->
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-primary mb-1">@Model.TblStudentSessions.Count</h4>
+                <small class="text-muted">Sessions</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-success mb-1">@Model.TblFeeCollections.Count</h4>
+                <small class="text-muted">Fee Collections</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-warning mb-1">@Model.TblStudentDues.Count</h4>
+                <small class="text-muted">Dues</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 bg-light text-center">
+            <div class="card-body py-3">
+                <h4 class="text-danger mb-1">@Model.TblStudentExtraCharges.Count</h4>
+                <small class="text-muted">Extra Charges</small>
+            </div>
+        </div>
+    </div>
+
+</div>

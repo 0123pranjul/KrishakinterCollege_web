@@ -1,0 +1,23 @@
+@model School_CRM.Models.TblSubject
+
+<form id="subjectForm" asp-action="CreateOrEdit" asp-controller="Subject" asp-route-id="@Model.SubjectId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="SubjectId" />
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="SubjectName" class="form-label fw-semibold">Subject Name <span class="text-danger">*</span></label>
+            <input asp-for="SubjectName" class="form-control" placeholder="e.g. Mathematics, Science ..." required />
+            <span asp-validation-for="SubjectName" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input type="checkbox" name="IsActive" value="true" class="form-check-input" @(Model.IsActive == true ? "checked" : "") />
+                <label class="form-check-label">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Subject</button>
+    </div>
+</form>

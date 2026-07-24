@@ -1,0 +1,1012 @@
+﻿@{
+    ViewData["Title"] = "Salary Reports";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    var currentMonth = DateTime.Today.ToString("yyyy-MM");
+    var currentYear  = DateTime.Today.Year;
+}
+
+<div class="container-fluid">
+
+    <!-- ── Tabs ── -->
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="reportTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#tabMonthly">
+                        <i class="fas fa-calendar-alt me-1"></i>Monthly Report
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tabYearly">
+                        <i class="fas fa-chart-bar me-1"></i>Yearly Summary
+                    </a>
+                </li>
+                @if (isAdmin)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tabEmployee">
+                            <i class="fas fa-user me-1"></i>Employee Report
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <div class="tab-content">
+
+                <!-- ══ Tab 1: Monthly Report ══ -->
+                <div class="tab-pane fade show active" id="tabMonthly">
+
+                    <!-- Filter Row -->
+                    <div class="row g-3 mb-4 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Month</label>
+                            <input type="month" id="monthFilter"
+                                   class="form-control"
+                                   value="@currentMonth">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" onclick="loadMonthly()">
+                                <i class="fas fa-search me-1"></i>Load
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-success w-100"
+                                    onclick="printMonthly()"
+                                    id="btnPrint"
+                                    style="display:none">
+                                <i class="fas fa-print me-1"></i>Print Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="row g-3 mb-4" id="summarySection" style="display:none">
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 bg-primary text-white text-center py-2">
+                                <div class="fs-4 fw-bold" id="crdTotal">-</div>
+                                <div class="small">Total Emp</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 bg-info text-white text-center py-2">
+                                <div class="fs-5 fw-bold" id="crdGross">-</div>
+                                <div class="small">Gross Salary</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 bg-warning text-white text-center py-2">
+                                <div class="fs-5 fw-bold" id="crdDeduct">-</div>
+                                <div class="small">Deductions</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 bg-success text-white text-center py-2">
+                                <div class="fs-5 fw-bold" id="crdNet">-</div>
+                                <div class="small">Net Salary</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 text-white text-center py-2"
+                                 style="background:#198754cc">
+                                <div class="fs-5 fw-bold" id="crdPaid">-</div>
+                                <div class="small">Paid</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="card border-0 bg-danger text-white text-center py-2">
+                                <div class="fs-5 fw-bold" id="crdPending">-</div>
+                                <div class="small">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Status Bar -->
+                    <div id="paymentBar" class="mb-4" style="display:none">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Payment Status</span>
+                            <span class="small" id="payBarText"></span>
+                        </div>
+                        <div class="progress" style="height:12px">
+                            <div class="progress-bar bg-success"
+                                 id="payBarFill"
+                                 style="width:0%"
+                                 role="progressbar">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Table -->
+                    <div id="monthlyTableSection" style="display:none">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <h6 class="mb-0 fw-bold">
+                                <i class="fas fa-list me-1"></i>Employee-wise Details
+                            </h6>
+                            <select id="statusFilter"
+                                    class="form-select form-select-sm"
+                                    style="width:150px"
+                                    onchange="filterMonthly()">
+                                <option value="">All Status</option>
+                                <option value="Generated">Generated</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Hold">Hold</option>
+                            </select>
+                        </div>
+
+                        <div class="table-responsive">
+                            <!-- Print Header (hidden on screen) -->
+                            <div class="text-center mb-3" id="printHeader" style="display:none">
+                                <h4>Monthly Salary Report</h4>
+                                <div class="text-muted" id="printMonthText"></div>
+                            </div>
+
+                            <table class="table table-bordered table-hover table-sm"
+                                   id="monthlyTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        @if (isAdmin)
+                                        {
+                                            <th>Employee</th>
+                                            <th>Designation</th>
+                                        }
+                                        <th class="text-center">Days</th>
+                                        <th class="text-center">Present</th>
+                                        <th class="text-center">Holiday</th>
+                                        <th class="text-center">Leave</th>
+                                        <th class="text-center">LWP</th>
+                                        <th class="text-center">OT Hrs</th>
+                                        <th class="text-end">Basic</th>
+                                        <th class="text-end">OT Amt</th>
+                                        <th class="text-end">Gross</th>
+                                        <th class="text-end">Deduct</th>
+                                        <th class="text-end">Net Salary</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center no-print">Slip</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monthlyBody"></tbody>
+                                <tfoot class="table-secondary fw-bold">
+                                    <tr id="monthlyFooter" style="display:none">
+                                        <td colspan="@(isAdmin ? "3" : "1")">TOTAL</td>
+                                        <td></td><td></td><td></td>
+                                        <td></td><td></td><td></td>
+                                        <td class="text-end" id="ftBasic"></td>
+                                        <td class="text-end" id="ftOT"></td>
+                                        <td class="text-end" id="ftGross"></td>
+                                        <td class="text-end" id="ftDeduct"></td>
+                                        <td class="text-end" id="ftNet"></td>
+                                        <td></td>
+                                        <td class="no-print"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ Tab 2: Yearly Summary ══ -->
+                <div class="tab-pane fade" id="tabYearly">
+                    <div class="row g-3 mb-4 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Year</label>
+                            <select id="yearFilter" class="form-control">
+                                @for (int y = currentYear; y >= currentYear - 3; y--)
+                                {
+                                    <option value="@y" selected="@(y == currentYear)">@y</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" onclick="loadYearly()">
+                                <i class="fas fa-search me-1"></i>Load
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Yearly Summary Cards -->
+                    <div class="row g-3 mb-4" id="yearlyCards" style="display:none">
+                        <div class="col-md-3">
+                            <div class="card border-0 bg-primary text-white text-center py-3">
+                                <div class="fs-3 fw-bold" id="yTotalNet">-</div>
+                                <div>Total Net Paid</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 bg-info text-white text-center py-3">
+                                <div class="fs-3 fw-bold" id="yTotalGross">-</div>
+                                <div>Total Gross</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 bg-warning text-white text-center py-3">
+                                <div class="fs-3 fw-bold" id="yMonthsGen">-</div>
+                                <div>Months Generated</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 bg-success text-white text-center py-3">
+                                <div class="fs-3 fw-bold" id="yMonthsPaid">-</div>
+                                <div>Months Fully Paid</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Month-wise Chart + Status -->
+                    <div class="row" id="yearlySection" style="display:none">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Month-wise Net Salary</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="monthBars"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Payment Status</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div id="yearlyStatusList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ Tab 3: Employee Report (Admin only) ══ -->
+                @if (isAdmin)
+                {
+                    <div class="tab-pane fade" id="tabEmployee">
+                        <div class="row g-3 mb-4 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Employee</label>
+                                <select id="empFilter" class="form-select">
+                                    <option value="">-- Select Employee --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Year</label>
+                                <select id="empYearFilter" class="form-select">
+                                    @for (int y = currentYear; y >= currentYear - 3; y--)
+                                    {
+                                        <option value="@y">@y</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100"
+                                        onclick="loadEmployeeReport()">
+                                    <i class="fas fa-search me-1"></i>Load
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Employee Info Card -->
+                        <div id="empInfoCard" style="display:none"
+                             class="alert alert-primary mb-3">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted">Employee</small>
+                                    <div class="fw-bold" id="empInfoName"></div>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">Code</small>
+                                    <div class="fw-bold" id="empInfoCode"></div>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">Designation</small>
+                                    <div id="empInfoDes"></div>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">Basic Salary</small>
+                                    <div class="fw-bold" id="empInfoBasic"></div>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">Yearly Net</small>
+                                    <div class="fw-bold text-success" id="empInfoYearNet"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Yearly Table -->
+                        <div class="table-responsive" id="empTableSection" style="display:none">
+                            <table class="table table-bordered table-hover table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Month</th>
+                                        <th class="text-center">Present</th>
+                                        <th class="text-center">Holiday</th>
+                                        <th class="text-center">Leave</th>
+                                        <th class="text-center">LWP</th>
+                                        <th class="text-center">OT Hrs</th>
+                                        <th class="text-end">Basic</th>
+                                        <th class="text-end">OT Amt</th>
+                                        <th class="text-end">Gross</th>
+                                        <th class="text-end">Deduct</th>
+                                        <th class="text-end">Net</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Slip</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="empTableBody"></tbody>
+                                <tfoot class="table-secondary fw-bold">
+                                    <tr id="empFooter" style="display:none">
+                                        <td>TOTAL</td>
+                                        <td></td><td></td><td></td>
+                                        <td></td><td></td>
+                                        <td class="text-end" id="eftBasic"></td>
+                                        <td class="text-end" id="eftOT"></td>
+                                        <td class="text-end" id="eftGross"></td>
+                                        <td class="text-end" id="eftDeduct"></td>
+                                        <td class="text-end" id="eftNet"></td>
+                                        <td></td><td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Salary Slip Modal ══ -->
+<div class="modal fade" id="slipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt me-2"></i>Salary Slip
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="slipContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary"
+                        onclick="printSlip()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        .table th, .table td {
+            font-size: 0.82rem;
+            padding: 5px 7px;
+            vertical-align: middle;
+        }
+        .badge-generated { background:#fff3cd; color:#856404; }
+        .badge-paid      { background:#d1e7dd; color:#0a3622; }
+        .badge-hold      { background:#f8d7da; color:#842029; }
+
+        .month-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+        }
+        .month-bar-row .bar-label {
+            min-width: 35px;
+            font-size: 0.8rem;
+        }
+        .month-bar-row .bar-fill {
+            height: 18px;
+            border-radius: 4px;
+            background: #4361ee;
+            transition: width 0.4s;
+            display: flex;
+            align-items: center;
+            padding-left: 6px;
+            color: #fff;
+            font-size: 0.72rem;
+            min-width: 4px;
+        }
+        .month-bar-row .bar-amt {
+            font-size: 0.78rem;
+            color: #555;
+            min-width: 80px;
+        }
+
+        /* ── PRINT STYLES ── */
+        @@media print {
+            body * { visibility: hidden !important; }
+            #dynamicPrintArea,
+            #dynamicPrintArea * { visibility: visible !important; }
+            #dynamicPrintArea {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                background: white !important;
+                padding: 20px !important;
+                z-index: 99999 !important;
+            }
+            .no-print { display: none !important; }
+            .modal, .modal-backdrop { display: none !important; }
+        }
+    </style>
+
+    <script>
+        const isAdmin = @Json.Serialize(isAdmin);
+        let monthlyData = [];
+
+        $(document).ready(function () {
+            if (isAdmin) loadEmployeeDropdown();
+            loadMonthly();
+
+            // Yearly tab lazy load
+            $('a[href="#tabYearly"]').on('shown.bs.tab',
+                function () { loadYearly(); });
+        });
+
+        // ── Format Helpers ───────────────────────────────────
+        const fmt = n =>
+            '₹' + parseFloat(n || 0).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+        const fmtK = n => {
+            const v = parseFloat(n || 0);
+            return v >= 100000
+                ? '₹' + (v / 100000).toFixed(1) + 'L'
+                : v >= 1000
+                    ? '₹' + (v / 1000).toFixed(1) + 'K'
+                    : fmt(v);
+        };
+
+        const statusBadge = s => {
+            const map = {
+                'Generated': 'badge-generated',
+                'Paid':      'badge-paid',
+                'Hold':      'badge-hold'
+            };
+            return `<span class="badge ${map[s] || 'badge-generated'}
+                          px-2 py-1">${s || '-'}</span>`;
+        };
+
+        const monthName = (monthYear) => {
+            if (!monthYear) return '-';
+            const [y, m] = monthYear.split('-');
+            return new Date(parseInt(y), parseInt(m) - 1)
+                .toLocaleString('default', { month: 'long' });
+        };
+
+        // ════════════════════════════════════════════════════
+        // TAB 1: MONTHLY REPORT
+        // ════════════════════════════════════════════════════
+        function loadMonthly() {
+            const month = $('#monthFilter').val();
+            if (!month) return;
+
+            $.get('@Url.Action("GetMonthlySummary", "Report")',
+                { monthYear: month },
+                function (res) {
+                    if (!res.success) {
+                        $('#summarySection').hide();
+                        $('#monthlyTableSection').hide();
+                        $('#paymentBar').hide();
+                        $('#btnPrint').hide();
+                        toastr.info(res.message || 'No data for this month');
+                        return;
+                    }
+
+                    const d = res.data;
+                    monthlyData = d.details;
+
+                    // Summary cards
+                    $('#crdTotal').text(d.totalEmployees);
+                    $('#crdGross').text(fmtK(d.totalGross));
+                    $('#crdDeduct').text(fmtK(d.totalDeductions));
+                    $('#crdNet').text(fmtK(d.totalNet));
+                    $('#crdPaid').html(
+                        `${d.paidCount}<br>
+                         <small>${fmtK(d.paidAmount)}</small>`);
+                    $('#crdPending').html(
+                        `${d.pendingCount}<br>
+                         <small>${fmtK(d.pendingAmount)}</small>`);
+                    $('#summarySection').show();
+
+                    // Payment progress bar
+                    const pct = d.totalEmployees > 0
+                        ? Math.round((d.paidCount / d.totalEmployees) * 100)
+                        : 0;
+                    $('#payBarFill').css('width', pct + '%');
+                    $('#payBarText').text(
+                        `${d.paidCount}/${d.totalEmployees} Paid (${pct}%)`);
+                    $('#paymentBar').show();
+
+                    renderMonthlyTable(d.details);
+                    $('#monthlyTableSection').show();
+                    $('#btnPrint').show();
+                });
+        }
+
+        function renderMonthlyTable(data) {
+            if (!data || !data.length) {
+                $('#monthlyBody').html(
+                    '<tr><td colspan="15" class="text-center text-muted py-3">' +
+                    'No records found</td></tr>');
+                $('#monthlyFooter').hide();
+                return;
+            }
+
+            let html = '';
+            let totBasic = 0, totOT = 0,
+                totGross = 0, totDeduct = 0, totNet = 0;
+            let i = 1;
+
+            data.forEach(r => {
+                totBasic  += parseFloat(r.basicSalary    || 0);
+                totOT     += parseFloat(r.overtimeAmount  || 0);
+                totGross  += parseFloat(r.grossSalary     || 0);
+                totDeduct += parseFloat(r.deductions      || 0);
+                totNet    += parseFloat(r.netSalary       || 0);
+
+                const lwpCls = (r.lwpDays || 0) > 0
+                    ? 'text-danger fw-bold' : '';
+
+                html += `<tr>
+                    <td>${i++}</td>
+                    ${isAdmin ? `
+                    <td>
+                        <strong>${r.employeeCode || ''}</strong><br>
+                        <small class="text-muted">${r.employeeName || ''}</small>
+                    </td>
+                    <td><small>${r.designation || '-'}</small></td>
+                    ` : ''}
+                    <td class="text-center">${r.payableDays  || 0}</td>
+                    <td class="text-center">${r.presentDays  || 0}</td>
+                    <td class="text-center">${r.holidayDays  || 0}</td>
+                    <td class="text-center">${r.leaveDays    || 0}</td>
+                    <td class="text-center ${lwpCls}">${r.lwpDays || 0}</td>
+                    <td class="text-center">${r.overtimeHours || 0}</td>
+                    <td class="text-end">${fmt(r.basicSalary)}</td>
+                    <td class="text-end text-success">
+                        ${parseFloat(r.overtimeAmount || 0) > 0
+                            ? fmt(r.overtimeAmount) : '-'}
+                    </td>
+                    <td class="text-end fw-bold">${fmt(r.grossSalary)}</td>
+                    <td class="text-end text-danger">
+                        ${parseFloat(r.deductions || 0) > 0
+                            ? fmt(r.deductions) : '-'}
+                    </td>
+                    <td class="text-end fw-bold text-success">${fmt(r.netSalary)}</td>
+                    <td class="text-center">${statusBadge(r.status)}</td>
+                    <td class="text-center no-print">
+                        <button class="btn btn-primary btn-sm"
+                                onclick="viewSlip(${r.id})"
+                                title="View Slip">
+                            <i class="fas fa-file-alt"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+
+            $('#monthlyBody').html(html);
+
+            // Footer totals
+            $('#ftBasic').text(fmt(totBasic));
+            $('#ftOT').text(totOT > 0 ? fmt(totOT) : '-');
+            $('#ftGross').text(fmt(totGross));
+            $('#ftDeduct').text(totDeduct > 0 ? fmt(totDeduct) : '-');
+            $('#ftNet').text(fmt(totNet));
+            $('#monthlyFooter').show();
+        }
+
+        function filterMonthly() {
+            const status = $('#statusFilter').val();
+            const filtered = status
+                ? monthlyData.filter(r => (r.status || '') === status)
+                : monthlyData;
+            renderMonthlyTable(filtered);
+        }
+
+        function printMonthly() {
+            const month = $('#monthFilter').val();
+            if (!month) return;
+
+            const mn  = monthName(month);
+            const [y] = month.split('-');
+
+            // Table clone karo for print
+            const tableClone = $('#monthlyTable')
+                .clone()
+                .find('.no-print')
+                .remove()
+                .end()
+                .prop('outerHTML');
+
+            $('#dynamicPrintArea').remove();
+            $('body').append(`
+                <div id="dynamicPrintArea">
+                    <div style="padding:20px">
+                        <div style="text-align:center;margin-bottom:16px">
+                            <h3 style="margin:0">Monthly Salary Report</h3>
+                            <div style="color:#666">${mn} ${y}</div>
+                            <div style="color:#999;font-size:0.8rem">
+                                Generated: ${new Date().toLocaleDateString('en-IN')}
+                            </div>
+                        </div>
+                        ${tableClone}
+                    </div>
+                </div>`);
+
+            window.print();
+            setTimeout(() => $('#dynamicPrintArea').remove(), 1500);
+        }
+
+        // ════════════════════════════════════════════════════
+        // TAB 2: YEARLY SUMMARY
+        // ════════════════════════════════════════════════════
+        function loadYearly() {
+            const year = $('#yearFilter').val();
+
+            $.get('@Url.Action("GetYearlySummary", "Report")',
+                { year },
+                function (res) {
+                    const data = res.data || [];
+
+                    const genMonths  = data.filter(m => m.generated).length;
+                    const paidMonths = data.filter(
+                        m => m.paidCount === m.employees &&
+                             m.employees > 0).length;
+                    const totalNet   = data.reduce(
+                        (a, m) => a + m.netSalary, 0);
+                    const totalGross = data.reduce(
+                        (a, m) => a + m.grossSalary, 0);
+
+                    $('#yTotalNet').text(fmtK(totalNet));
+                    $('#yTotalGross').text(fmtK(totalGross));
+                    $('#yMonthsGen').text(genMonths + '/12');
+                    $('#yMonthsPaid').text(paidMonths);
+                    $('#yearlyCards').show();
+                    $('#yearlySection').show();
+
+                    // Bar chart
+                    const maxNet = Math.max(
+                        ...data.map(m => m.netSalary), 1);
+                    let barsHtml = '';
+                    data.forEach(m => {
+                        const w = m.netSalary > 0
+                            ? Math.round((m.netSalary / maxNet) * 100)
+                            : 0;
+                        const cls = !m.generated
+                            ? 'bg-secondary opacity-25'
+                            : (m.paidCount === m.employees && m.employees > 0)
+                                ? 'bg-success' : 'bg-primary';
+
+                        barsHtml += `
+                            <div class="month-bar-row">
+                                <div class="bar-label">${m.month}</div>
+                                <div style="flex:1">
+                                    <div class="bar-fill ${cls}"
+                                         style="width:${w}%">
+                                        ${w > 15 ? fmtK(m.netSalary) : ''}
+                                    </div>
+                                </div>
+                                <div class="bar-amt">
+                                    ${m.generated ? fmtK(m.netSalary) : '-'}
+                                </div>
+                            </div>`;
+                    });
+                    $('#monthBars').html(barsHtml);
+
+                    // Status list
+                    let statusHtml = '';
+                    data.forEach(m => {
+                        if (!m.generated) return;
+                        const allPaid = m.paidCount === m.employees
+                                        && m.employees > 0;
+                        statusHtml += `
+                            <div class="d-flex justify-content-between
+                                        py-1 border-bottom align-items-center">
+                                <span class="small">${m.month}</span>
+                                <span class="badge ${allPaid
+                                    ? 'bg-success' : 'bg-warning text-dark'}">
+                                    ${m.paidCount}/${m.employees} Paid
+                                </span>
+                            </div>`;
+                    });
+                    $('#yearlyStatusList').html(statusHtml ||
+                        '<div class="text-muted small text-center py-2">No data</div>');
+                });
+        }
+
+        // ════════════════════════════════════════════════════
+        // TAB 3: EMPLOYEE REPORT
+        // ════════════════════════════════════════════════════
+        function loadEmployeeDropdown() {
+            $.get('@Url.Action("GetEmployees", "Report")', function (data) {
+                data.forEach(e =>
+                    $('#empFilter').append(
+                        `<option value="${e.id}">
+                            ${e.employeeCode} - ${e.name}
+                        </option>`
+                    )
+                );
+            });
+        }
+
+        function loadEmployeeReport() {
+            const empId = $('#empFilter').val();
+            const year  = $('#empYearFilter').val();
+
+            if (!empId) {
+                toastr.warning('Select employee!');
+                return;
+            }
+
+            $.get('@Url.Action("GetEmployeeYearly", "Report")',
+                { employeeId: empId, year },
+                function (res) {
+                    if (!res.success) {
+                        toastr.error(res.message);
+                        return;
+                    }
+
+                    const emp = res.employee;
+                    $('#empInfoName').text(emp.name || '-');
+                    $('#empInfoCode').text(emp.employeeCode || '-');
+                    $('#empInfoDes').text(emp.designation || '-');
+                    $('#empInfoBasic').text(fmt(emp.basicSalary));
+                    $('#empInfoYearNet').text(fmt(res.totals.netSalary));
+                    $('#empInfoCard').show();
+
+                    const data = res.data || [];
+                    let html = '';
+                    let totB=0, totOT=0, totG=0, totD=0, totN=0;
+
+                    data.forEach(r => {
+                        const mn = monthName(r.monthYear);
+                        const [y] = (r.monthYear || '').split('-');
+
+                        totB  += parseFloat(r.basicSalary    || 0);
+                        totOT += parseFloat(r.overtimeAmount  || 0);
+                        totG  += parseFloat(r.grossSalary     || 0);
+                        totD  += parseFloat(r.deductions      || 0);
+                        totN  += parseFloat(r.netSalary       || 0);
+
+                        html += `<tr>
+                            <td><strong>${mn} ${y}</strong></td>
+                            <td class="text-center">${r.presentDays  || 0}</td>
+                            <td class="text-center">${r.holidayDays  || 0}</td>
+                            <td class="text-center">${r.leaveDays    || 0}</td>
+                            <td class="text-center ${(r.lwpDays||0)>0
+                                ? 'text-danger' : ''}">
+                                ${r.lwpDays || 0}
+                            </td>
+                            <td class="text-center">${r.overtimeHours || 0}</td>
+                            <td class="text-end">${fmt(r.basicSalary)}</td>
+                            <td class="text-end text-success">
+                                ${parseFloat(r.overtimeAmount || 0) > 0
+                                    ? fmt(r.overtimeAmount) : '-'}
+                            </td>
+                            <td class="text-end fw-bold">${fmt(r.grossSalary)}</td>
+                            <td class="text-end text-danger">
+                                ${parseFloat(r.deductions || 0) > 0
+                                    ? fmt(r.deductions) : '-'}
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                ${fmt(r.netSalary)}
+                            </td>
+                            <td class="text-center">${statusBadge(r.status)}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-primary"
+                                        onclick="viewSlip(${r.id})">
+                                    <i class="fas fa-file-alt"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    $('#empTableBody').html(html ||
+                        '<tr><td colspan="13" class="text-center text-muted py-3">' +
+                        'No records found</td></tr>');
+
+                    if (data.length) {
+                        $('#eftBasic').text(fmt(totB));
+                        $('#eftOT').text(totOT > 0 ? fmt(totOT) : '-');
+                        $('#eftGross').text(fmt(totG));
+                        $('#eftDeduct').text(totD > 0 ? fmt(totD) : '-');
+                        $('#eftNet').text(fmt(totN));
+                        $('#empFooter').show();
+                    }
+
+                    $('#empTableSection').show();
+                });
+        }
+
+        // ════════════════════════════════════════════════════
+        // SALARY SLIP
+        // ════════════════════════════════════════════════════
+        function viewSlip(id) {
+            $.get('@Url.Action("GetSlip", "Report")', { id },
+                function (res) {
+                    if (!res.success) {
+                        toastr.error('Slip not found!');
+                        return;
+                    }
+
+                    const s  = res.data;
+                    const mn = monthName(s.monthYear);
+                    const yr = (s.monthYear || '').split('-')[0];
+
+                    $('#slipContent').html(`
+                    <div id="slipPrintArea">
+                        <!-- Header -->
+                        <div class="text-center pb-3 mb-3 border-bottom">
+                            <h4 class="mb-1 text-primary">SALARY SLIP</h4>
+                            <div class="fw-bold text-muted">${mn} ${yr}</div>
+                        </div>
+
+                        <!-- Employee Info -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr>
+                                        <td class="text-muted" style="width:42%">Code</td>
+                                        <td><strong>${s.employeeCode || '-'}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Name</td>
+                                        <td><strong>${s.employeeName || '-'}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Designation</td>
+                                        <td>${s.designation || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Department</td>
+                                        <td>${s.department || '-'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-6">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr>
+                                        <td class="text-muted" style="width:42%">Month</td>
+                                        <td><strong>${mn} ${yr}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Payable Days</td>
+                                        <td>${s.payableDays || 0}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Generated</td>
+                                        <td>${s.generatedDate || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Status</td>
+                                        <td>${statusBadge(s.status)}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Attendance + Salary -->
+                        <div class="row">
+                            <div class="col-6">
+                                <h6 class="bg-light p-2 rounded mb-2">
+                                    Attendance Summary
+                                </h6>
+                                <table class="table table-sm table-bordered">
+                                    <tr>
+                                        <td>Present Days</td>
+                                        <td class="text-end fw-bold">
+                                            ${s.presentDays || 0}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Holiday Days</td>
+                                        <td class="text-end">${s.holidayDays || 0}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Leave Days</td>
+                                        <td class="text-end">${s.leaveDays || 0}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>LWP Days</td>
+                                        <td class="text-end text-danger">
+                                            ${s.lwpDays || 0}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>OT Hours</td>
+                                        <td class="text-end text-success">
+                                            ${s.overtimeHours || 0} hrs
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="bg-light p-2 rounded mb-2">
+                                    Salary Breakdown
+                                </h6>
+                                <table class="table table-sm table-bordered">
+                                    <tr>
+                                        <td>Basic Salary</td>
+                                        <td class="text-end">${fmt(s.basicSalary)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>OT Amount</td>
+                                        <td class="text-end text-success">
+                                            + ${fmt(s.overtimeAmount)}
+                                        </td>
+                                    </tr>
+                                    <tr class="table-light">
+                                        <td><strong>Gross Salary</strong></td>
+                                        <td class="text-end fw-bold">
+                                            ${fmt(s.grossSalary)}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Deductions (LWP)</td>
+                                        <td class="text-end text-danger">
+                                            - ${fmt(s.deductions)}
+                                        </td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td><strong>Net Salary</strong></td>
+                                        <td class="text-end fw-bold fs-5">
+                                            ${fmt(s.netSalary)}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="row mt-3 pt-3 border-top">
+                            <div class="col-6 text-muted small">
+                                Generated: ${new Date()
+                                    .toLocaleDateString('en-IN')}
+                            </div>
+                            <div class="col-6 text-end">
+                                <div class="border-top pt-1 mt-4 text-muted small"
+                                     style="width:150px;margin-left:auto">
+                                    Authorized Signature
+                                </div>
+                            </div>
+                        </div>
+                    </div>`);
+
+                    new bootstrap.Modal(
+                        document.getElementById('slipModal')).show();
+                });
+        }
+
+        function printSlip() {
+            const slipHtml = $('#slipPrintArea').html();
+            if (!slipHtml) return;
+
+            $('#dynamicPrintArea').remove();
+            $('body').append(`
+                <div id="dynamicPrintArea">
+                    <div style="padding:30px">
+                        ${slipHtml}
+                    </div>
+                </div>`);
+
+            window.print();
+            setTimeout(() => $('#dynamicPrintArea').remove(), 1500);
+        }
+    </script>
+}

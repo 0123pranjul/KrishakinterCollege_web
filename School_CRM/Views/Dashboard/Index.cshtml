@@ -1,0 +1,984 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    string empName = ViewBag.EmployeeName ?? "User";
+    var today = DateTime.Today;
+}
+
+<style>
+    .stat-card {
+        border-radius: 12px;
+        border: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    .stat-card .icon-box {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .stat-card .stat-num {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .stat-card .stat-label {
+        font-size: 0.78rem;
+        opacity: 0.85;
+    }
+    .stat-card .stat-sub {
+        font-size: 0.72rem;
+        opacity: 0.7;
+    }
+    .activity-item {
+        display: flex; gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+    .holiday-item {
+        display: flex; align-items: center;
+        gap: 12px; padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .holiday-item:last-child { border-bottom: none; }
+    .holiday-date-box {
+        min-width: 48px; text-align: center;
+        background: #4361ee; color: white;
+        border-radius: 8px; padding: 4px 6px;
+        font-size: 0.75rem; font-weight: 600;
+    }
+    .dept-bar {
+        height: 8px; border-radius: 4px;
+        background: #4361ee;
+        transition: width 0.5s ease;
+    }
+    .quick-link-btn {
+        border-radius: 10px;
+        border: 2px solid;
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .quick-link-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .section-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .badge-present  { background:#d1e7dd; color:#0a3622; }
+    .badge-absent   { background:#f8d7da; color:#842029; }
+    .badge-halfday  { background:#fff3cd; color:#856404; }
+    .badge-leave    { background:#cff4fc; color:#055160; }
+    .badge-holiday  { background:#e2d9f3; color:#432874; }
+    .badge-pending  { background:#fff3cd; color:#856404; }
+    .badge-approved { background:#d1e7dd; color:#0a3622; }
+    .badge-rejected { background:#f8d7da; color:#842029; }
+</style>
+
+<div class="container-fluid">
+
+    <!-- ── Welcome Row ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                Dashboard
+            </h4>
+            <div class="text-muted small">
+                Welcome back, <strong>@empName</strong> &nbsp;|&nbsp;
+                @today.ToString("dddd, dd MMMM yyyy")
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-primary px-3 py-2" id="todayDateBadge">
+                <i class="fas fa-calendar me-1"></i>
+                @today.ToString("dd MMM yyyy")
+            </span>
+            @if (isAdmin)
+            {
+                <span class="badge bg-success px-3 py-2">
+                    <i class="fas fa-shield-alt me-1"></i>Admin
+                </span>
+            }
+        </div>
+    </div>
+
+    <!-- ══ ROW 1: Main Stat Cards ══ -->
+    <div class="row g-3 mb-3" id="statsRow">
+
+        <!-- Total Employees -->
+        <div class="col-6 col-md-3">
+            <a href="/Employee/Index" class="stat-card card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3"
+                     style="background:linear-gradient(135deg,#4361ee,#3a0ca3);
+                            border-radius:12px;color:white">
+                    <div class="icon-box" style="background:rgba(255,255,255,0.2)">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" id="statTotalEmp">-</div>
+                        <div class="stat-label">Total Employees</div>
+                        <div class="stat-sub">Active Staff</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Today Present -->
+        <div class="col-6 col-md-3">
+            <a href="/Attendance/Index" class="stat-card card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3"
+                     style="background:linear-gradient(135deg,#2dc653,#1a7a33);
+                            border-radius:12px;color:white">
+                    <div class="icon-box" style="background:rgba(255,255,255,0.2)">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" id="statPresent">-</div>
+                        <div class="stat-label">Present Today</div>
+                        <div class="stat-sub" id="statAbsent">- Absent</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Pending Leaves -->
+        <div class="col-6 col-md-3">
+            <a href="/Leave/Index" class="stat-card card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3"
+                     style="background:linear-gradient(135deg,#f77f00,#d62828);
+                            border-radius:12px;color:white">
+                    <div class="icon-box" style="background:rgba(255,255,255,0.2)">
+                        <i class="fas fa-calendar-minus"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" id="statPendingLeave">-</div>
+                        <div class="stat-label">Pending Leaves</div>
+                        <div class="stat-sub" id="statApprovedLeave">- Approved</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Net Salary -->
+        <div class="col-6 col-md-3">
+            <a href="/Payroll/Index" class="stat-card card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3"
+                     style="background:linear-gradient(135deg,#7209b7,#560bad);
+                            border-radius:12px;color:white">
+                    <div class="icon-box" style="background:rgba(255,255,255,0.2)">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" id="statNetSalary">-</div>
+                        <div class="stat-label">Net Salary</div>
+                        <div class="stat-sub" id="statSalaryMonth">This Month</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ══ ROW 2: Today Attendance Mini Cards ══ -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#d1e7dd;border-radius:10px">
+                <div class="fw-bold fs-5 text-success" id="mc_present">-</div>
+                <div class="small text-success">
+                    <i class="fas fa-check-circle me-1"></i>Present
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#f8d7da;border-radius:10px">
+                <div class="fw-bold fs-5 text-danger" id="mc_absent">-</div>
+                <div class="small text-danger">
+                    <i class="fas fa-times-circle me-1"></i>Absent
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#fff3cd;border-radius:10px">
+                <div class="fw-bold fs-5 text-warning" id="mc_halfday">-</div>
+                <div class="small text-warning">
+                    <i class="fas fa-adjust me-1"></i>Half Day
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#cff4fc;border-radius:10px">
+                <div class="fw-bold fs-5 text-info" id="mc_leave">-</div>
+                <div class="small text-info">
+                    <i class="fas fa-plane-departure me-1"></i>On Leave
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 3: Charts + Salary ══ -->
+    <div class="row g-3 mb-3">
+
+        <!-- Attendance Pie Chart -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-chart-pie text-primary"></i>
+                        Monthly Attendance
+                    </div>
+                    <canvas id="attendancePie"
+                            style="max-height:220px"></canvas>
+                    <div id="pieNoData"
+                         class="text-center text-muted py-4"
+                         style="display:none">
+                        No attendance data
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bar Chart: 7-day trend -->
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-chart-bar text-success"></i>
+                        Last 7 Days Attendance
+                    </div>
+                    <canvas id="trendBar"
+                            style="max-height:220px"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salary Status -->
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-money-bill-wave text-warning"></i>
+                        Salary Status
+                        <span class="badge bg-primary ms-auto"
+                              id="salaryMonthBadge" style="font-size:0.65rem">
+                        </span>
+                    </div>
+
+                    <!-- Paid Progress -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-success fw-bold">
+                                Paid
+                            </span>
+                            <span class="small" id="salPaidCount">-</span>
+                        </div>
+                        <div class="progress" style="height:10px">
+                            <div class="progress-bar bg-success"
+                                 id="salPaidBar" style="width:0%">
+                            </div>
+                        </div>
+                        <div class="text-success fw-bold mt-1"
+                             id="salPaidAmt">-</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-danger fw-bold">
+                                Pending
+                            </span>
+                            <span class="small" id="salPendCount">-</span>
+                        </div>
+                        <div class="progress" style="height:10px">
+                            <div class="progress-bar bg-danger"
+                                 id="salPendBar" style="width:0%">
+                            </div>
+                        </div>
+                        <div class="text-danger fw-bold mt-1"
+                             id="salPendAmt">-</div>
+                    </div>
+
+                    <div class="border-top pt-2 mt-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="small fw-bold">Total Net</span>
+                            <span class="fw-bold text-primary"
+                                  id="salTotalNet">-</span>
+                        </div>
+                    </div>
+
+                    <a href="/Payroll/Index"
+                       class="btn btn-primary btn-sm w-100 mt-3">
+                        <i class="fas fa-bolt me-1"></i>
+                        Go to Payroll
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 4: Dept + Holidays + Quick Links ══ -->
+    <div class="row g-3 mb-3">
+
+        <!-- Department Stats -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-building text-info"></i>
+                        Department Overview
+                    </div>
+                    <div id="deptList">
+                        <div class="text-muted text-center py-3 small">
+                            Loading...
+                        </div>
+                    </div>
+                    <a href="/Employee/Index"
+                       class="btn btn-outline-info btn-sm w-100 mt-2">
+                        <i class="fas fa-users me-1"></i>
+                        View All Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Holidays -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-calendar-day text-warning"></i>
+                        Upcoming Holidays
+                    </div>
+                    <div id="holidayList">
+                        <div class="text-muted text-center py-3 small">
+                            Loading...
+                        </div>
+                    </div>
+                    <a href="/Holiday/Index"
+                       class="btn btn-outline-warning btn-sm w-100 mt-2">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Holiday Calendar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-bolt text-danger"></i>
+                        Quick Actions
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/Attendance/Index"
+                           class="quick-link-btn"
+                           style="border-color:#2dc653;color:#2dc653">
+                            <i class="fas fa-calendar-check"></i>
+                            Mark Attendance
+                        </a>
+                        <a href="/Leave/Index"
+                           class="quick-link-btn"
+                           style="border-color:#f77f00;color:#f77f00">
+                            <i class="fas fa-calendar-minus"></i>
+                            Apply Leave
+                        </a>
+                        @if (isAdmin)
+                        {
+                            <a href="/Payroll/Index"
+                               class="quick-link-btn"
+                               style="border-color:#7209b7;color:#7209b7">
+                                <i class="fas fa-bolt"></i>
+                                Generate Salary
+                            </a>
+                            <a href="/Holiday/Index"
+                               class="quick-link-btn"
+                               style="border-color:#4361ee;color:#4361ee">
+                                <i class="fas fa-plus-circle"></i>
+                                Add Holiday
+                            </a>
+                        }
+                        <a href="/Report/Index"
+                           class="quick-link-btn"
+                           style="border-color:#e63946;color:#e63946">
+                            <i class="fas fa-file-alt"></i>
+                            Salary Report
+                        </a>
+                        <a href="/Attendance/Report"
+                           class="quick-link-btn"
+                           style="border-color:#06d6a0;color:#06d6a0">
+                            <i class="fas fa-chart-line"></i>
+                            Attendance Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 5: Recent Activities ══ -->
+    <div class="row g-3">
+
+        <!-- Recent Attendance -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between
+                            align-items-center py-2">
+                    <span class="fw-bold small">
+                        <i class="fas fa-history me-1 text-primary"></i>
+                        Recent Attendance
+                    </span>
+                    <a href="/Attendance/Index"
+                       class="btn btn-outline-primary btn-sm"
+                       style="font-size:0.7rem">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body py-2">
+                    <div id="recentAttList">
+                        <div class="text-muted text-center py-2 small">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Leaves -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between
+                            align-items-center py-2">
+                    <span class="fw-bold small">
+                        <i class="fas fa-calendar-minus me-1
+                                  text-warning"></i>
+                        Recent Leave Requests
+                    </span>
+                    <a href="/Leave/Index"
+                       class="btn btn-outline-warning btn-sm"
+                       style="font-size:0.7rem">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body py-2">
+                    <div id="recentLeaveList">
+                        <div class="text-muted text-center py-2 small">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Monthly Workflow Status ── -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <div class="section-title">
+                <i class="fas fa-tasks text-primary"></i>
+                Monthly Payroll Checklist —
+                @today.ToString("MMMM yyyy")
+            </div>
+            <div class="row g-3" id="checklistRow">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 text-center py-3"
+                         style="background:#f8f9fa;border-radius:10px">
+                        <i class="fas fa-calendar-check fa-2x
+                                  text-success mb-2"></i>
+                        <div class="fw-bold small">Attendance</div>
+                        <div class="small text-muted" id="chkAtt">
+                            Checking...
+                        </div>
+                        <a href="/Attendance/Index"
+                           class="btn btn-outline-success btn-sm mt-2"
+                           style="font-size:0.7rem">
+                            Open
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 text-center py-3"
+                         style="background:#f8f9fa;border-radius:10px">
+                        <i class="fas fa-calendar-minus fa-2x
+                                  text-warning mb-2"></i>
+                        <div class="fw-bold small">Leaves</div>
+                        <div class="small text-muted" id="chkLeave">
+                            Checking...
+                        </div>
+                        <a href="/Leave/Index"
+                           class="btn btn-outline-warning btn-sm mt-2"
+                           style="font-size:0.7rem">
+                            Open
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 text-center py-3"
+                         style="background:#f8f9fa;border-radius:10px">
+                        <i class="fas fa-umbrella-beach fa-2x
+                                  text-info mb-2"></i>
+                        <div class="fw-bold small">Holidays</div>
+                        <div class="small text-muted" id="chkHoliday">
+                            Checking...
+                        </div>
+                        <a href="/Holiday/Index"
+                           class="btn btn-outline-info btn-sm mt-2"
+                           style="font-size:0.7rem">
+                            Open
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 text-center py-3"
+                         style="background:#f8f9fa;border-radius:10px">
+                        <i class="fas fa-bolt fa-2x
+                                  text-primary mb-2"></i>
+                        <div class="fw-bold small">Salary</div>
+                        <div class="small text-muted" id="chkSalary">
+                            Checking...
+                        </div>
+                        <a href="/Payroll/Index"
+                           class="btn btn-outline-primary btn-sm mt-2"
+                           style="font-size:0.7rem">
+                            Open
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        const isAdmin = @Json.Serialize(isAdmin);
+        let pieChart, barChart;
+
+        const fmtK = n => {
+            const v = parseFloat(n || 0);
+            return v >= 100000
+                ? '₹' + (v / 100000).toFixed(1) + 'L'
+                : v >= 1000
+                    ? '₹' + (v / 1000).toFixed(1) + 'K'
+                    : '₹' + v.toFixed(0);
+        };
+
+        const statusBadgeSmall = s => {
+            const map = {
+                'Present':  'badge-present',
+                'Absent':   'badge-absent',
+                'HalfDay':  'badge-halfday',
+                'Leave':    'badge-leave',
+                'Holiday':  'badge-holiday',
+                'Pending':  'badge-pending',
+                'Approved': 'badge-approved',
+                'Rejected': 'badge-rejected'
+            };
+            return `<span class="badge ${map[s]||'bg-secondary'}
+                          px-2">${s||'-'}</span>`;
+        };
+
+        $(document).ready(function () {
+            loadStats();
+            loadTrend();
+        });
+
+        // ── Load All Stats ───────────────────────────────────
+        function loadStats() {
+            $.get('@Url.Action("GetStats","Dashboard")',
+                function (d) {
+                    // Stat Cards
+                    $('#statTotalEmp').text(d.totalEmp);
+                    $('#statPresent').text(d.presentToday);
+                    $('#statAbsent').text(d.absentToday + ' Absent');
+                    $('#statPendingLeave').text(d.pendingLeaves);
+                    $('#statApprovedLeave').text(
+                        d.approvedLeavesMonth + ' Approved');
+                    $('#statNetSalary').text(fmtK(d.totalNet));
+                    $('#statSalaryMonth').text(d.monthYear);
+
+                    // Mini cards
+                    $('#mc_present').text(d.presentToday);
+                    $('#mc_absent').text(d.absentToday);
+                    $('#mc_halfday').text(d.halfDayToday);
+                    $('#mc_leave').text(d.onLeaveToday);
+
+                    // Salary section
+                    const total = d.paidCount + d.pendingCount;
+                    const paidPct = total > 0
+                        ? Math.round((d.paidCount / total) * 100) : 0;
+                    const pendPct = 100 - paidPct;
+
+                    $('#salaryMonthBadge').text(d.monthYear);
+                    $('#salPaidCount').text(d.paidCount + ' employees');
+                    $('#salPendCount').text(
+                        d.pendingCount + ' employees');
+                    $('#salPaidBar').css('width', paidPct + '%');
+                    $('#salPendBar').css('width', pendPct + '%');
+                    $('#salPaidAmt').text(fmtK(d.totalPaid));
+                    $('#salPendAmt').text(
+                        fmtK(d.totalNet - d.totalPaid));
+                    $('#salTotalNet').text(fmtK(d.totalNet));
+
+                    // Pie Chart
+                    const pie = d.monthlyPie;
+                    const total2 = pie.present + pie.absent +
+                        pie.halfDay + pie.leave + pie.holiday;
+
+                    if (total2 > 0) {
+                        renderPie(pie);
+                    } else {
+                        $('#attendancePie').hide();
+                        $('#pieNoData').show();
+                    }
+
+                    // Department
+                    renderDept(d.deptStats, d.totalEmp);
+
+                    // Holidays
+                    renderHolidays(d.upcomingHolidays);
+
+                    // Recent Attendance
+                    renderRecentAtt(d.recentAtt);
+
+                    // Recent Leaves
+                    renderRecentLeave(d.recentLeaves);
+
+                    // Checklist
+                    renderChecklist(d);
+                });
+        }
+
+        // ── Pie Chart ────────────────────────────────────────
+        function renderPie(pie) {
+            if (pieChart) pieChart.destroy();
+            const ctx = document.getElementById('attendancePie')
+                .getContext('2d');
+            pieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present','Absent','Half Day',
+                             'Leave','Holiday'],
+                    datasets: [{
+                        data: [pie.present, pie.absent,
+                               pie.halfDay, pie.leave,
+                               pie.holiday],
+                        backgroundColor: [
+                            '#2dc653','#e63946','#f77f00',
+                            '#4cc9f0','#7209b7'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 11 },
+                                      padding: 10 }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        // ── Bar Chart (7-day trend) ───────────────────────────
+        function loadTrend() {
+            $.get('@Url.Action("GetAttendanceTrend","Dashboard")',
+                function (data) {
+                    if (barChart) barChart.destroy();
+                    const ctx = document.getElementById('trendBar')
+                        .getContext('2d');
+                    barChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.date),
+                            datasets: [
+                                {
+                                    label: 'Present',
+                                    data: data.map(d => d.present),
+                                    backgroundColor: '#2dc653',
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Absent',
+                                    data: data.map(d => d.absent),
+                                    backgroundColor: '#e63946',
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Half Day',
+                                    data: data.map(d => d.halfDay),
+                                    backgroundColor: '#f77f00',
+                                    borderRadius: 4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { size: 11 } }
+                                }
+                            },
+                            scales: {
+                                x: { stacked: false,
+                                     grid: { display: false } },
+                                y: { beginAtZero: true,
+                                     ticks: { stepSize: 1 } }
+                            }
+                        }
+                    });
+                });
+        }
+
+        // ── Department Bars ──────────────────────────────────
+        function renderDept(depts, total) {
+            if (!depts || !depts.length) {
+                $('#deptList').html(
+                    '<div class="text-muted small text-center py-2">' +
+                    'No data</div>');
+                return;
+            }
+            const colors = ['#4361ee','#2dc653','#f77f00',
+                            '#7209b7','#e63946','#06d6a0'];
+            let html = '';
+            depts.forEach((d, i) => {
+                const pct = total > 0
+                    ? Math.round((d.count / total) * 100) : 0;
+                const clr = colors[i % colors.length];
+                html += `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">
+                                ${d.department || 'Other'}
+                            </span>
+                            <span class="small text-muted">
+                                ${d.count} (${pct}%)
+                            </span>
+                        </div>
+                        <div style="background:#f0f0f0;
+                                    border-radius:4px;height:8px">
+                            <div class="dept-bar"
+                                 style="width:${pct}%;
+                                        background:${clr}">
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#deptList').html(html);
+        }
+
+        // ── Upcoming Holidays ────────────────────────────────
+        function renderHolidays(holidays) {
+            if (!holidays || !holidays.length) {
+                $('#holidayList').html(
+                    '<div class="text-muted small text-center py-2">' +
+                    'No upcoming holidays</div>');
+                return;
+            }
+            let html = '';
+            holidays.forEach(h => {
+                const d   = new Date(h.date);
+                const day = d.getDate();
+                const mon = d.toLocaleString('default',
+                    { month: 'short' });
+                html += `
+                    <div class="holiday-item">
+                        <div class="holiday-date-box">
+                            <div>${day}</div>
+                            <div>${mon}</div>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">
+                                ${h.holidayName}
+                            </div>
+                            <div class="text-muted"
+                                 style="font-size:0.72rem">
+                                ${h.dayName}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#holidayList').html(html);
+        }
+
+        // ── Recent Attendance ────────────────────────────────
+        function renderRecentAtt(data) {
+            if (!data || !data.length) {
+                $('#recentAttList').html(
+                    '<div class="text-muted small text-center py-2">' +
+                    'No recent data</div>');
+                return;
+            }
+            const dotMap = {
+                'Present': '#2dc653', 'Absent': '#e63946',
+                'HalfDay': '#f77f00', 'Leave': '#4cc9f0',
+                'Holiday': '#7209b7'
+            };
+            let html = '';
+            data.forEach(a => {
+                const clr = dotMap[a.status] || '#999';
+                html += `
+                    <div class="activity-item">
+                        <div class="activity-dot"
+                             style="background:${clr};
+                                    margin-top:6px">
+                        </div>
+                        <div class="flex-1">
+                            <div class="small fw-bold">
+                                ${a.description}
+                            </div>
+                            <div class="d-flex gap-2
+                                        align-items-center">
+                                <span style="font-size:0.7rem;
+                                             color:#999">
+                                    ${a.date}
+                                </span>
+                                ${statusBadgeSmall(a.status)}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#recentAttList').html(html);
+        }
+
+        // ── Recent Leaves ────────────────────────────────────
+        function renderRecentLeave(data) {
+            if (!data || !data.length) {
+                $('#recentLeaveList').html(
+                    '<div class="text-muted small text-center py-2">' +
+                    'No recent data</div>');
+                return;
+            }
+            const dotMap = {
+                'Pending':  '#f77f00',
+                'Approved': '#2dc653',
+                'Rejected': '#e63946'
+            };
+            let html = '';
+            data.forEach(l => {
+                const clr = dotMap[l.status] || '#999';
+                html += `
+                    <div class="activity-item">
+                        <div class="activity-dot"
+                             style="background:${clr};
+                                    margin-top:6px">
+                        </div>
+                        <div>
+                            <div class="small fw-bold">
+                                ${l.description}
+                            </div>
+                            <div class="d-flex gap-2
+                                        align-items-center">
+                                <span style="font-size:0.7rem;
+                                             color:#999">
+                                    From: ${l.date}
+                                </span>
+                                ${statusBadgeSmall(l.status)}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            $('#recentLeaveList').html(html);
+        }
+
+        // ── Monthly Checklist ─────────────────────────────────
+        function renderChecklist(d) {
+            // Attendance
+            const attOk = d.presentToday > 0;
+            $('#chkAtt').html(attOk
+                ? `<span class="text-success">
+                       <i class="fas fa-check me-1"></i>
+                       ${d.presentToday} Present Today
+                   </span>`
+                : `<span class="text-danger">
+                       <i class="fas fa-times me-1"></i>
+                       Not Marked
+                   </span>`);
+
+            // Leaves
+            const leaveOk = d.pendingLeaves === 0;
+            $('#chkLeave').html(leaveOk
+                ? `<span class="text-success">
+                       <i class="fas fa-check me-1"></i>
+                       All Cleared
+                   </span>`
+                : `<span class="text-warning">
+                       <i class="fas fa-clock me-1"></i>
+                       ${d.pendingLeaves} Pending
+                   </span>`);
+
+            // Holidays
+            const holOk = d.upcomingHolidays &&
+                          d.upcomingHolidays.length > 0;
+            $('#chkHoliday').html(holOk
+                ? `<span class="text-success">
+                       <i class="fas fa-check me-1"></i>
+                       ${d.upcomingHolidays.length} Upcoming
+                   </span>`
+                : `<span class="text-muted">
+                       <i class="fas fa-plus me-1"></i>
+                       Add Holidays
+                   </span>`);
+
+            // Salary
+            const salOk = d.paidCount > 0 ||
+                          d.pendingCount > 0;
+            const salGenerated = d.paidCount + d.pendingCount;
+            $('#chkSalary').html(salOk
+                ? (d.pendingCount === 0
+                    ? `<span class="text-success">
+                           <i class="fas fa-check me-1"></i>
+                           All Paid ✅
+                       </span>`
+                    : `<span class="text-warning">
+                           <i class="fas fa-clock me-1"></i>
+                           ${d.pendingCount} Pending
+                       </span>`)
+                : `<span class="text-danger">
+                       <i class="fas fa-exclamation me-1"></i>
+                       Not Generated
+                   </span>`);
+        }
+    </script>
+}

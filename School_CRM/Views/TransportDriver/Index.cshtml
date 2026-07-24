@@ -1,0 +1,217 @@
+@{
+    ViewData["Title"] = "Drivers & Conductors";
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<style>
+    .row-warn td { background: #fffbeb !important; }
+    .row-expired td { background: #fef2f2 !important; }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-id-badge text-primary me-2"></i>Drivers & Conductors</h4>
+            <small class="text-muted">Manage transport staff</small>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="staffTab">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#driversTab"><i class="fas fa-steering-wheel me-1"></i>Drivers</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#conductorsTab"><i class="fas fa-user-tag me-1"></i>Conductors</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Drivers Tab -->
+        <div class="tab-pane fade show active" id="driversTab">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-primary btn-sm" onclick="openDriverModal(0)"><i class="fas fa-plus me-1"></i>Add Driver</button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblDrivers" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>License No.</th>
+                                    <th>License Expiry</th>
+                                    <th>Address</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driversBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conductors Tab -->
+        <div class="tab-pane fade" id="conductorsTab">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-primary btn-sm" onclick="openConductorModal(0)"><i class="fas fa-plus me-1"></i>Add Conductor</button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblConductors" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Employee ID</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="conductorsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Driver Modal -->
+<div class="modal fade" id="driverModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="driverModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Conductor Modal -->
+<div class="modal fade" id="conductorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="conductorModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+    let driverTable, conductorTable;
+
+    function loadDrivers() {
+        $.get('/TransportDriver/GetAllDrivers', function (r) {
+            if (!r.success) return;
+            if (driverTable) { driverTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(d => {
+                const expClass = d.licenseExpired ? 'text-danger fw-semibold row-expired' : d.licenseWarn ? 'text-warning fw-semibold' : '';
+                const rowClass = d.licenseExpired ? 'row-expired' : d.licenseWarn ? 'row-warn' : '';
+                return `<tr class="${rowClass}">
+                    <td>${sno++}</td>
+                    <td class="fw-semibold">${d.driverName}</td>
+                    <td>${d.contactNumber}</td>
+                    <td><code>${d.licenseNumber}</code></td>
+                    <td class="${expClass}">${d.licenseExpiry}${d.licenseExpired ? ' <i class="fas fa-exclamation-triangle text-danger"></i>' : d.licenseWarn ? ' <i class="fas fa-exclamation-circle text-warning"></i>' : ''}</td>
+                    <td class="text-muted">${d.address || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openDriverModal(${d.driverId})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDriver(${d.driverId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            $('#driversBody').html(rows.join(''));
+            driverTable = $('#tblDrivers').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function loadConductors() {
+        $.get('/TransportDriver/GetAllConductors', function (r) {
+            if (!r.success) return;
+            if (conductorTable) { conductorTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(c => `<tr>
+                <td>${sno++}</td>
+                <td class="fw-semibold">${c.conductorName}</td>
+                <td>${c.contactNumber}</td>
+                <td>${c.employeeId || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openConductorModal(${c.conductorId})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteConductor(${c.conductorId})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`);
+            $('#conductorsBody').html(rows.join(''));
+            conductorTable = $('#tblConductors').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function openDriverModal(id) {
+        $('#driverModal').modal('show');
+        $('#driverModalContent').load('/TransportDriver/CreateOrEditDriver?id=' + id);
+    }
+
+    function saveDriver(form) {
+        const id = $(form).find('[name=DriverId]').val() || 0;
+        $.ajax({
+            url: `/TransportDriver/CreateOrEditDriver?id=${id}`,
+            type: 'POST',
+            data: $(form).serialize(),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#driverModal').modal('hide'); loadDrivers(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    function deleteDriver(id) {
+        Swal.fire({ title: 'Delete Driver?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportDriver/DeleteDriver', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadDrivers(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    function openConductorModal(id) {
+        $('#conductorModal').modal('show');
+        $('#conductorModalContent').load('/TransportDriver/CreateOrEditConductor?id=' + id);
+    }
+
+    function saveConductor(form) {
+        const id = $(form).find('[name=ConductorId]').val() || 0;
+        $.ajax({
+            url: `/TransportDriver/CreateOrEditConductor?id=${id}`,
+            type: 'POST',
+            data: $(form).serialize(),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#conductorModal').modal('hide'); loadConductors(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    function deleteConductor(id) {
+        Swal.fire({ title: 'Delete Conductor?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportDriver/DeleteConductor', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadConductors(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    $(document).ready(function () {
+        loadDrivers();
+        loadConductors();
+    });
+</script>
+}

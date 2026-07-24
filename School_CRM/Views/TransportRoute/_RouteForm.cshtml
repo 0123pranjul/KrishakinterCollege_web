@@ -1,0 +1,43 @@
+@model School_CRM.Models.TblTrnRoute
+@{
+    bool isNew = Model.RouteId == 0;
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+}
+
+<div class="modal-header">
+    <h5 class="modal-title"><i class="fas fa-route me-2 text-primary"></i>@(isNew ? "Add Route" : "Edit Route")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form onsubmit="return saveRoute(this)">
+    <input type="hidden" name="RouteId" value="@Model.RouteId" />
+    <div class="modal-body">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label fw-semibold">Route Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="RouteName" value="@Model.RouteName" required placeholder="e.g. North Route - Morning" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Session <span class="text-danger">*</span></label>
+                <select class="form-select" name="SessionId" required>
+                    <option value="">-- Select Session --</option>
+                    @foreach (var s in sessions)
+                    {
+                        <option value="@s.SessionId" selected="@(Model.SessionId == s.SessionId)">@s.SessionName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Max Student Capacity <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="MaxStudentCapacity" value="@Model.MaxStudentCapacity" required min="1" max="200" />
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea class="form-control" name="Description" rows="2">@Model.Description</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Route</button>
+    </div>
+</form>

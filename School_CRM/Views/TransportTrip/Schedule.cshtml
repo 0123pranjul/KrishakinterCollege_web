@@ -1,0 +1,263 @@
+@{
+    ViewData["Title"] = "Weekly Trip Schedule";
+    var routes = ViewBag.Routes as List<School_CRM.Models.TblTrnRoute> ?? new();
+}
+
+<style>
+    .schedule-grid { border-collapse: collapse; width: 100%; }
+    .schedule-grid th, .schedule-grid td { border: 1px solid #e2e8f0; padding: 8px 10px; vertical-align: middle; }
+    .schedule-grid thead { background: #1e3a8a; color: #fff; }
+    .day-btn {
+        cursor: pointer; border-radius: 20px; padding: 4px 10px; font-size: .75rem;
+        font-weight: 600; border: 2px solid; transition: all .15s;
+        min-width: 80px; text-align: center; display: inline-block; user-select: none;
+    }
+    .day-btn.none     { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+    .day-btn.morning  { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
+    .day-btn.evening  { background: #dbeafe; border-color: #60a5fa; color: #1e40af; }
+    .day-btn.both     { background: #d1fae5; border-color: #34d399; color: #065f46; }
+    .day-btn:hover    { filter: brightness(.95); transform: scale(1.04); }
+    .route-row td:first-child { font-weight: 600; color: #1e3a8a; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-calendar-week text-primary me-2"></i>Weekly Trip Schedule</h4>
+            <small class="text-muted">Har route ke liye Mon–Sat schedule set karo — isi se trips auto-generate hongi</small>
+        </div>
+        <a href="/TransportTrip" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Trips
+        </a>
+    </div>
+
+    <!-- ── Schedule Grid ── -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-semibold border-0 d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-table me-2 text-primary"></i>Route-wise Weekly Schedule</span>
+            <button class="btn btn-success btn-sm" onclick="saveAllSchedules()">
+                <i class="fas fa-save me-1"></i>Save All Schedules
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="schedule-grid">
+                    <thead>
+                        <tr>
+                            <th style="width:200px">Route</th>
+                            <th class="text-center">Monday</th>
+                            <th class="text-center">Tuesday</th>
+                            <th class="text-center">Wednesday</th>
+                            <th class="text-center">Thursday</th>
+                            <th class="text-center">Friday</th>
+                            <th class="text-center">Saturday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+                        @foreach (var route in routes)
+                        {
+                            <tr class="route-row" data-route-id="@route.RouteId">
+                                <td>
+                                    <div>@route.RouteName</div>
+                                    <small class="text-muted" style="font-size:.7rem">Max: @route.MaxStudentCapacity students</small>
+                                </td>
+                                @for (int d = 1; d <= 6; d++)
+                                {
+                                    <td class="text-center">
+                                        <div class="day-btn none"
+                                             data-route="@route.RouteId"
+                                             data-day="@d"
+                                             data-value="none"
+                                             onclick="cycleDay(this)">
+                                            None
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-3 border-top" style="background:#f8fafc">
+                <div class="d-flex gap-4 flex-wrap" style="font-size:.78rem">
+                    <span><span class="day-btn none" style="pointer-events:none">None</span> — Trip nahi chalegi</span>
+                    <span><span class="day-btn morning" style="pointer-events:none">Morning</span> — Sirf morning trip</span>
+                    <span><span class="day-btn evening" style="pointer-events:none">Evening</span> — Sirf evening trip</span>
+                    <span><span class="day-btn both" style="pointer-events:none">Both</span> — Morning + Evening dono</span>
+                </div>
+                <div class="mt-2 text-muted small"><i class="fas fa-info-circle me-1"></i>Cell pe click karo: None → Morning → Evening → Both → None</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Generate Trips Section ── -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white fw-semibold border-0">
+            <i class="fas fa-magic me-2"></i>Auto Generate Trips
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">From Date <span class="text-danger">*</span></label>
+                    <input type="date" id="genFrom" class="form-control form-control-sm"
+                           value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">To Date <span class="text-danger">*</span></label>
+                    <input type="date" id="genTo" class="form-control form-control-sm"
+                           value="@DateTime.Today.AddDays(6).ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Route (Optional)</label>
+                    <select id="genRoute" class="form-select form-select-sm">
+                        <option value="">All Routes</option>
+                        @foreach (var r in routes)
+                        {
+                            <option value="@r.RouteId">@r.RouteName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" onclick="generateTrips()">
+                        <i class="fas fa-magic me-1"></i>Generate Trips
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick date presets -->
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <span class="text-muted small fw-semibold me-1">Quick:</span>
+                <button class="btn btn-outline-secondary btn-sm" onclick="setDateRange(0, 0)">Today</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="setDateRange(0, 6)">This Week</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="setDateRange(7, 13)">Next Week</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="setDateRange(0, 29)">This Month</button>
+            </div>
+
+            <!-- Result -->
+            <div id="genResult" class="mt-3 d-none"></div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+// Day cycle order
+const CYCLE = ['none', 'morning', 'evening', 'both'];
+const LABELS = { none: 'None', morning: 'Morning', evening: 'Evening', both: 'Both' };
+
+function cycleDay(el) {
+    const cur = el.getAttribute('data-value');
+    const nxt = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+    el.setAttribute('data-value', nxt);
+    el.className  = 'day-btn ' + nxt;
+    el.textContent = LABELS[nxt];
+}
+
+// Load existing schedules on page load
+function loadExistingSchedules() {
+    $.get('/TransportTrip/GetWeeklySchedule', function(r) {
+        if (!r.success) return;
+        r.data.forEach(function(s) {
+            const btn = document.querySelector(
+                '.day-btn[data-route="' + s.routeId + '"][data-day="' + s.dayOfWeek + '"]'
+            );
+            if (!btn) return;
+            const val = s.tripType.toLowerCase();
+            btn.setAttribute('data-value', val);
+            btn.className   = 'day-btn ' + val;
+            btn.textContent = LABELS[val] || s.tripType;
+        });
+    });
+}
+
+function saveAllSchedules() {
+    const routeRows = document.querySelectorAll('.route-row');
+    const promises  = [];
+
+    routeRows.forEach(function(row) {
+        const routeId = parseInt(row.getAttribute('data-route-id'));
+        const entries = [];
+        row.querySelectorAll('.day-btn').forEach(function(btn) {
+            const val = btn.getAttribute('data-value');
+            if (val === 'none') return;
+            const day     = parseInt(btn.getAttribute('data-day'));
+            const tripType = val.charAt(0).toUpperCase() + val.slice(1); // Both | Morning | Evening
+            entries.push({ dayOfWeek: day, tripType: tripType });
+        });
+        promises.push(
+            $.ajax({
+                url: '/TransportTrip/SaveWeeklySchedule',
+                type: 'POST', contentType: 'application/json',
+                data: JSON.stringify({ routeId: routeId, entries: entries })
+            })
+        );
+    });
+
+    Promise.all(promises).then(function() {
+        toastr.success('Saare routes ka weekly schedule save ho gaya!');
+    }).catch(function() {
+        toastr.error('Kuch schedule save nahi ho sake.');
+    });
+}
+
+function setDateRange(fromOffset, toOffset) {
+    const from = new Date();
+    from.setDate(from.getDate() + fromOffset);
+    const to = new Date();
+    to.setDate(to.getDate() + toOffset);
+    document.getElementById('genFrom').value = from.toISOString().split('T')[0];
+    document.getElementById('genTo').value   = to.toISOString().split('T')[0];
+}
+
+function generateTrips() {
+    const fromDate = document.getElementById('genFrom').value;
+    const toDate   = document.getElementById('genTo').value;
+    const routeVal = document.getElementById('genRoute').value;
+
+    if (!fromDate || !toDate) { toastr.warning('Date range select karo.'); return; }
+
+    const payload = { fromDate, toDate, routeId: routeVal ? parseInt(routeVal) : null };
+
+    $('#genResult').html(
+        '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Generating...</div>'
+    ).removeClass('d-none');
+
+    $.ajax({
+        url: '/TransportTrip/GenerateScheduledTrips',
+        type: 'POST', contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function(r) {
+            if (r.success) {
+                const alertClass = r.created > 0 ? 'alert-success' : 'alert-info';
+                const icon       = r.created > 0 ? 'fas fa-check-circle' : 'fas fa-info-circle';
+                $('#genResult').html(
+                    '<div class="alert ' + alertClass + ' d-flex align-items-center gap-2">' +
+                    '<i class="' + icon + ' fa-lg"></i>' +
+                    '<div>' +
+                    '<strong>' + r.message + '</strong>' +
+                    (r.created > 0
+                        ? '<div class="small mt-1"><a href="/TransportTrip" class="alert-link">Trip Management pe jaao →</a></div>'
+                        : '') +
+                    '</div></div>'
+                );
+            } else {
+                $('#genResult').html('<div class="alert alert-danger"><i class="fas fa-times me-2"></i>' + r.message + '</div>');
+            }
+        },
+        error: function() {
+            $('#genResult').html('<div class="alert alert-danger">Network error. Please try again.</div>');
+        }
+    });
+}
+
+$(document).ready(function() {
+    loadExistingSchedules();
+});
+</script>
+}

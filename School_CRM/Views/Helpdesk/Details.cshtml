@@ -1,0 +1,329 @@
+@model School_CRM.Models.TblHelpdeskTicket
+@{
+    ViewData["Title"] = "Ticket Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    var employees = ViewBag.Employees as List<School_CRM.Models.Employee>;
+    int currentUserId = ViewBag.CurrentUserId;
+}
+
+<style>
+    .chat-container {
+        height: 450px;
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    .message-bubble {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+    .message-user {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+    .message-admin {
+        background-color: #f1f5f9;
+        color: #334155;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+    }
+    .card-detail {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+        <h4 class="fw-bold mb-0">Ticket Reference: <span class="text-primary">@Model.TicketNo</span></h4>
+    </div>
+
+    <div class="row">
+        <!-- Ticket Information Side Pane -->
+        <div class="col-lg-4 mb-4">
+            <div class="card card-detail h-100">
+                <div class="card-header bg-white pt-4 border-0">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-info-circle me-2 text-primary"></i>Ticket Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 border-bottom pb-2">
+                        <label class="text-muted small fw-bold text-uppercase">Title</label>
+                        <div class="fw-bold text-dark">@Model.Title</div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <label class="text-muted small fw-bold text-uppercase">Category</label>
+                        <div>
+                            <span class="badge bg-light text-dark border">@Model.Category.CategoryName</span>
+                        </div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <label class="text-muted small fw-bold text-uppercase">Priority</label>
+                        <div>
+                            @if (Model.Priority == "High")
+                            {
+                                <span class="badge bg-danger">High</span>
+                            }
+                            else if (Model.Priority == "Normal")
+                            {
+                                <span class="badge bg-primary">Normal</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Low</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <label class="text-muted small fw-bold text-uppercase">Status</label>
+                        <div>
+                            @if (Model.Status == "Open")
+                            {
+                                <span class="badge bg-danger">Open</span>
+                            }
+                            else if (Model.Status == "In Progress")
+                            {
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                            }
+                            else if (Model.Status == "Resolved")
+                            {
+                                <span class="badge bg-success">Resolved</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Closed</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <label class="text-muted small fw-bold text-uppercase">Date Created</label>
+                        <div class="text-dark">@Model.CreatedDate.ToString("dd MMM yyyy, hh:mm tt")</div>
+                    </div>
+
+                    @if (Model.AssignedToNavigation != null)
+                    {
+                        <div class="mb-3 border-bottom pb-2">
+                            <label class="text-muted small fw-bold text-uppercase">Assigned Staff</label>
+                            <div class="fw-bold text-success"><i class="fas fa-user-cog me-1"></i>@Model.AssignedToNavigation.Name</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Remarks))
+                    {
+                        <div class="mb-3">
+                            <label class="text-muted small fw-bold text-uppercase">Admin Resolution Note</label>
+                            <div class="p-2 bg-light rounded text-muted small">@Model.Remarks</div>
+                        </div>
+                    }
+
+                    <!-- Admin Actions Section -->
+                    @if (isAdmin)
+                    {
+                        <div class="card border border-warning mt-4">
+                            <div class="card-body bg-light">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-tools me-2 text-warning"></i>Admin Ticket Actions</h6>
+                                <form id="adminUpdateForm">
+                                    <input type="hidden" id="adminTicketId" value="@Model.Id" />
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Update Status</label>
+                                        <select class="form-select form-select-sm" id="adminStatus" required>
+                                            <option value="Open" selected="@(Model.Status == "Open")">Open</option>
+                                            <option value="In Progress" selected="@(Model.Status == "In Progress")">In Progress</option>
+                                            <option value="Resolved" selected="@(Model.Status == "Resolved")">Resolved</option>
+                                            <option value="Closed" selected="@(Model.Status == "Closed")">Closed</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Assign Staff</label>
+                                        <select class="form-select form-select-sm" id="adminAssignee">
+                                            <option value="">-- Unassigned --</option>
+                                            @if (employees != null)
+                                            {
+                                                foreach (var emp in employees)
+                                                {
+                                                    <option value="@emp.Id" selected="@(Model.AssignedTo == emp.Id)">@emp.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Resolution Notes / Remarks</label>
+                                        <textarea class="form-control form-control-sm" id="adminRemarks" rows="3" placeholder="Add resolution notes or internal remarks...">@Model.Remarks</textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-warning btn-sm w-100 rounded-pill fw-bold" id="btnAdminUpdate">
+                                        Update Ticket Info
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat / Conversation Thread Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="card card-detail h-100">
+                <div class="card-header bg-white pt-4 border-0">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-primary"></i>Conversation Thread</h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <!-- Ticket Description as Initial Message -->
+                    <div class="alert alert-primary shadow-sm mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold text-dark">Original Complaint by @Model.RaisedByNavigation.Username</span>
+                            <small class="text-muted">@Model.CreatedDate.ToString("dd MMM yyyy, hh:mm tt")</small>
+                        </div>
+                        <div class="text-dark">@Model.Description</div>
+
+                        @if (!string.IsNullOrEmpty(Model.AttachmentUrl))
+                        {
+                            <div class="mt-3 pt-2 border-top">
+                                <span class="fw-bold text-dark small"><i class="fas fa-paperclip me-1"></i>Attachment:</span>
+                                <div class="mt-2">
+                                    @if (Model.AttachmentUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
+                                         Model.AttachmentUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || 
+                                         Model.AttachmentUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <a href="@Model.AttachmentUrl" target="_blank">
+                                            <img src="@Model.AttachmentUrl" class="img-thumbnail" style="max-height: 200px; display: block;" alt="Attachment" />
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Model.AttachmentUrl" class="btn btn-sm btn-light border text-dark" target="_blank">
+                                            <i class="fas fa-file-download me-1 text-primary"></i> View / Download Document
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Chat Bubbles Container -->
+                    <div class="chat-container d-flex flex-column mb-3" id="chatWindow">
+                        @if (!Model.TblHelpdeskReplies.Any())
+                        {
+                            <div class="text-center text-muted fst-italic my-auto">No replies yet. Type a message below to start conversation.</div>
+                        }
+                        @foreach (var reply in Model.TblHelpdeskReplies.OrderBy(r => r.CreatedDate))
+                        {
+                            var isCurrentUser = reply.ReplyBy == currentUserId;
+                            <div class="d-flex flex-column @(isCurrentUser ? "align-items-end" : "align-items-start") w-100">
+                                <div class="message-bubble @(reply.IsAdminReply ? "message-admin" : "message-user")">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="fw-bold me-3">@reply.ReplyByNavigation.Username @(reply.IsAdminReply ? "(Support)" : "")</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">@reply.CreatedDate.ToString("hh:mm tt")</small>
+                                    </div>
+                                    <div>@reply.ReplyMessage</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Reply Input Box -->
+                    <form id="replyForm" class="d-flex gap-2">
+                        <input type="hidden" id="ticketId" value="@Model.Id" />
+                        <input type="text" class="form-control rounded-pill px-4" id="replyMessage" placeholder="Type your reply message here..." required autocomplete="off" />
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" id="btnSendReply">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Scroll Chat Window to bottom initially
+            var chatWindow = $('#chatWindow');
+            chatWindow.scrollTop(chatWindow[0].scrollHeight);
+
+            // Handle Reply Form submission
+            $('#replyForm').submit(function(e) {
+                e.preventDefault();
+
+                var ticketId = $('#ticketId').val();
+                var replyMessage = $('#replyMessage').val();
+
+                var btn = $('#btnSendReply');
+                btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("Reply", "Helpdesk")',
+                    type: 'POST',
+                    data: {
+                        ticketId: ticketId,
+                        replyMessage: replyMessage
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                            btn.prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        alert('Unable to send reply. Please try again.');
+                        btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Handle Admin Actions form submission
+            $('#adminUpdateForm').submit(function(e) {
+                e.preventDefault();
+
+                var ticketId = $('#adminTicketId').val();
+                var status = $('#adminStatus').val();
+                var assignedTo = $('#adminAssignee').val();
+                var remarks = $('#adminRemarks').val();
+
+                var btn = $('#btnAdminUpdate');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Updating...');
+
+                $.ajax({
+                    url: '@Url.Action("UpdateStatus", "Helpdesk")',
+                    type: 'POST',
+                    data: {
+                        ticketId: ticketId,
+                        status: status,
+                        assignedTo: assignedTo,
+                        remarks: remarks
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                            btn.prop('disabled', false).text('Update Ticket Info');
+                        }
+                    },
+                    error: function() {
+                        alert('Unable to update ticket. Please try again.');
+                        btn.prop('disabled', false).text('Update Ticket Info');
+                    }
+                });
+            });
+        });
+    </script>
+}

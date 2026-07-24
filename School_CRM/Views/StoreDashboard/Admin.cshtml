@@ -1,0 +1,247 @@
+@model School_CRM.Models.DTOs.InvAdminDashboardDto
+@{ ViewData["Title"] = "Store Dashboard"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-store text-primary me-2"></i>Store Dashboard</h2>
+            <small class="text-muted">Real-time inventory & sales overview</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="StoreSale" asp-action="Create" class="btn btn-success">
+                <i class="fas fa-cash-register me-1"></i>New Bill
+            </a>
+            <a asp-controller="StoreGRN" asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-truck me-1"></i>Receive Stock
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        @{
+            var cards = new[]
+            {
+                ("Today Sales",       $"₹{Model.TodaySalesTotal:F0}",  "bg-success",   "fas fa-rupee-sign"),
+                ("Items Sold Today",  Model.TodayItemsSold.ToString(),  "bg-primary",   "fas fa-shopping-cart"),
+                ("Issues Today",      Model.TodayIssues.ToString(),     "bg-info",      "fas fa-gift"),
+                ("Pending Credits",   Model.PendingCreditsCount.ToString(), "bg-warning","fas fa-clock"),
+                ("Low Stock",         Model.LowStockCount.ToString(),   "bg-orange",    "fas fa-exclamation-triangle"),
+                ("Out of Stock",      Model.OutOfStockCount.ToString(), "bg-danger",    "fas fa-times-circle"),
+                ("Pending POs",       Model.PendingPOCount.ToString(),  "bg-secondary", "fas fa-file-alt"),
+                ("Credit Due",        $"₹{Model.PendingCreditsAmount:F0}", "bg-dark",   "fas fa-hand-holding-usd"),
+            };
+        }
+        @foreach (var (label, value, bg, icon) in cards)
+        {
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card border-0 shadow-sm @bg text-white">
+                    <div class="card-body text-center py-3">
+                        <i class="@icon fa-2x mb-2 opacity-75"></i>
+                        <h3 class="fw-bold mb-0">@value</h3>
+                        <small>@label</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Low Stock Alert -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between py-3">
+                    <h6 class="fw-bold mb-0 text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h6>
+                    <a asp-controller="StoreProduct" asp-action="Index" asp-route-StockStatus="LowStock" class="btn btn-sm btn-outline-warning">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr><th>Product</th><th>Category</th><th>Stock</th><th>Reorder</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.LowStockItems.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-3">All stock levels are healthy</td></tr>
+                                }
+                                @foreach (var item in Model.LowStockItems.Take(8))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.ProductName</td>
+                                        <td class="text-muted small">@item.CategoryName</td>
+                                        <td><span class="badge bg-warning text-dark">@item.CurrentStock</span></td>
+                                        <td class="text-muted">@item.ReorderLevel</td>
+                                        <td>
+                                            <a asp-controller="StorePurchase" asp-action="Create" class="btn btn-xs btn-outline-primary">Order</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Sales Chart -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Monthly Sales</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Out of Stock -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-danger"><i class="fas fa-times-circle me-2"></i>Out of Stock</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light"><tr><th>Product</th><th>Category</th></tr></thead>
+                            <tbody>
+                                @if (!Model.OutOfStockItems.Any())
+                                {
+                                    <tr><td colspan="2" class="text-center text-muted py-3">No out-of-stock items</td></tr>
+                                }
+                                @foreach (var item in Model.OutOfStockItems.Take(8))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold text-danger">@item.ProductName</td>
+                                        <td class="text-muted small">@item.CategoryName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Stock Value -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-tags me-2 text-info"></i>Category Stock Value</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light"><tr><th>Category</th><th>Items</th><th>Value</th></tr></thead>
+                            <tbody>
+                                @foreach (var c in Model.CategoryStockValues)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@c.CategoryName</td>
+                                        <td>@c.TotalItems</td>
+                                        <td class="text-success fw-semibold">₹@c.StockValue.ToString("F0")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Debtors -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-danger"><i class="fas fa-hand-holding-usd me-2"></i>Top Debtors</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light"><tr><th>Customer</th><th>Type</th><th>Due</th></tr></thead>
+                            <tbody>
+                                @if (!Model.TopDebtors.Any())
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted py-3">No pending dues</td></tr>
+                                }
+                                @foreach (var d in Model.TopDebtors)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@d.CustomerName</td>
+                                        <td><span class="badge bg-secondary">@d.CustomerType</span></td>
+                                        <td class="text-danger fw-bold">₹@d.TotalDue.ToString("F0")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bills -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between py-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-receipt me-2 text-secondary"></i>Recent Transactions</h6>
+            <a asp-controller="StoreSale" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Bill No.</th><th>Customer</th><th>Type</th><th>Date</th><th>Amount</th><th>Payment</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in Model.RecentBills)
+                        {
+                            <tr>
+                                <td><code>@b.BillNumber</code></td>
+                                <td>@b.CustomerName</td>
+                                <td><span class="badge bg-light text-dark border">@b.CustomerType</span></td>
+                                <td class="text-muted small">@b.SaleDate.ToString("dd/MM/yyyy")</td>
+                                <td class="fw-semibold">₹@b.TotalAmount.ToString("F2")</td>
+                                <td><span class="badge bg-info text-dark">@b.PaymentMode</span></td>
+                                <td>
+                                    <span class="badge @(b.IsPaid ? "bg-success" : "bg-danger")">
+                                        @(b.IsPaid ? "Paid" : "Pending")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const salesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlySales));
+    new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+            labels: salesData.map(x => x.month),
+            datasets: [{
+                label: 'Sales (₹)',
+                data: salesData.map(x => x.total),
+                backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v } } }
+        }
+    });
+</script>
+}

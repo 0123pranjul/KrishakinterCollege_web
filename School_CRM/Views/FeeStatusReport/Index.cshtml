@@ -1,0 +1,359 @@
+@{
+    ViewData["Title"] = "Fee Status Report";
+}
+
+<style>
+.filter-bar { background:linear-gradient(135deg,#1e40af,#1d4ed8); border-radius:10px; }
+.cell-paid    { background:#d1fae5; color:#065f46; font-size:14px; text-align:center; }
+.cell-partial { background:#fef9c3; color:#92400e; font-size:14px; text-align:center; }
+.cell-unpaid  { background:#fee2e2; color:#991b1b; font-size:14px; text-align:center; }
+.cell-na      { background:#f3f4f6; color:#9ca3af; font-size:12px; text-align:center; }
+th.month-col  { font-size:11px; white-space:nowrap; padding:4px 6px !important; text-align:center; }
+td.month-cell { padding:3px 6px !important; cursor:default; }
+.legend-dot   { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; }
+@@media print {
+    .no-print { display:none !important; }
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { font-size:10px; }
+}
+</style>
+
+<div class="container-fluid">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar p-3 mb-3 no-print">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="text-white fw-semibold small d-block mb-1">Session *</label>
+                <select id="fSession" class="form-select form-select-sm" style="min-width:130px">
+                    <option value="">-- Session --</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="text-white fw-semibold small d-block mb-1">Class *</label>
+                <select id="fClass" class="form-select form-select-sm" style="min-width:120px">
+                    <option value="">-- Class --</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="text-white fw-semibold small d-block mb-1">Section</label>
+                <select id="fSection" class="form-select form-select-sm" style="min-width:100px">
+                    <option value="">All Sections</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="text-white fw-semibold small d-block mb-1">Show</label>
+                <select id="fStatus" class="form-select form-select-sm" style="min-width:120px">
+                    <option value="">All Students</option>
+                    <option value="any-unpaid">Has Any Unpaid</option>
+                    <option value="all-paid">Fully Paid</option>
+                </select>
+            </div>
+            <div class="col-auto d-flex gap-2 align-items-end">
+                <button class="btn btn-warning fw-semibold" onclick="loadReport()">
+                    <i class="fas fa-search me-1"></i> Load
+                </button>
+                <button class="btn btn-outline-light" onclick="resetAll()" title="Reset">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+            <div class="col-auto ms-auto d-flex gap-2 align-items-end">
+                <button class="btn btn-outline-light btn-sm" onclick="doPrint()" id="btnPrint" style="display:none">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <button class="btn btn-light btn-sm fw-semibold" onclick="doDownload()" id="btnDownload" style="display:none">
+                    <i class="fas fa-download me-1"></i> PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex gap-3 mb-2 no-print" id="legendRow" style="display:none !important">
+        <span><span class="legend-dot" style="background:#d1fae5; border:1px solid #10b981"></span>✅ Paid</span>
+        <span><span class="legend-dot" style="background:#fef9c3; border:1px solid #f59e0b"></span>⚠️ Partial</span>
+        <span><span class="legend-dot" style="background:#fee2e2; border:1px solid #ef4444"></span>❌ Unpaid</span>
+        <span><span class="legend-dot" style="background:#f3f4f6; border:1px solid #d1d5db"></span>— Not Due</span>
+    </div>
+
+    <!-- Report Title (print only) -->
+    <div class="text-center mb-2" id="printTitle" style="display:none">
+        <h5 class="fw-bold mb-0">Fee Status Report</h5>
+        <p class="text-muted small mb-0" id="printSubtitle"></p>
+    </div>
+
+    <!-- Report Table -->
+    <div id="reportWrap" style="display:none">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center py-2 no-print">
+                <div>
+                    <strong id="reportHeading">Fee Status</strong>
+                    <span class="text-muted ms-2 small" id="reportStats"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <!-- Quick month filter chips -->
+                    <div id="monthFilterChips" class="d-flex gap-1 flex-wrap"></div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm mb-0" id="gridTable" style="font-size:12px">
+                        <thead id="gridHead" style="background:#1e3a8a; color:#fff; position:sticky; top:0; z-index:1"></thead>
+                        <tbody id="gridBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder -->
+    <div id="placeholder" class="text-center py-5">
+        <i class="fas fa-table fa-4x text-muted opacity-25 mb-3 d-block"></i>
+        <h5 class="text-muted">Session aur Class select karo</h5>
+        <p class="text-muted small">Poori class ka month-wise fee status ek jagah dikhega</p>
+    </div>
+
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script>
+var allStudents   = [];
+var allMonths     = [];
+var activeMonthFilter = null;
+var meta = {};
+
+// ── Load dropdowns ────────────────────────────────────────────────────────
+$(function () {
+    $.get('@Url.Action("GetDropdowns","FeeStatusReport")', function (res) {
+        res.sessions.forEach(s => $('#fSession').append(`<option value="${s.sessionId}">${s.sessionName}</option>`));
+        res.classes .forEach(c => $('#fClass')  .append(`<option value="${c.classId}">${c.className}</option>`));
+    });
+
+    $('#fClass').on('change', function () {
+        $('#fSection').html('<option value="">All Sections</option>');
+        var cId = $(this).val();
+        if (!cId) return;
+        $.get('@Url.Action("GetSections","FeeStatusReport")', { classId: cId }, function (r) {
+            r.forEach(s => $('#fSection').append(`<option value="${s.sectionId}">${s.sectionName}</option>`));
+        });
+    });
+});
+
+// ── Load Report ───────────────────────────────────────────────────────────
+function loadReport() {
+    var sId    = $('#fSession').val();
+    var cId    = $('#fClass').val();
+    var secId  = $('#fSection').val() || 0;
+
+    if (!sId || !cId) { toastr.warning('Session aur Class dono select karo!'); return; }
+
+    meta = {
+        sessionName : $('#fSession option:selected').text(),
+        className   : $('#fClass option:selected').text(),
+        sectionName : $('#fSection option:selected').text() || 'All Sections'
+    };
+
+    $('#placeholder').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x text-primary mb-3 d-block"></i><p class="text-muted">Loading...</p></div>').show();
+    $('#reportWrap').hide();
+
+    $.get('@Url.Action("GetReport","FeeStatusReport")', {
+        sessionId: sId, classId: cId, sectionId: secId
+    }, function (res) {
+        $('#placeholder').hide();
+        if (!res.success) {
+            toastr.error(res.message);
+            $('#placeholder').html(`<div class="text-center py-5 text-danger"><i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i><p>${res.message}</p></div>`).show();
+            return;
+        }
+
+        allStudents = res.students;
+        allMonths   = res.months;
+        activeMonthFilter = null;
+
+        buildGrid();
+        buildMonthChips();
+
+        $('#reportHeading').text(`${meta.className} — ${meta.sessionName}`);
+        $('#printSubtitle').text(`${meta.sessionName} | ${meta.className} | ${meta.sectionName}`);
+        $('#reportWrap').show();
+        $('#legendRow').show();
+        $('#btnPrint, #btnDownload').show();
+    }).fail(function () {
+        toastr.error('Server error!');
+        $('#placeholder').show();
+    });
+}
+
+// ── Build Grid ────────────────────────────────────────────────────────────
+function buildGrid() {
+    var statusFilter = $('#fStatus').val();
+
+    var students = allStudents;
+    if (statusFilter === 'any-unpaid') {
+        students = students.filter(s => {
+            return allMonths.some(m => {
+                var key = `${m.month}_${m.year}`;
+                return !s.monthStatus[key];  // not paid
+            });
+        });
+    } else if (statusFilter === 'all-paid') {
+        students = students.filter(s => {
+            return allMonths.every(m => {
+                var key = `${m.month}_${m.year}`;
+                return s.monthStatus[key] === 'Paid';
+            });
+        });
+    }
+
+    // Filter by active month chip
+    if (activeMonthFilter) {
+        var mf = activeMonthFilter;
+        if (mf === 'unpaid') {
+            students = students.filter(s => {
+                return allMonths.some(m => !s.monthStatus[`${m.month}_${m.year}`]);
+            });
+        } else {
+            // specific month — show only students with unpaid for that month
+            var [fm, fy] = mf.split('_');
+            students = students.filter(s => !s.monthStatus[mf] || s.monthStatus[mf] !== 'Paid');
+        }
+    }
+
+    // Summary stats
+    var totalS  = allStudents.length;
+    var paidAll = allStudents.filter(s => allMonths.every(m => s.monthStatus[`${m.month}_${m.year}`] === 'Paid')).length;
+    var hasUnpaid = allStudents.filter(s => allMonths.some(m => !s.monthStatus[`${m.month}_${m.year}`])).length;
+    $('#reportStats').html(`
+        <span class="badge bg-primary">${totalS} students</span>
+        <span class="badge bg-success ms-1">${paidAll} fully paid</span>
+        <span class="badge bg-danger ms-1">${hasUnpaid} have unpaid months</span>
+        <span class="text-muted ms-2">Showing: ${students.length}</span>
+    `);
+
+    // Header
+    var hdr = `<tr>
+        <th style="width:4%" class="text-center py-2">#</th>
+        <th style="width:18%">Student</th>
+        <th style="width:6%" class="text-center">Roll</th>
+        <th style="width:6%" class="text-center">Section</th>`;
+    allMonths.forEach(m => {
+        hdr += `<th class="month-col">${m.label}</th>`;
+    });
+    hdr += `<th style="width:8%" class="text-center no-print">Action</th></tr>`;
+    $('#gridHead').html(hdr);
+
+    // Body
+    var body = '';
+    if (!students.length) {
+        body = `<tr><td colspan="${4 + allMonths.length + 1}" class="text-center text-muted py-4">Koi student nahi mila</td></tr>`;
+    } else {
+        students.forEach(function (s, i) {
+            body += `<tr>
+                <td class="text-center">${i + 1}</td>
+                <td class="fw-semibold">${s.studentName}</td>
+                <td class="text-center">${s.rollNo}</td>
+                <td class="text-center">${s.sectionName}</td>`;
+            allMonths.forEach(m => {
+                var key    = `${m.month}_${m.year}`;
+                var status = s.monthStatus[key];
+                var cell   = status === 'Paid'    ? `<td class="month-cell cell-paid"    title="${m.label} - Paid">✅</td>`
+                           : status === 'Partial' ? `<td class="month-cell cell-partial" title="${m.label} - Partial">⚠️</td>`
+                           :                        `<td class="month-cell cell-unpaid"  title="${m.label} - Unpaid">❌</td>`;
+                body += cell;
+            });
+            body += `<td class="text-center no-print">
+                <a href="/FeeCollection/Index" class="btn btn-xs btn-outline-primary" style="font-size:10px;padding:2px 6px" title="Collect Fee">
+                    <i class="fas fa-money-bill-wave"></i>
+                </a>
+            </td></tr>`;
+        });
+    }
+    $('#gridBody').html(body);
+}
+
+// ── Month Chips (quick filter: "April unpaid?") ───────────────────────────
+function buildMonthChips() {
+    var html = '';
+    allMonths.forEach(m => {
+        var unpaidCount = allStudents.filter(s => !s.monthStatus[`${m.month}_${m.year}`]).length;
+        if (unpaidCount > 0) {
+            html += `<button class="btn btn-xs btn-outline-danger month-chip" style="font-size:10px;padding:2px 6px"
+                        data-key="${m.month}_${m.year}" onclick="filterByMonth('${m.month}_${m.year}')">
+                        ${m.label} <span class="badge bg-danger">${unpaidCount}</span>
+                     </button>`;
+        }
+    });
+    if (html) {
+        html = '<small class="text-muted me-1">Unpaid months:</small>' + html;
+        html += `<button class="btn btn-xs btn-outline-secondary" style="font-size:10px;padding:2px 6px" onclick="filterByMonth(null)">Show All</button>`;
+    }
+    $('#monthFilterChips').html(html);
+}
+
+function filterByMonth(key) {
+    activeMonthFilter = key;
+    buildGrid();
+    $('.month-chip').removeClass('active btn-danger').addClass('btn-outline-danger');
+    if (key) {
+        $(`.month-chip[data-key="${key}"]`).addClass('active btn-danger').removeClass('btn-outline-danger');
+    }
+}
+
+// Status filter change
+$('#fStatus').on('change', function () { if (allStudents.length) buildGrid(); });
+
+function resetAll() {
+    $('#fSession,#fClass,#fSection,#fStatus').val('');
+    allStudents = []; allMonths = []; activeMonthFilter = null;
+    $('#reportWrap').hide();
+    $('#legendRow').hide();
+    $('#btnPrint,#btnDownload').hide();
+    $('#placeholder').html('<div class="text-center py-5"><i class="fas fa-table fa-4x text-muted opacity-25 mb-3 d-block"></i><h5 class="text-muted">Session aur Class select karo</h5></div>').show();
+}
+
+// ── Print / Download ──────────────────────────────────────────────────────
+function loadHtml2pdf(cb) {
+    if (typeof html2pdf !== 'undefined') { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload = cb;
+    document.head.appendChild(s);
+}
+
+// Orient landscape because table has 12 columns
+function getPdfOpt() {
+    return {
+        margin:      [5,5,5,5],
+        filename:    `FeeStatus-${meta.className || ''}-${meta.sessionName || ''}.pdf`,
+        image:       { type:'jpeg', quality:0.98 },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+        jsPDF:       { unit:'mm', format:'a4', orientation:'landscape' }
+    };
+}
+
+function doPrint() {
+    $('#printTitle').show();
+    loadHtml2pdf(function () {
+        html2pdf().set(getPdfOpt()).from(document.getElementById('reportWrap'))
+            .toPdf().get('pdf').then(function (pdf) {
+                var blob = pdf.output('bloburl');
+                var w = window.open(blob, '_blank');
+                if (w) w.onload = function () { w.print(); };
+                else pdf.save(getPdfOpt().filename);
+                $('#printTitle').hide();
+            });
+    });
+}
+
+function doDownload() {
+    $('#printTitle').show();
+    loadHtml2pdf(function () {
+        html2pdf().set(getPdfOpt()).from(document.getElementById('reportWrap'))
+            .save().then(function () { $('#printTitle').hide(); });
+    });
+}
+</script>
+}

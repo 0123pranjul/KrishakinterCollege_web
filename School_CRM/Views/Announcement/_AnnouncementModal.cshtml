@@ -1,0 +1,48 @@
+@model School_CRM.Models.TblAnnouncement
+
+<form id="announcementForm" asp-action="CreateOrEdit" asp-controller="Announcement" asp-route-id="@Model.AnnouncementId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="AnnouncementId" />
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input asp-for="Title" class="form-control" placeholder="Thought title" required />
+        </div>
+        <div class="col-12">
+            <label asp-for="Message" class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
+            <textarea asp-for="Message" class="form-control" rows="4" placeholder="Thought message..." required></textarea>
+        </div>
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input type="checkbox" name="IsGlobal" value="true" id="isGlobalCheck" class="form-check-input" @(Model.IsGlobal == true ? "checked" : "") onchange="toggleScope(this)" />
+                <label class="form-check-label">Global Thought (All Classes)</label>
+            </div>
+        </div>
+        <div id="scopeFields" class="col-12 @(Model.IsGlobal == true ? "d-none" : "")">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label asp-for="ClassId" class="form-label fw-semibold">Class</label>
+                    <select asp-for="ClassId" class="form-select" asp-items="@(new SelectList(ViewBag.Classes, "ClassId", "ClassName"))">
+                        <option value="">-- All Classes --</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SectionId" class="form-label fw-semibold">Section</label>
+                    <select asp-for="SectionId" class="form-select" asp-items="@(new SelectList(ViewBag.Sections, "SectionId", "SectionName"))">
+                        <option value="">-- All Sections --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Thought</button>
+    </div>
+</form>
+<script>
+    function toggleScope(cb) {
+        if ($(cb).is(':checked')) $('#scopeFields').addClass('d-none');
+        else $('#scopeFields').removeClass('d-none');
+    }
+</script>

@@ -1,0 +1,978 @@
+@{
+    ViewData["Title"] = "Super Admin Dashboard";
+    string username = ViewBag.Username ?? "Admin";
+    string role     = ViewBag.Role     ?? "SuperAdmin";
+    string greeting = DateTime.Now.Hour < 12 ? "Good Morning"
+                    : DateTime.Now.Hour < 17 ? "Good Afternoon"
+                    : "Good Evening";
+    int totalStudents = ViewBag.TotalStudents  ?? 0;
+    int totalTeachers = ViewBag.TotalTeachers  ?? 0;
+    int totalEmp      = ViewBag.TotalEmployees ?? 0;
+
+    // Chart data — serialized for JS
+    var feeMonthlyTrend = ViewBag.FeeMonthlyTrend as List<object> ?? new List<object>();
+    var invCatStock     = ViewBag.InvCatStock     as List<object> ?? new List<object>();
+    var deptDist        = ViewBag.DeptDistribution as List<object> ?? new List<object>();
+
+    var feeLabels  = System.Text.Json.JsonSerializer.Serialize(feeMonthlyTrend.Select(x => ((dynamic)x).month  as string ?? "").ToList());
+    var feeAmounts = System.Text.Json.JsonSerializer.Serialize(feeMonthlyTrend.Select(x => (decimal)((dynamic)x).amount).ToList());
+    var catLabels  = System.Text.Json.JsonSerializer.Serialize(invCatStock.Select(x => ((dynamic)x).cat as string ?? "").ToList());
+    var catVals    = System.Text.Json.JsonSerializer.Serialize(invCatStock.Select(x => (decimal)((dynamic)x).val).ToList());
+    var deptLabels = System.Text.Json.JsonSerializer.Serialize(deptDist.Select(x => ((dynamic)x).dept as string ?? "").ToList());
+    var deptCounts = System.Text.Json.JsonSerializer.Serialize(deptDist.Select(x => (int)((dynamic)x).count).ToList());
+
+    int attPresent = ViewBag.AttPresent ?? 0;
+    int attAbsent  = ViewBag.AttAbsent  ?? 0;
+    int attLate    = ViewBag.AttLate    ?? 0;
+    decimal attPct = ViewBag.AttPct     ?? 0m;
+}
+
+@* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS — PREMIUM GLASSMORPHISM PALETTE
+   Primary  : #1e40af  (deep blue)
+   Teal     : #0d9488
+   Green    : #16a34a
+   Amber    : #d97706
+   Red      : #dc2626
+   Indigo   : #4f46e5
+   Surface  : #f0f4f8  (page bg)
+   Card     : rgba(255,255,255,0.75) glass
+   Border   : rgba(255,255,255,0.3)
+   ═══════════════════════════════════════════════════════════ *@
+
+<style>
+    /* ── Base ─────────────────────────────────────────────── */
+    body { background: #f0f4f8; }
+
+    /* ── Logo Watermark background for Dashboard Cards ────── */
+    .glass-card::after {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 220px; height: 220px;
+        transform: translate(-50%, -50%);
+        background: url('/kic_logo.png') no-repeat center;
+        background-size: contain;
+        opacity: 0.09;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 120px; height: 120px;
+        transform: translate(-50%, -50%);
+        background: url('/kic_logo.png') no-repeat center;
+        background-size: contain;
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* ── Glassmorphism Card Base ──────────────────────────── */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 18px;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .glass-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, rgba(30, 64, 175, 0.3), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .glass-card:hover {
+        box-shadow: 0 12px 40px rgba(30, 64, 175, 0.12);
+        transform: translateY(-4px);
+        border-color: rgba(30, 64, 175, 0.15);
+    }
+    .glass-card:hover::before { opacity: 1; }
+
+    /* ── KPI Cards ────────────────────────────────────────── */
+    .kpi-card {
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.5);
+        border-radius: 18px;
+        padding: 20px 20px 16px;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-card::after {
+        content: '';
+        position: absolute;
+        top: -50%; right: -30%;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        opacity: 0.04;
+        transition: opacity 0.3s;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255,255,255,0.6);
+    }
+    .kpi-card:hover::after { opacity: 0.08; }
+
+    .kpi-icon-wrap {
+        width: 52px; height: 52px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; margin-bottom: 14px;
+        position: relative;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .kpi-icon-wrap::after {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        border-radius: 16px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .kpi-card:hover .kpi-icon-wrap::after { opacity: 1; }
+
+    .blue-soft   { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
+    .blue-soft::after { background: rgba(30,64,175,0.12); }
+    .teal-soft   { background: linear-gradient(135deg, #ccfbf1, #99f6e4); color: #0d9488; }
+    .teal-soft::after { background: rgba(13,148,136,0.12); }
+    .green-soft  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #16a34a; }
+    .green-soft::after { background: rgba(22,163,74,0.12); }
+    .amber-soft  { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
+    .amber-soft::after { background: rgba(217,119,6,0.12); }
+    .red-soft    { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
+    .red-soft::after { background: rgba(220,38,38,0.12); }
+    .indigo-soft { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #4f46e5; }
+    .indigo-soft::after { background: rgba(79,70,229,0.12); }
+
+    .kpi-val   { font-size: 1.9rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .kpi-unit  { font-size: 1rem; font-weight: 600; }
+    .kpi-title { font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-top: 3px; }
+    .kpi-sub   { font-size: .72rem; color: #94a3b8; margin-top: 5px; }
+    .kpi-body  { margin-bottom: 12px; }
+
+    /* ── Radial Progress Ring ─────────────────────────────── */
+    .radial-ring {
+        position: absolute;
+        top: 14px; right: 14px;
+        width: 52px; height: 52px;
+    }
+    .radial-ring svg { transform: rotate(-90deg); }
+    .radial-ring .ring-bg { stroke: #e2e8f0; }
+    .radial-ring .ring-fill { transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .radial-ring .ring-text {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .6rem; font-weight: 800; color: #64748b;
+    }
+
+    /* ── Progress bar colors ──────────────────────────────── */
+    .blue-bar   { background: linear-gradient(90deg, #1e40af, #3b82f6); }
+    .teal-bar   { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
+    .green-bar  { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .amber-bar  { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .red-bar    { background: linear-gradient(90deg, #dc2626, #f87171); }
+    .indigo-bar { background: linear-gradient(90deg, #4f46e5, #818cf8); }
+
+    /* ── Mini badges ──────────────────────────────────────── */
+    .badge-mini {
+        display: inline-block; padding: 3px 8px; border-radius: 20px;
+        font-size: .68rem; font-weight: 600; margin-right: 3px;
+        backdrop-filter: blur(4px);
+    }
+    .badge-mini.green  { background: rgba(22,163,74,0.12); color: #16a34a; }
+    .badge-mini.red    { background: rgba(220,38,38,0.12); color: #dc2626; }
+    .badge-mini.amber  { background: rgba(217,119,6,0.12); color: #d97706; }
+    .badge-mini.blue   { background: rgba(30,64,175,0.12); color: #1e40af; }
+    .badge-mini.indigo { background: rgba(79,70,229,0.12); color: #4f46e5; }
+
+    /* ── Dash Cards (chart / table containers) ────────────── */
+    .dash-card {
+        background: rgba(255,255,255,0.72);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.45);
+        border-radius: 18px;
+        overflow: hidden;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dash-card:hover {
+        box-shadow: 0 10px 35px rgba(30,64,175,0.1);
+        transform: translateY(-3px);
+    }
+    .dash-card-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(241,245,249,0.8);
+        font-size: .88rem; font-weight: 700; color: #1e293b;
+    }
+    .dash-card-body { padding: 18px 20px; }
+
+    /* ── Section label ────────────────────────────────────── */
+    .section-label {
+        font-size: .7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1.5px; color: #94a3b8; margin-bottom: .85rem;
+        display: flex; align-items: center;
+    }
+    .section-label i { font-size: .75rem; }
+
+    /* ── Greeting banner ──────────────────────────────────── */
+    .greeting-banner {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #4f46e5 100%);
+        border-radius: 20px;
+        color: #fff;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 15px 40px rgba(30, 64, 175, 0.2);
+    }
+    .greeting-banner::before {
+        content: '';
+        position: absolute;
+        top: -60%; right: -15%;
+        width: 350px; height: 350px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        animation: floatOrb 8s ease-in-out infinite;
+    }
+    .greeting-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -40%; left: 10%;
+        width: 250px; height: 250px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+        animation: floatOrb 10s ease-in-out infinite reverse;
+    }
+    @@keyframes floatOrb {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(20px, -15px) scale(1.05); }
+    }
+    /* Shimmer overlay */
+    .greeting-shimmer {
+        position: absolute;
+        top: 0; left: -100%; right: 0; bottom: 0;
+        width: 200%;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+        animation: shimmer 4s ease-in-out infinite;
+    }
+    @@keyframes shimmer {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(50%); }
+    }
+    .greeting-avatar {
+        width: 56px; height: 56px; border-radius: 16px;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .greeting-stat {
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 14px; padding: 12px 16px; text-align: center;
+        transition: all 0.3s;
+    }
+    .greeting-stat:hover {
+        background: rgba(255,255,255,0.2);
+        transform: scale(1.03);
+    }
+    .greeting-stat-val { font-size: 1.4rem; font-weight: 800; }
+    .greeting-stat-lbl { font-size: .7rem; opacity: .8; font-weight: 500; }
+
+    /* ── Live Clock Widget ────────────────────────────────── */
+    .clock-widget {
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 16px;
+        padding: 14px 20px;
+        text-align: center;
+        min-width: 150px;
+    }
+    .clock-time {
+        font-size: 1.8rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 1px;
+        line-height: 1.1;
+    }
+    .clock-time .clock-blink { animation: blink 1s step-end infinite; }
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    .clock-date { font-size: .72rem; opacity: .75; margin-top: 3px; font-weight: 500; }
+    .clock-label { font-size: .6rem; opacity: .5; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    /* ── Mini Calendar Widget ─────────────────────────────── */
+    .mini-cal-card {
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.45);
+        border-radius: 18px;
+        overflow: hidden;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mini-cal-card:hover {
+        box-shadow: 0 10px 35px rgba(30,64,175,0.1);
+        transform: translateY(-3px);
+    }
+    .mini-cal-header {
+        background: linear-gradient(135deg, #1e40af, #4f46e5);
+        color: white;
+        padding: 14px 18px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .mini-cal-header .cal-title { font-weight: 700; font-size: .92rem; }
+    .mini-cal-nav {
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        border-radius: 8px;
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: .75rem;
+    }
+    .mini-cal-nav:hover { background: rgba(255,255,255,0.3); }
+    .mini-cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+        padding: 12px 14px;
+    }
+    .mini-cal-dayname {
+        text-align: center;
+        font-size: .62rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        padding: 4px 0;
+        letter-spacing: 0.5px;
+    }
+    .mini-cal-day {
+        text-align: center;
+        font-size: .78rem;
+        font-weight: 500;
+        padding: 7px 4px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #475569;
+    }
+    .mini-cal-day:hover { background: #e0e7ff; color: #1e40af; }
+    .mini-cal-day.today {
+        background: linear-gradient(135deg, #1e40af, #4f46e5);
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 3px 12px rgba(30,64,175,0.3);
+    }
+    .mini-cal-day.other-month { color: #cbd5e1; }
+    .mini-cal-day.sunday { color: #dc2626; }
+    .mini-cal-day.has-event {
+        position: relative;
+    }
+    .mini-cal-day.has-event::after {
+        content: '';
+        position: absolute;
+        bottom: 3px; left: 50%;
+        transform: translateX(-50%);
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: #d97706;
+    }
+
+    /* ── Stat tiles (comm section) ────────────────────────── */
+    .stat-tile {
+        border-radius: 14px; padding: 14px; text-align: center;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.3);
+        transition: all 0.3s;
+    }
+    .stat-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .stat-tile-val { font-size: 1.5rem; font-weight: 800; }
+    .stat-tile-lbl { font-size: .68rem; font-weight: 500; opacity: .75; }
+    .blue-tile   { background: rgba(30,64,175,0.08); color: #1e40af; }
+    .teal-tile   { background: rgba(13,148,136,0.08); color: #0d9488; }
+    .amber-tile  { background: rgba(217,119,6,0.08); color: #d97706; }
+    .indigo-tile { background: rgba(79,70,229,0.08); color: #4f46e5; }
+
+    /* ── Event dot ────────────────────────────────────────── */
+    .event-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Announcement item ────────────────────────────────── */
+    .ann-item { padding-bottom: 14px; border-bottom: 1px solid rgba(241,245,249,0.8); }
+    .ann-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    /* ── Quick action buttons ─────────────────────────────── */
+    .quick-action-btn {
+        display: flex; align-items: center; justify-content: center;
+        padding: 14px 12px; border-radius: 14px; font-size: .84rem;
+        font-weight: 600; text-decoration: none; transition: all 0.3s;
+        border: 1.5px solid rgba(226,232,240,0.8);
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(8px);
+        color: #1e293b;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        position: relative;
+    }
+    .quick-action-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(30,64,175,0.03), rgba(79,70,229,0.03));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .quick-action-btn:hover {
+        background: linear-gradient(135deg, #1e40af, #4f46e5);
+        color: #fff; border-color: transparent;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(30,64,175,0.25);
+    }
+    .quick-action-btn:hover::before { opacity: 0; }
+    .quick-action-btn:hover i { animation: iconPulse 0.4s ease; }
+    @@keyframes iconPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+
+    /* ── Link button ──────────────────────────────────────── */
+    .btn-link-sm {
+        font-size: .75rem; font-weight: 600; color: #1e40af;
+        text-decoration: none; padding: 4px 10px; border-radius: 8px;
+        background: rgba(30,64,175,0.08);
+        transition: all 0.2s;
+    }
+    .btn-link-sm:hover { background: #1e40af; color: #fff; }
+
+    /* ── Legend dot ───────────────────────────────────────── */
+    .legend-dot {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: .75rem; font-weight: 600;
+    }
+    .legend-dot::before {
+        content: ''; display: inline-block;
+        width: 10px; height: 10px; border-radius: 50%;
+    }
+    .legend-dot.green::before  { background: #16a34a; }
+    .legend-dot.red::before    { background: #dc2626; }
+    .legend-dot.amber::before  { background: #d97706; }
+
+    /* ── Icon colors ──────────────────────────────────────── */
+    .text-teal   { color: #0d9488 !important; }
+    .text-indigo { color: #4f46e5 !important; }
+
+    /* ── Table tweaks ─────────────────────────────────────── */
+    .table thead th {
+        font-size: .75rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .5px; color: #64748b; border-bottom: 1px solid #e2e8f0;
+    }
+    .table tbody td { font-size: .82rem; border-color: rgba(241,245,249,0.6); }
+    .table tbody tr {
+        transition: all 0.2s;
+    }
+    .table tbody tr:hover {
+        background: rgba(30,64,175,0.03);
+    }
+
+    /* ── Fade-in animation ────────────────────────────────── */
+    .fade-up {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .fade-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* ── Module Health Glow Bars ──────────────────────────── */
+    .health-bar-wrap {
+        height: 8px;
+        background: rgba(241,245,249,0.8);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+    .health-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .health-bar::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+        animation: healthShine 2s ease-in-out infinite;
+    }
+    @@keyframes healthShine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    @@media (max-width: 768px) {
+        .kpi-val { font-size: 1.4rem; }
+        .greeting-banner { padding: 18px; }
+        .clock-time { font-size: 1.3rem; }
+    }
+</style>
+
+<div class="container-fluid px-3 px-md-4 py-3">
+
+    <!-- ═══════════════════════════════════════════════════════
+         GREETING BANNER + LIVE CLOCK
+    ═══════════════════════════════════════════════════════ -->
+    <div class="greeting-banner">
+        <div class="greeting-shimmer"></div>
+        <div class="row align-items-center" style="position:relative;z-index:2;">
+            <div class="col-lg-5">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="greeting-avatar"><i class="fas fa-user-shield"></i></div>
+                    <div>
+                        <h5 class="fw-bold mb-0">@greeting, @username! 👋</h5>
+                        <small class="opacity-75">@role &nbsp;·&nbsp; @DateTime.Now.ToString("dddd, dd MMMM yyyy")</small>
+                    </div>
+                </div>
+                <p class="mb-0 opacity-75 small mt-2">Complete school management overview — all modules at a glance.</p>
+            </div>
+            <div class="col-lg-4 mt-3 mt-lg-0">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="greeting-stat">
+                            <div class="greeting-stat-val counter" data-target="@totalStudents">0</div>
+                            <div class="greeting-stat-lbl">Students</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="greeting-stat">
+                            <div class="greeting-stat-val counter" data-target="@totalTeachers">0</div>
+                            <div class="greeting-stat-lbl">Teachers</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="greeting-stat">
+                            <div class="greeting-stat-val counter" data-target="@totalEmp">0</div>
+                            <div class="greeting-stat-lbl">Staff</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mt-3 mt-lg-0 d-flex justify-content-lg-end">
+                <div class="clock-widget">
+                    <div class="clock-time" id="liveClock">--<span class="clock-blink">:</span>--</div>
+                    <div class="clock-date" id="liveDate">Loading...</div>
+                    <div class="clock-label">Live Clock</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         KPI CARDS
+    ═══════════════════════════════════════════════════════ -->
+    @await Html.PartialAsync("_DashboardKPIs")
+
+    <!-- ═══════════════════════════════════════════════════════
+         CHARTS + MODULE HEALTH + CALENDAR
+    ═══════════════════════════════════════════════════════ -->
+    @await Html.PartialAsync("_DashboardCharts")
+
+    <!-- ═══════════════════════════════════════════════════════
+         RECENT ACTIVITY
+    ═══════════════════════════════════════════════════════ -->
+    @await Html.PartialAsync("_DashboardActivity")
+
+    <!-- ═══════════════════════════════════════════════════════
+         QUICK ACTIONS
+    ═══════════════════════════════════════════════════════ -->
+    @await Html.PartialAsync("_DashboardQuickActions")
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    // ── Palette ──────────────────────────────────────────────────
+    const BLUE   = '#1e40af';
+    const TEAL   = '#0d9488';
+    const GREEN  = '#16a34a';
+    const AMBER  = '#d97706';
+    const RED    = '#dc2626';
+    const INDIGO = '#4f46e5';
+    const VIOLET = '#7c3aed';
+
+    // ── Gradient helpers ─────────────────────────────────────────
+    function createGradient(ctx, color1, color2, opacity) {
+        const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+        g.addColorStop(0, color1.replace(')', `,${opacity})`).replace('rgb', 'rgba'));
+        g.addColorStop(1, color1.replace(')', ',0.01)').replace('rgb', 'rgba'));
+        return g;
+    }
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // ── Fee Trend Line (Gradient Area) ──────────────────────────
+    const feeLabels  = @Html.Raw(feeLabels);
+    const feeAmounts = @Html.Raw(feeAmounts);
+
+    const feeCtx = document.getElementById('feeChart').getContext('2d');
+    const feeGrad = feeCtx.createLinearGradient(0, 0, 0, 280);
+    feeGrad.addColorStop(0, hexToRgba(BLUE, 0.18));
+    feeGrad.addColorStop(1, hexToRgba(BLUE, 0.01));
+
+    new Chart(feeCtx, {
+        type: 'line',
+        data: {
+            labels: feeLabels,
+            datasets: [{
+                label: 'Fee Collected (₹)',
+                data: feeAmounts,
+                borderColor: BLUE,
+                backgroundColor: feeGrad,
+                borderWidth: 3,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: BLUE,
+                pointBorderWidth: 2.5,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: BLUE,
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 3,
+                tension: 0.45,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1200, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 13, weight: '700' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 10,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(ctx) { return '₹ ' + ctx.parsed.y.toLocaleString('en-IN'); }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false },
+                    ticks: {
+                        font: { size: 11, weight: '600' },
+                        color: '#94a3b8',
+                        callback: v => '₹' + (v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v)
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11, weight: '600' }, color: '#94a3b8' }
+                }
+            }
+        }
+    });
+
+    // ── Attendance Donut (Premium) ───────────────────────────────
+    const attCtx = document.getElementById('attChart').getContext('2d');
+    new Chart(attCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Present', 'Absent', 'Late'],
+            datasets: [{
+                data: [@attPresent, @attAbsent, @attLate],
+                backgroundColor: [
+                    hexToRgba(GREEN, 0.85),
+                    hexToRgba(RED, 0.85),
+                    hexToRgba(AMBER, 0.85)
+                ],
+                borderWidth: 0,
+                hoverOffset: 8,
+                hoverBorderWidth: 3,
+                hoverBorderColor: '#fff',
+                borderRadius: 4,
+                spacing: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '75%',
+            animation: { duration: 1400, easing: 'easeOutQuart', animateRotate: true },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 10,
+                    cornerRadius: 10,
+                    callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} students` }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            afterDraw(chart) {
+                const { ctx, width, height } = chart;
+                ctx.save();
+                const total = @(attPresent + attAbsent + attLate);
+                const pct = total > 0 ? Math.round(@attPresent * 100 / total) : 0;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 1.6rem system-ui';
+                ctx.fillStyle = '#0f172a';
+                ctx.fillText(pct + '%', width / 2, height / 2 - 6);
+                ctx.font = '600 0.65rem system-ui';
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText('PRESENT', width / 2, height / 2 + 14);
+                ctx.restore();
+            }
+        }]
+    });
+
+    // ── Inventory Category Bar (Rounded + Gradient) ─────────────
+    const catLabels = @Html.Raw(catLabels);
+    const catVals   = @Html.Raw(catVals);
+    const barColors = [BLUE, TEAL, INDIGO, GREEN, AMBER, VIOLET];
+
+    new Chart(document.getElementById('invChart'), {
+        type: 'bar',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                label: 'Stock Value (₹)',
+                data: catVals,
+                backgroundColor: barColors.map(c => hexToRgba(c, 0.78)),
+                hoverBackgroundColor: barColors,
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 28
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1200, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 10,
+                    cornerRadius: 10,
+                    callbacks: {
+                        label: ctx => '₹ ' + ctx.parsed.y.toLocaleString('en-IN')
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false },
+                    ticks: {
+                        font: { size: 11, weight: '600' },
+                        color: '#94a3b8',
+                        callback: v => '₹' + (v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v)
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10, weight: '600' }, color: '#94a3b8' }
+                }
+            }
+        }
+    });
+
+    // ── Department Polar Area Chart ──────────────────────────────
+    const deptLabels = @Html.Raw(deptLabels);
+    const deptCounts = @Html.Raw(deptCounts);
+    const polarColors = [BLUE, TEAL, INDIGO, GREEN, AMBER, VIOLET, RED];
+
+    new Chart(document.getElementById('deptChart'), {
+        type: 'polarArea',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                data: deptCounts,
+                backgroundColor: polarColors.map(c => hexToRgba(c, 0.7)),
+                borderColor: polarColors.map(c => hexToRgba(c, 0.9)),
+                borderWidth: 2,
+                hoverBackgroundColor: polarColors.map(c => hexToRgba(c, 0.9))
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1400, easing: 'easeOutQuart', animateRotate: true },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 11, weight: '600' },
+                        color: '#64748b',
+                        padding: 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 10,
+                    cornerRadius: 10,
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.parsed.r} employees`
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    grid: { color: 'rgba(241,245,249,0.8)' },
+                    ticks: { display: false }
+                }
+            }
+        }
+    });
+
+    // ── Animated Counters ────────────────────────────────────────
+    document.querySelectorAll('.counter').forEach(el => {
+        const target = parseInt(el.dataset.target, 10) || 0;
+        if (target === 0) { el.textContent = '0'; return; }
+        let current = 0;
+        const step = Math.max(1, Math.ceil(target / 60));
+        const timer = setInterval(() => {
+            current = Math.min(current + step, target);
+            el.textContent = current.toLocaleString('en-IN');
+            if (current >= target) clearInterval(timer);
+        }, 20);
+    });
+
+    // ── Fade-in on Scroll (IntersectionObserver) ─────────────────
+    const fadeEls = document.querySelectorAll('.fade-up');
+    if (fadeEls.length) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, idx) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => entry.target.classList.add('visible'), idx * 80);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        fadeEls.forEach(el => observer.observe(el));
+    }
+
+    // ── Live Clock ───────────────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        const hrs = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const sec = String(now.getSeconds()).padStart(2, '0');
+        const clockEl = document.getElementById('liveClock');
+        if (clockEl) {
+            clockEl.innerHTML = `${hrs}<span class="clock-blink">:</span>${min}<span class="clock-blink" style="font-size:.65em;opacity:.6">:${sec}</span>`;
+        }
+        const dateEl = document.getElementById('liveDate');
+        if (dateEl) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+        }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── Mini Calendar ────────────────────────────────────────────
+    window.miniCalYear = new Date().getFullYear();
+    window.miniCalMonth = new Date().getMonth();
+
+    window.renderMiniCal = function() {
+        const year = window.miniCalYear;
+        const month = window.miniCalMonth;
+        const today = new Date();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay();
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const titleEl = document.getElementById('miniCalTitle');
+        if (titleEl) titleEl.textContent = `${monthNames[month]} ${year}`;
+
+        const grid = document.getElementById('miniCalGrid');
+        if (!grid) return;
+
+        let html = '';
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        dayNames.forEach(d => {
+            html += `<div class="mini-cal-dayname">${d}</div>`;
+        });
+
+        // Previous month trailing days
+        const prevLast = new Date(year, month, 0).getDate();
+        for (let i = startDay - 1; i >= 0; i--) {
+            html += `<div class="mini-cal-day other-month">${prevLast - i}</div>`;
+        }
+
+        // Current month days
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            const dateObj = new Date(year, month, d);
+            const isSunday = dateObj.getDay() === 0;
+            const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+            let cls = 'mini-cal-day';
+            if (isToday) cls += ' today';
+            else if (isSunday) cls += ' sunday';
+            html += `<div class="${cls}">${d}</div>`;
+        }
+
+        // Next month leading days
+        const remaining = 42 - (startDay + lastDay.getDate());
+        for (let d = 1; d <= remaining; d++) {
+            html += `<div class="mini-cal-day other-month">${d}</div>`;
+        }
+
+        grid.innerHTML = html;
+    };
+
+    window.miniCalPrev = function() {
+        window.miniCalMonth--;
+        if (window.miniCalMonth < 0) { window.miniCalMonth = 11; window.miniCalYear--; }
+        window.renderMiniCal();
+    };
+
+    window.miniCalNext = function() {
+        window.miniCalMonth++;
+        if (window.miniCalMonth > 11) { window.miniCalMonth = 0; window.miniCalYear++; }
+        window.renderMiniCal();
+    };
+
+    window.renderMiniCal();
+})();
+</script>
+}

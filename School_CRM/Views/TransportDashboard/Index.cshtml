@@ -1,0 +1,471 @@
+@{
+    ViewData["Title"] = "Transport Dashboard";
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+}
+
+<!-- OpenLayers CSS — pinned version -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@8.2.0/dist/ol.css" />
+
+<style>
+    /* ── KPI Cards ── */
+    .stat-card { border-radius: 14px; border: none; transition: transform .18s, box-shadow .18s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; }
+    .stat-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+
+    /* ── Map container ── */
+    #transportMap {
+        width: 100%;
+        height: 420px;
+        border-radius: 12px;
+        background: #e8e0d8; /* map loading placeholder */
+    }
+
+    /* ── OL controls: Google Maps style (bottom-right) ── */
+    .ol-zoom {
+        top: auto !important; bottom: 24px !important;
+        left: auto !important; right: 12px !important;
+    }
+    .ol-zoom button {
+        width: 34px !important; height: 34px !important;
+        font-size: 1.1rem !important;
+        background: #fff !important; color: #444 !important;
+        border: 1px solid #ddd !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15) !important;
+        border-radius: 4px !important; margin-bottom: 3px !important;
+    }
+    .ol-attribution { bottom: 6px !important; right: 60px !important; font-size: .65rem !important; }
+
+    /* ── Util bar ── */
+    .util-bar  { height: 8px; border-radius: 4px; background: #e9ecef; overflow: hidden; }
+    .util-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+
+    /* ── Map tooltip ── */
+    .ol-tooltip {
+        position: absolute;
+        background: #1e293b; color: #fff;
+        border-radius: 8px; padding: 5px 10px;
+        font-size: .72rem; pointer-events: none;
+        display: none; z-index: 999; white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .ol-tooltip::after {
+        content: ''; position: absolute;
+        top: 100%; left: 50%; transform: translateX(-50%);
+        border: 5px solid transparent; border-top-color: #1e293b;
+    }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- ── Header ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-bus text-primary me-2"></i>Transport Dashboard</h4>
+            <small class="text-muted" id="todayLabel">Loading...</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select id="selSession" class="form-select form-select-sm" style="min-width:160px" onchange="loadCapacity()">
+                @foreach (var s in sessions)
+                {
+                    <option value="@s.SessionId">@s.SessionName</option>
+                }
+            </select>
+            <button class="btn btn-outline-primary btn-sm" onclick="loadAll()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- ── KPI Cards ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-primary-subtle"><i class="fas fa-bus text-primary"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kTotalVehicles">—</div><div class="text-muted small">Total Vehicles</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-info-subtle"><i class="fas fa-calendar-check text-info"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kScheduled">—</div><div class="text-muted small">Scheduled Today</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-warning-subtle"><i class="fas fa-road text-warning"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kInProgress">—</div><div class="text-muted small">In Progress</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-success-subtle"><i class="fas fa-check-circle text-success"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kCompleted">—</div><div class="text-muted small">Completed Today</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-danger-subtle"><i class="fas fa-tools text-danger"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kOverdue">—</div><div class="text-muted small">Overdue Service</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon" style="background:#fff3cd"><i class="fas fa-shield-alt" style="color:#d97706"></i></div>
+                    <div><div class="fw-bold fs-4 mb-0 lh-1" id="kInsurance">—</div><div class="text-muted small">Insurance Expiring</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Map + Capacity ── -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">
+                        <i class="fas fa-map-marked-alt text-primary me-2"></i>Route Map
+                    </span>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.7rem">
+                            <i class="fas fa-circle me-1" style="font-size:.4rem"></i>Live Map
+                        </span>
+                        <select id="mapRouteSelect" class="form-select form-select-sm" style="max-width:170px" onchange="loadRouteOnMap()">
+                            <option value="0">All Routes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-2" style="position:relative">
+                    <!-- Map div — fixed height crucial for OL -->
+                    <div id="transportMap"></div>
+                    <!-- Map tooltip -->
+                    <div class="ol-tooltip" id="mapTooltip"></div>
+                    <!-- Legend -->
+                    <div class="d-flex flex-wrap gap-3 mt-2 px-1" style="font-size:.72rem;color:#64748b">
+                        <span><span style="display:inline-block;width:20px;height:4px;background:#2563eb;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Route Path</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb;border:2px solid #fff;box-shadow:0 0 0 1.5px #2563eb;vertical-align:middle;margin-right:4px"></span>Stop</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;border:2px solid #fff;box-shadow:0 0 0 1.5px #16a34a;vertical-align:middle;margin-right:4px"></span>School</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-semibold border-0 pb-0">
+                    <i class="fas fa-tachometer-alt text-success me-2"></i>Route Capacity
+                </div>
+                <div class="card-body pt-2" style="overflow-y:auto;max-height:460px">
+                    <div id="capacityList"><div class="text-center text-muted small py-4">Loading...</div></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Today's Trips ── -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-semibold border-0 d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-route text-warning me-2"></i>Today's Trips</span>
+            <div class="d-flex gap-2 align-items-center">
+                <small class="text-muted">Auto-refresh: 60s</small>
+                <a href="/TransportTrip" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size:.85rem">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Route</th><th>Type</th><th>Vehicle</th><th>Driver</th>
+                            <th>Status</th><th>Adherence</th><th>Start</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsBody">
+                        <tr><td colspan="8" class="text-center text-muted py-3">
+                            <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<!-- OpenLayers JS — same pinned version -->
+<script src="https://cdn.jsdelivr.net/npm/ol@8.2.0/dist/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+
+<script>
+// ── Map globals ───────────────────────────────────────────────────────────────
+let olMap, routeLayer, markerLayer;
+let allRoutesData = [];
+
+// Multi-route color palette
+const ROUTE_COLORS = ['#2563eb','#d97706','#16a34a','#dc2626','#7c3aed','#0891b2','#be185d'];
+
+function initMap() {
+    routeLayer  = new ol.layer.Vector({ source: new ol.source.Vector() });
+    markerLayer = new ol.layer.Vector({ source: new ol.source.Vector() });
+
+    olMap = new ol.Map({
+        target: 'transportMap',
+        layers: [
+            // CartoDB Voyager — clean Google Maps-like tile style
+            new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+                    maxZoom: 19,
+                    crossOrigin: 'anonymous'
+                })
+            }),
+            routeLayer,
+            markerLayer
+        ],
+        view: new ol.View({
+            // Krishak Inter College, Ghatampur — exact location
+            center: ol.proj.fromLonLat([80.1897, 26.1422]),
+            zoom: 13
+        }),
+        controls: ol.control.defaults.defaults({ attributionOptions: { collapsible: true } })
+    });
+
+    // ── Tooltip ──
+    const tip = document.getElementById('mapTooltip');
+    olMap.on('pointermove', function(e) {
+        const feat = olMap.forEachFeatureAtPixel(e.pixel, f => f);
+        if (feat && feat.get('tip')) {
+            const px = e.pixel;
+            tip.innerHTML      = feat.get('tip');
+            tip.style.display  = 'block';
+            // position above cursor
+            tip.style.left = (px[0] - tip.offsetWidth / 2) + 'px';
+            tip.style.top  = (px[1] - tip.offsetHeight - 16) + 'px';
+            olMap.getTargetElement().style.cursor = 'pointer';
+        } else {
+            tip.style.display = 'none';
+            olMap.getTargetElement().style.cursor = '';
+        }
+    });
+}
+
+// ── Plot routes on map ────────────────────────────────────────────────────────
+function plotRoutes(data) {
+    const rSrc = routeLayer.getSource();
+    const mSrc = markerLayer.getSource();
+    rSrc.clear();
+    mSrc.clear();
+
+    data.forEach(function(rt, rIdx) {
+        const color = ROUTE_COLORS[rIdx % ROUTE_COLORS.length];
+        const stops = rt.stops || [];
+        const valid = stops.filter(s => s.latitude && s.longitude);
+        if (valid.length < 2) return;
+
+        // ── Route line with thick shadow for Google Maps feel
+        const coords = valid.map(s => ol.proj.fromLonLat([parseFloat(s.longitude), parseFloat(s.latitude)]));
+
+        // Shadow line
+        const shadow = new ol.Feature({ geometry: new ol.geom.LineString(coords) });
+        shadow.setStyle(new ol.style.Style({
+            stroke: new ol.style.Stroke({ color: 'rgba(0,0,0,.15)', width: 8, lineCap: 'round' })
+        }));
+        rSrc.addFeature(shadow);
+
+        // Main line
+        const line = new ol.Feature({ geometry: new ol.geom.LineString(coords) });
+        line.setStyle(new ol.style.Style({
+            stroke: new ol.style.Stroke({ color: color, width: 5, lineCap: 'round', lineJoin: 'round' })
+        }));
+        rSrc.addFeature(line);
+
+        // ── Stops
+        valid.forEach(function(s, idx) {
+            const isSchool = idx === valid.length - 1;
+            const coord    = ol.proj.fromLonLat([parseFloat(s.longitude), parseFloat(s.latitude)]);
+            const order    = s.stopOrder || (idx + 1);
+            const name     = s.stopName  || s.StopName || '';
+            const arrival  = s.arrivalTime || '';
+            const fare     = s.fareAmount  || 0;
+
+            // White halo behind marker
+            const halo = new ol.Feature({ geometry: new ol.geom.Point(coord) });
+            halo.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: isSchool ? 14 : 11,
+                    fill:   new ol.style.Fill({ color: '#fff' }),
+                    stroke: new ol.style.Stroke({ color: 'rgba(0,0,0,.1)', width: 1 })
+                })
+            }));
+            mSrc.addFeature(halo);
+
+            // Main stop marker
+            const f = new ol.Feature({ geometry: new ol.geom.Point(coord) });
+            f.set('tip',
+                '<b>' + name + '</b>' +
+                (arrival ? '<br><i class="fas fa-clock" style="font-size:.65rem"></i> ' + arrival : '') +
+                (fare > 0 ? '<br>Fare: ₹' + fare : '')
+            );
+            f.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: isSchool ? 12 : 9,
+                    fill:   new ol.style.Fill({ color: isSchool ? '#16a34a' : color }),
+                    stroke: new ol.style.Stroke({ color: '#fff', width: 2.5 })
+                }),
+                text: new ol.style.Text({
+                    text: isSchool ? '🏫' : String(order),
+                    fill: new ol.style.Fill({ color: '#fff' }),
+                    font: 'bold ' + (isSchool ? '9' : '8') + 'px sans-serif',
+                    textBaseline: 'middle'
+                })
+            }));
+            mSrc.addFeature(f);
+        });
+    });
+
+    // Fit to all route extents
+    const ext = rSrc.getExtent();
+    if (ext && !ol.extent.isEmpty(ext)) {
+        olMap.getView().fit(ext, { padding: [30, 30, 50, 30], maxZoom: 14, duration: 800 });
+    }
+}
+
+function loadRouteOnMap() {
+    const sel = parseInt($('#mapRouteSelect').val()) || 0;
+    const toShow = sel === 0 ? allRoutesData : allRoutesData.filter(r => r.routeId === sel);
+    plotRoutes(toShow);
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function loadStats() {
+    $.get('/TransportDashboard/GetDashboardStats', function(r) {
+        if (!r.success) return;
+        const d = r.data;
+        $('#kTotalVehicles').text(d.totalVehicles);
+        $('#kScheduled').text(d.scheduledToday);
+        $('#kInProgress').text(d.inProgressToday);
+        $('#kCompleted').text(d.completedToday);
+        $('#kOverdue').text(d.overdueService);
+        $('#kInsurance').text(d.expiringInsurance30Days);
+        $('#todayLabel').text(new Date().toLocaleDateString('en-IN', {
+            weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+        }));
+    });
+}
+
+// ── Capacity + load route stops for map ───────────────────────────────────────
+function loadCapacity() {
+    const sessionId = $('#selSession').val() || 0;
+
+    $.get('/TransportDashboard/GetRouteCapacityOverview', { sessionId }, function(r) {
+        if (!r.success) return;
+
+        // Capacity bars
+        if (!r.data.length) {
+            $('#capacityList').html('<div class="text-muted small p-2 text-center">No routes found.</div>');
+        } else {
+            $('#capacityList').html(r.data.map(function(rt) {
+                const pct   = rt.utilisationPct || 0;
+                const color = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#22c55e';
+                return '<div class="mb-3">' +
+                    '<div class="d-flex justify-content-between small mb-1">' +
+                    '<span class="fw-semibold">' + rt.routeName + '</span>' +
+                    '<span class="text-muted">' + rt.assigned + '/' + rt.capacity + '</span>' +
+                    '</div>' +
+                    '<div class="util-bar">' +
+                    '<div class="util-fill" style="width:' + pct + '%;background:' + color + '"></div>' +
+                    '</div>' +
+                    '<div class="d-flex justify-content-between mt-1" style="font-size:.7rem;color:#9aa5b4">' +
+                    '<span>' + pct + '% utilized</span>' +
+                    '<span>' + rt.available + ' seats free</span>' +
+                    '</div>' +
+                    '</div>';
+            }).join(''));
+        }
+
+        // Populate route dropdown on map
+        const sel = $('#mapRouteSelect');
+        sel.html('<option value="0">All Routes</option>');
+        r.data.forEach(function(rt) {
+            sel.append('<option value="' + rt.routeId + '">' + rt.routeName + '</option>');
+        });
+
+        // Fetch all stops then plot
+        allRoutesData = [];
+        let pending = r.data.length;
+        if (!pending) return;
+
+        r.data.forEach(function(rt) {
+            $.get('/TransportRoute/GetStops', { routeId: rt.routeId }, function(rs) {
+                if (rs.success) {
+                    allRoutesData.push({ routeId: rt.routeId, routeName: rt.routeName, stops: rs.data });
+                }
+                pending--;
+                if (pending === 0) plotRoutes(allRoutesData);
+            });
+        });
+    });
+}
+
+// ── Today's Trips ─────────────────────────────────────────────────────────────
+function loadTodayTrips() {
+    $.get('/TransportDashboard/GetTodayTrips', function(r) {
+        const body = $('#tripsBody');
+        if (!r.success || !r.data.length) {
+            body.html('<tr><td colspan="8" class="text-center text-muted py-4">No trips scheduled for today.</td></tr>');
+            return;
+        }
+
+        const sBadge = function(s) {
+            const m = { Scheduled:'secondary', InProgress:'warning text-dark', Completed:'success', Cancelled:'danger' };
+            return '<span class="badge bg-' + (m[s] || 'secondary') + '">' + s + '</span>';
+        };
+        const aBadge = function(a) {
+            if (!a || a === '-') return '—';
+            const ok = a === 'OnTime';
+            return '<span class="badge bg-' + (ok ? 'success' : 'danger') + '-subtle text-' + (ok ? 'success' : 'danger') + '">' + a + '</span>';
+        };
+
+        body.html(r.data.map(function(t) {
+            return '<tr>' +
+                '<td class="fw-semibold">' + t.routeName + '</td>' +
+                '<td><span class="badge bg-light text-dark border">' + t.tripType + '</span></td>' +
+                '<td>' + t.vehicleNo + '</td>' +
+                '<td>' + t.driverName + '</td>' +
+                '<td>' + sBadge(t.tripStatus) + '</td>' +
+                '<td>' + aBadge(t.adherenceStatus) + '</td>' +
+                '<td>' + t.actualStart + '</td>' +
+                '<td>' +
+                '<a href="/TransportTrip/Track/' + t.tripId + '" class="btn btn-sm btn-primary py-0 px-2" target="_blank">' +
+                '<i class="fas fa-map-marker-alt me-1"></i>Track</a>' +
+                '</td>' +
+                '</tr>';
+        }).join(''));
+    });
+}
+
+function loadAll() { loadStats(); loadTodayTrips(); loadCapacity(); }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+$(document).ready(function() {
+    initMap();
+    loadAll();
+    setInterval(loadAll, 60000);
+});
+</script>
+}

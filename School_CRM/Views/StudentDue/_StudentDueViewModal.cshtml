@@ -1,0 +1,141 @@
+@model School_CRM.Models.TblStudentDue
+
+@{
+    var monthName    = Model.Month.HasValue
+        ? System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month.Value)
+        : "-";
+    var remainingDue = (Model.TotalDue ?? 0) - (Model.PaidAmount ?? 0);
+}
+
+<div class="row g-3">
+
+    <!-- Student Info -->
+    <div class="col-md-6">
+        <div class="card border-primary h-100">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Name</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Roll No</td>
+                        <td class="fw-semibold">@(Model.Student?.RollNo ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Session</td>
+                        <td class="fw-semibold">@(Model.Session?.SessionName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Month/Year</td>
+                        <td class="fw-semibold">@monthName @Model.Year</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Due Type</td>
+                        <td><span class="badge bg-info text-dark">@(Model.DueType ?? "-")</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Due Status -->
+    <div class="col-md-6">
+        <div class="card @(Model.IsSettled == true ? "border-success" : "border-danger") h-100">
+            <div class="card-header @(Model.IsSettled == true ? "bg-success" : "bg-danger") text-white py-2">
+                <h6 class="mb-0">
+                    <i class="fas @(Model.IsSettled == true ? "fa-check-circle" : "fa-exclamation-circle") me-2"></i>
+                    @(Model.IsSettled == true ? "Settled" : "Pending Due")
+                </h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Total Due</td>
+                        <td class="fw-semibold">₹@((Model.TotalDue ?? 0).ToString("0.00"))</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Paid</td>
+                        <td class="fw-semibold text-success">₹@((Model.PaidAmount ?? 0).ToString("0.00"))</td>
+                    </tr>
+                    <tr class="border-top">
+                        <td class="text-muted fw-bold">Remaining</td>
+                        <td class="fw-bold @(remainingDue > 0 ? "text-danger" : "text-success") fs-6">
+                            ₹@remainingDue.ToString("0.00")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Due Date</td>
+                        <td class="fw-semibold">
+                            @(Model.DueDate.HasValue ? Model.DueDate.Value.ToString("dd-MM-yyyy") : "-")
+                        </td>
+                    </tr>
+                    @if (Model.IsSettled == true && Model.SettledDate.HasValue)
+                    {
+                        <tr>
+                            <td class="text-muted">Settled On</td>
+                            <td class="fw-semibold text-success">
+                                @Model.SettledDate.Value.ToString("dd-MM-yyyy")
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="col-12">
+        @{
+            var total    = (double)(Model.TotalDue   ?? 0);
+            var paid     = (double)(Model.PaidAmount ?? 0);
+            var pct      = total > 0 ? (int)Math.Min((paid / total) * 100, 100) : 0;
+            var barColor = pct >= 100 ? "bg-success" : pct >= 50 ? "bg-warning" : "bg-danger";
+        }
+        <div class="card border-0 bg-light">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">Payment Progress</span>
+                    <span class="fw-semibold">@pct%</span>
+                </div>
+                <div class="progress" style="height:12px">
+                    <div class="progress-bar @barColor" style="width:@pct%">@pct%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remarks -->
+    @if (!string.IsNullOrWhiteSpace(Model.Remarks))
+    {
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark py-1">
+                    <small class="fw-semibold"><i class="fas fa-comment-alt me-1"></i>Remarks</small>
+                </div>
+                <div class="card-body py-2">
+                    <p class="mb-0 small">@Model.Remarks</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Timestamps -->
+    <div class="col-md-6">
+        <small class="text-muted d-block">Created Date</small>
+        <span class="fw-semibold small">
+            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy hh:mm tt") : "-")
+        </span>
+    </div>
+    @if (Model.UpdatedDate.HasValue)
+    {
+        <div class="col-md-6">
+            <small class="text-muted d-block">Last Updated</small>
+            <span class="fw-semibold small">@Model.UpdatedDate.Value.ToString("dd-MM-yyyy hh:mm tt")</span>
+        </div>
+    }
+
+</div>

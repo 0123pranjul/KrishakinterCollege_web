@@ -1,0 +1,336 @@
+@model School_CRM.Models.TblFeeCollection
+
+@{
+    var monthName  = Model.Month.HasValue
+        ? System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month.Value)
+        : "-";
+    var dueAmount  = (Model.TotalAmount ?? 0) - (Model.PaidAmount ?? 0);
+    var receiptNo  = "RCPT-" + Model.FeeCollectionId.ToString("D6");
+
+    // Group fee details by category (FeeType not null check)
+    var mandatory = Model.TblFeeCollectionDetails
+        .Where(d => d.IsActive == true && d.FeeType != null && d.FeeType.FeeCategory != "Optional")
+        .ToList();
+    var optional  = Model.TblFeeCollectionDetails
+        .Where(d => d.IsActive == true && d.FeeType != null && d.FeeType.FeeCategory == "Optional")
+        .ToList();
+}
+
+<style>
+/* Print styles */
+@@media print {
+    .no-print { display: none !important; }
+    .modal-header, .modal-footer { display: none !important; }
+    body { font-size: 12px; }
+    .receipt-wrapper { padding: 0 !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+.receipt-wrapper { font-family: 'Segoe UI', sans-serif; }
+.receipt-header  { background: linear-gradient(135deg,#1e40af,#1d4ed8); color:#fff; border-radius:10px 10px 0 0; }
+.fee-section-header { font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; padding:4px 12px; }
+.fee-row-mandatory { background:#f0fdf4; }
+.fee-row-optional  { background:#eff6ff; }
+.fee-row-total     { background:#1e3a8a; color:#fff !important; font-weight:700; }
+.summary-box { border-radius:8px; padding:10px 14px; text-align:center; }
+.paid-stamp { border: 3px solid #16a34a; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto; transform: rotate(-15deg); }
+</style>
+
+<!-- Action Buttons -->
+<div class="no-print d-flex gap-2 justify-content-end mb-3">
+    <button class="btn btn-sm btn-outline-secondary" onclick="printReceipt()">
+        <i class="fas fa-print me-1"></i> Print
+    </button>
+    <button class="btn btn-sm btn-primary" onclick="downloadReceipt()">
+        <i class="fas fa-download me-1"></i> Download PDF
+    </button>
+</div>
+
+<div class="receipt-wrapper" id="receiptContent">
+
+    <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
+    <div class="receipt-header p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h4 class="mb-1 fw-bold"><i class="fas fa-school me-2"></i>School Fee Receipt</h4>
+                <div style="font-size:12px; opacity:.85">
+                    <i class="fas fa-hashtag me-1"></i>@receiptNo
+                </div>
+            </div>
+            <div class="text-end">
+                @if (dueAmount <= 0)
+                {
+                    <div class="paid-stamp">
+                        <div class="text-center" style="color:#16a34a; transform:rotate(15deg)">
+                            <i class="fas fa-check-circle fa-2x d-block"></i>
+                            <span style="font-size:10px; font-weight:700">PAID</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                        <i class="fas fa-clock me-1"></i>PARTIAL
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ── STUDENT + PAYMENT INFO ──────────────────────────────────────────── -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header py-2 bg-primary bg-opacity-10">
+                    <span class="fw-semibold small text-primary"><i class="fas fa-user-graduate me-2"></i>Student Information</span>
+                </div>
+                <div class="card-body py-2">
+                    <table class="table table-sm table-borderless mb-0" style="font-size:13px">
+                        <tr>
+                            <td class="text-muted" width="40%">Name</td>
+                            <td class="fw-semibold">@(Model.Student?.StudentName ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Roll No</td>
+                            <td class="fw-semibold">@(Model.Student?.RollNo ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Session</td>
+                            <td class="fw-semibold">@(Model.Session?.SessionName ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Month / Year</td>
+                            <td class="fw-semibold">@monthName @Model.Year</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Pay Date</td>
+                            <td class="fw-semibold">@(Model.PaymentDate.HasValue ? Model.PaymentDate.Value.ToString("dd MMM yyyy") : "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Pay Mode</td>
+                            <td><span class="badge bg-info text-dark">@(Model.PaymentMode ?? "-")</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Boxes -->
+        <div class="col-md-6">
+            <div class="row g-2 h-100">
+                <div class="col-6">
+                    <div class="summary-box h-100" style="background:#f0fdf4; border:1px solid #86efac">
+                        <div style="font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Total Fee</div>
+                        <div style="font-size:22px; font-weight:700; color:#065f46">₹@((Model.TotalAmount ?? 0).ToString("0.00"))</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="summary-box h-100" style="background:#dbeafe; border:1px solid #93c5fd">
+                        <div style="font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Paid</div>
+                        <div style="font-size:22px; font-weight:700; color:#1e40af">₹@((Model.PaidAmount ?? 0).ToString("0.00"))</div>
+                    </div>
+                </div>
+                @if ((Model.DiscountAmount ?? 0) > 0)
+                {
+                <div class="col-6">
+                    <div class="summary-box" style="background:#fef9c3; border:1px solid #fde047">
+                        <div style="font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Discount</div>
+                        <div style="font-size:18px; font-weight:700; color:#92400e">-₹@((Model.DiscountAmount ?? 0).ToString("0.00"))</div>
+                    </div>
+                </div>
+                }
+                @if ((Model.FineAmount ?? 0) > 0)
+                {
+                <div class="col-6">
+                    <div class="summary-box" style="background:#fee2e2; border:1px solid #fca5a5">
+                        <div style="font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Fine</div>
+                        <div style="font-size:18px; font-weight:700; color:#991b1b">+₹@((Model.FineAmount ?? 0).ToString("0.00"))</div>
+                    </div>
+                </div>
+                }
+                <div class="col-12">
+                    <div class="summary-box @(dueAmount > 0 ? "" : "")"
+                         style="background:@(dueAmount > 0 ? "#fef2f2" : "#f0fdf4"); border:1px solid @(dueAmount > 0 ? "#fca5a5" : "#86efac")">
+                        <div style="font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Balance Due</div>
+                        <div style="font-size:20px; font-weight:700; color:@(dueAmount > 0 ? "#991b1b" : "#065f46")">
+                            ₹@dueAmount.ToString("0.00")
+                            @if (dueAmount <= 0) { <span class="badge bg-success ms-1" style="font-size:10px">Cleared</span> }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FEE BREAKDOWN ───────────────────────────────────────────────────── -->
+    @if (Model.TblFeeCollectionDetails.Any(d => d.IsActive == true))
+    {
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header py-2" style="background:linear-gradient(135deg,#065f46,#059669); color:#fff">
+            <span class="fw-semibold"><i class="fas fa-list-alt me-2"></i>Fee Breakdown</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0" style="font-size:13px">
+                <thead>
+                    <tr class="table-secondary">
+                        <th class="ps-3">Fee Type</th>
+                        <th class="text-center" style="width:100px">Category</th>
+                        <th class="text-end pe-3" style="width:110px">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (mandatory.Any())
+                    {
+                        <tr>
+                            <td colspan="3" class="fee-section-header" style="background:#f0fdf4; color:#065f46">
+                                Mandatory Fees
+                            </td>
+                        </tr>
+                        @foreach (var d in mandatory)
+                        {
+                            <tr class="fee-row-mandatory">
+                                <td class="ps-3">@(d.FeeType?.FeeName ?? "-")</td>
+                                <td class="text-center">
+                                    @if (d.FeeType?.IsRecurring == true)
+                                    {
+                                        <span class="badge bg-primary" style="font-size:9px">Monthly</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary" style="font-size:9px">One Time</span>
+                                    }
+                                </td>
+                                <td class="text-end fw-semibold text-success pe-3">₹@((d.Amount ?? 0).ToString("0.00"))</td>
+                            </tr>
+                        }
+                        <tr style="background:#dcfce7">
+                            <td colspan="2" class="text-end pe-2"><small class="text-success">Subtotal</small></td>
+                            <td class="text-end fw-bold text-success pe-3">₹@mandatory.Sum(d => d.Amount ?? 0).ToString("0.00")</td>
+                        </tr>
+                    }
+
+                    @if (optional.Any())
+                    {
+                        <tr>
+                            <td colspan="3" class="fee-section-header" style="background:#eff6ff; color:#1d4ed8">
+                                Optional Fees
+                            </td>
+                        </tr>
+                        @foreach (var d in optional)
+                        {
+                            <tr class="fee-row-optional">
+                                <td class="ps-3">@(d.FeeType?.FeeName ?? "-")</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success" style="font-size:9px">Optional</span>
+                                </td>
+                                <td class="text-end fw-semibold text-primary pe-3">₹@((d.Amount ?? 0).ToString("0.00"))</td>
+                            </tr>
+                        }
+                        <tr style="background:#dbeafe">
+                            <td colspan="2" class="text-end pe-2"><small class="text-primary">Subtotal</small></td>
+                            <td class="text-end fw-bold text-primary pe-3">₹@optional.Sum(d => d.Amount ?? 0).ToString("0.00")</td>
+                        </tr>
+                    }
+
+                    <!-- Total row -->
+                    <tr class="fee-row-total">
+                        <td class="ps-3" colspan="2">TOTAL</td>
+                        <td class="text-end pe-3">₹@((Model.TotalAmount ?? 0).ToString("0.00"))</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+
+    <!-- ── TRANSACTIONS ────────────────────────────────────────────────────── -->
+    @if (Model.TblFeeTransactions.Any())
+    {
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header py-2 bg-primary bg-opacity-10">
+            <span class="fw-semibold small text-primary"><i class="fas fa-exchange-alt me-2"></i>Transaction Record</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0" style="font-size:13px">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Reference No</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Mode</th>
+                        <th class="text-center">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var txn in Model.TblFeeTransactions)
+                    {
+                        <tr>
+                            <td class="ps-3"><code style="font-size:11px">@(txn.ReferenceNo ?? "-")</code></td>
+                            <td class="text-end fw-semibold text-success">₹@((txn.Amount ?? 0).ToString("0.00"))</td>
+                            <td class="text-center"><span class="badge bg-info text-dark" style="font-size:10px">@(txn.PaymentMode ?? "-")</span></td>
+                            <td class="text-center text-muted" style="font-size:12px">
+                                @(txn.TransactionDate.HasValue ? txn.TransactionDate.Value.ToString("dd MMM yyyy") : "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+
+    <!-- ── FOOTER ──────────────────────────────────────────────────────────── -->
+    <div class="text-center text-muted border-top pt-2" style="font-size:11px">
+        <i class="fas fa-check-circle text-success me-1"></i>
+        This is a computer-generated receipt — @receiptNo — @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")
+    </div>
+
+</div>
+
+<script>
+function getHtml2pdf(callback) {
+    if (typeof html2pdf !== 'undefined') { callback(); return; }
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = callback;
+    document.head.appendChild(script);
+}
+
+function getPdfOptions(filename) {
+    return {
+        margin:      [8, 8, 8, 8],
+        filename:    filename,
+        image:       { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+}
+
+function downloadReceipt() {
+    getHtml2pdf(function () {
+        html2pdf()
+            .set(getPdfOptions('FeeReceipt-@(receiptNo).pdf'))
+            .from(document.getElementById('receiptContent'))
+            .save();
+    });
+}
+
+function printReceipt() {
+    getHtml2pdf(function () {
+        html2pdf()
+            .set(getPdfOptions('FeeReceipt-@(receiptNo).pdf'))
+            .from(document.getElementById('receiptContent'))
+            .toPdf()
+            .get('pdf')
+            .then(function (pdf) {
+                // Open PDF in new window and trigger print
+                var blob = pdf.output('bloburl');
+                var win  = window.open(blob, '_blank');
+                if (win) {
+                    win.onload = function () { win.print(); };
+                } else {
+                    // Fallback: download if popup blocked
+                    pdf.save('FeeReceipt-@(receiptNo).pdf');
+                }
+            });
+    });
+}
+</script>

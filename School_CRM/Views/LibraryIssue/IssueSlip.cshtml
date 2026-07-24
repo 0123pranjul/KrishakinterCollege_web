@@ -1,0 +1,50 @@
+@{
+    ViewData["Title"] = "Issue Slip";
+    int issueId = ViewBag.IssueId;
+}
+
+<div class="container py-4" style="max-width: 600px;">
+    <div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
+        <h5 class="fw-bold mb-0">Issue Slip</h5>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-primary btn-sm">
+                <i class="fas fa-print me-1"></i>Print
+            </button>
+            <a asp-action="Create" class="btn btn-outline-secondary btn-sm">Issue Another</a>
+        </div>
+    </div>
+
+    <div class="card border shadow-sm" id="issueSlip">
+        <div class="card-header text-center py-3 bg-primary text-white">
+            <h5 class="mb-0">LIBRARY ISSUE SLIP</h5>
+            <small>School Library Management System</small>
+        </div>
+        <div class="card-body">
+            <div class="text-center mb-3">
+                <div class="text-muted small">Issue ID</div>
+                <div class="fw-bold fs-4">#@issueId</div>
+                <div class="text-muted small">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+            <hr />
+            <p class="text-center text-muted">
+                <i class="fas fa-check-circle text-success fa-2x mb-2 d-block"></i>
+                Book issued successfully. Please return the book on or before the due date to avoid fines.
+            </p>
+            <div class="alert alert-warning text-center small">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                Late returns will incur a fine as per library policy.
+            </div>
+        </div>
+        <div class="card-footer text-center text-muted small py-2">
+            Thank you for using the library!
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .d-print-none { display: none !important; }
+        body { background: white; }
+        .card { border: 1px solid #000 !important; box-shadow: none !important; }
+    }
+</style>

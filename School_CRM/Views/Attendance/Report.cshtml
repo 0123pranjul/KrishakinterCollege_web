@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Attendance Report";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Attendance Report
+                    </h3>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <label class="mb-0">From:</label>
+                        <input type="date" id="fromDate" class="form-control form-control-sm"
+                               value="@ViewBag.FromDate" style="width:150px">
+                        <label class="mb-0">To:</label>
+                        <input type="date" id="toDate" class="form-control form-control-sm"
+                               value="@ViewBag.ToDate" style="width:150px">
+                        <button class="btn btn-primary btn-sm" onclick="loadReport()">
+                            <i class="fas fa-search"></i> Generate
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="reportTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Employee</th>
+                                    <th>Present</th>
+                                    <th>Half Day</th>
+                                    <th>Leave</th>
+                                    <th>Holiday</th>
+                                    <th>Absent</th>
+                                    <th>Total Hrs</th>
+                                    <th>OT Hrs</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr class="table-secondary fw-bold">
+                                    <td colspan="2">Total</td>
+                                    <td id="totalPresent"></td>
+                                    <td id="totalHalf"></td>
+                                    <td id="totalLeave"></td>
+                                    <td id="totalHoliday"></td>
+                                    <td id="totalAbsent"></td>
+                                    <td id="totalHours"></td>
+                                    <td id="totalOT"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let reportTable;
+
+        $(document).ready(function () { loadReport(); });
+
+        function loadReport() {
+            const from = $('#fromDate').val();
+            const to   = $('#toDate').val();
+
+            if (!from || !to) { toastr.warning('Select date range!'); return; }
+            if (from > to)    { toastr.warning('From date must be before To date!'); return; }
+
+            if ($.fn.DataTable.isDataTable('#reportTable'))
+                $('#reportTable').DataTable().destroy();
+
+            reportTable = $('#reportTable').DataTable({
+                destroy: true,
+                processing: true,
+                ajax: {
+                    url: '@Url.Action("GetAttendanceReport", "Attendance")',
+                    type: 'GET',
+                    data: { fromDate: from, toDate: to },
+                    dataSrc: function (json) { return json.data || []; },
+                    error: function () { toastr.error('Error loading report!'); }
+                },
+                columns: [
+                    { data: 'employeeCode', width: '10%' },
+                    { data: 'employeeName', width: '20%' },
+                    {
+                        data: 'presentDays', width: '10%', className: 'text-center',
+                        render: d => `<span class="badge bg-success">${d}</span>`
+                    },
+                    {
+                        data: 'halfDays', width: '10%', className: 'text-center',
+                        render: d => `<span class="badge bg-warning text-dark">${d}</span>`
+                    },
+                    {
+                        data: 'leaveDays', width: '10%', className: 'text-center',
+                        render: d => `<span class="badge bg-secondary">${d}</span>`
+                    },
+                    {
+                        data: 'holidayDays', width: '10%', className: 'text-center',
+                        render: d => `<span class="badge bg-info">${d}</span>`
+                    },
+                    {
+                        data: 'absentDays', width: '10%', className: 'text-center',
+                        render: d => `<span class="badge bg-danger">${d}</span>`
+                    },
+                    {
+                        data: 'totalHours', width: '10%', className: 'text-center fw-bold',
+                        render: d => `${parseFloat(d).toFixed(1)} hrs`
+                    },
+                    {
+                        data: 'totalOT', width: '10%', className: 'text-center fw-bold text-danger',
+                        render: d => parseFloat(d) > 0 ? `${parseFloat(d).toFixed(1)} hrs` : '-'
+                    }
+                ],
+                pageLength: 25,
+                order: [[1, 'asc']],
+                language: { emptyTable: "No data found", search: "Search:" },
+                footerCallback: function (row, data) {
+                    const sum = col => data.reduce((a, r) => a + (parseFloat(r[col]) || 0), 0);
+                    $('#totalPresent').text(sum('presentDays'));
+                    $('#totalHalf').text(sum('halfDays'));
+                    $('#totalLeave').text(sum('leaveDays'));
+                    $('#totalHoliday').text(sum('holidayDays'));
+                    $('#totalAbsent').text(sum('absentDays'));
+                    $('#totalHours').text(sum('totalHours').toFixed(1) + ' hrs');
+                    $('#totalOT').text(sum('totalOT').toFixed(1) + ' hrs');
+                }
+            });
+        }
+    </script>
+}

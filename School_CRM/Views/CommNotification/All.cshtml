@@ -1,0 +1,117 @@
+@model List<School_CRM.Models.CommNotification>
+@{
+    ViewData["Title"] = "All Notifications";
+    int totalCount  = ViewBag.TotalCount;
+    int currentPage = ViewBag.CurrentPage;
+    int totalPages  = ViewBag.TotalPages;
+    string? filterType = ViewBag.FilterType;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-bell text-primary me-2"></i>Notifications</h2>
+        <button onclick="markAllRead()" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-check-double me-1"></i>Mark All Read
+        </button>
+    </div>
+
+    <!-- Filter by type -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-action="All" class="btn btn-sm @(filterType == null ? "btn-primary" : "btn-outline-secondary")">All</a>
+                @foreach (var t in new[] { "FeeReminder","FeeReceived","BookOverdue","BookIssued","HomeworkAssigned","ResultPublished","Announcement","LowStock","Emergency","MessageReceived","CircularUploaded","General" })
+                {
+                    <a asp-action="All" asp-route-type="@t"
+                       class="btn btn-sm @(filterType == t ? "btn-primary" : "btn-outline-secondary")">@t</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-bell-slash fa-3x mb-3 opacity-25"></i>
+                    <p>No notifications found.</p>
+                </div>
+            }
+            @foreach (var n in Model)
+            {
+                string icon = n.NotificationType switch
+                {
+                    "FeeReminder" or "FeeReceived" => "fa-rupee-sign text-warning",
+                    "BookOverdue" or "BookIssued"  => "fa-book text-info",
+                    "Emergency"                    => "fa-exclamation-triangle text-danger",
+                    "HomeworkAssigned"             => "fa-tasks text-primary",
+                    "ResultPublished"              => "fa-graduation-cap text-success",
+                    "LowStock"                     => "fa-boxes text-warning",
+                    "MessageReceived"              => "fa-envelope text-primary",
+                    _                              => "fa-bell text-secondary"
+                };
+
+                <div class="d-flex align-items-start p-3 border-bottom @(!n.IsRead ? "bg-light" : "")"
+                     id="noti-@n.NotificationId">
+                    <div class="rounded-circle bg-white border d-flex align-items-center justify-content-center me-3"
+                         style="width:38px;height:38px;flex-shrink:0;">
+                        <i class="fas @icon"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-@(!n.IsRead ? "bold" : "normal")">@n.Title</span>
+                            <small class="text-muted ms-2">@n.CreatedAt.ToString("dd/MM HH:mm")</small>
+                        </div>
+                        <div class="text-muted small">@n.Body</div>
+                        @if (n.Priority == "Emergency")
+                        {
+                            <span class="badge bg-danger small">EMERGENCY</span>
+                        }
+                    </div>
+                    <div class="ms-2 d-flex flex-column gap-1">
+                        @if (!n.IsRead)
+                        {
+                            <button onclick="markRead(@n.NotificationId)" class="btn btn-xs btn-outline-secondary" title="Mark read">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        }
+                        @if (!string.IsNullOrEmpty(n.RedirectUrl))
+                        {
+                            <a href="@n.RedirectUrl" class="btn btn-xs btn-outline-primary" title="View">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted">Page @currentPage of @totalPages</small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        @if (currentPage > 1) { <li class="page-item"><a class="page-link" asp-action="All" asp-route-page="@(currentPage-1)" asp-route-type="@filterType">«</a></li> }
+                        @if (currentPage < totalPages) { <li class="page-item"><a class="page-link" asp-action="All" asp-route-page="@(currentPage+1)" asp-route-type="@filterType">»</a></li> }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function markRead(id) {
+        await fetch(`/Communication/Notification/MarkRead/${id}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('[name=__RequestVerificationToken]')?.value ?? '' } });
+        document.getElementById(`noti-${id}`)?.classList.remove('bg-light');
+    }
+    async function markAllRead() {
+        const resp = await fetch('/Communication/Notification/MarkAllRead', { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) location.reload();
+    }
+</script>
+}

@@ -1,0 +1,64 @@
+@model School_CRM.Models.DTOs.MoveAssetDto
+@{ ViewData["Title"] = "Move Asset"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-arrows-alt text-info me-2"></i>Move Asset</h2>
+            <small class="text-muted">Unit ID: @Model.UnitId</small>
+        </div>
+        <a asp-controller="Asset" asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0">Move to New Location</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Move" asp-route-unitId="@Model.UnitId" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="UnitId" type="hidden" />
+
+                        @if (!string.IsNullOrEmpty(Model.CurrentLocationName))
+                        {
+                            <div class="alert alert-light border mb-3">
+                                <small class="text-muted">Current Location:</small>
+                                <div class="fw-semibold">@Model.CurrentLocationName</div>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="ToLocationId" class="form-label fw-semibold">Move To <span class="text-danger">*</span></label>
+                            <select asp-for="ToLocationId" class="form-select">
+                                <option value="">Select New Location</option>
+                                @if (ViewBag.Locations is List<School_CRM.Models.AsmLocation> locations)
+                                {
+                                    @foreach (var loc in locations)
+                                    {
+                                        <option value="@loc.LocationId">@loc.LocationName (@loc.LocationType)</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="ToLocationId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label fw-semibold">Reason</label>
+                            <textarea asp-for="Reason" class="form-control" rows="2" placeholder="Reason for moving..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-info text-white px-4">
+                                <i class="fas fa-arrows-alt me-2"></i>Move Asset
+                            </button>
+                            <a asp-controller="Asset" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

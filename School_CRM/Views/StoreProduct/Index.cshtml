@@ -1,0 +1,129 @@
+@model List<School_CRM.Models.DTOs.InvProductListItemDto>
+@{
+    ViewData["Title"] = "Product Catalog";
+    int totalCount  = (int)(ViewBag.TotalCount  ?? 0);
+    int currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    int totalPages  = (int)(ViewBag.TotalPages  ?? 1);
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-boxes text-primary me-2"></i>Product Catalog</h2>
+            <small class="text-muted">@totalCount products found</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Product</a>
+            <a asp-controller="StoreSetup" asp-action="Categories" class="btn btn-outline-secondary"><i class="fas fa-tags me-1"></i>Categories</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+    @if (TempData["Error"] != null)   { <div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Search</label>
+                    <input type="text" name="SearchText" value="@Context.Request.Query["SearchText"]"
+                           class="form-control" placeholder="Name, Code, Barcode..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="CategoryId" class="form-select" asp-items="ViewBag.Categories">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Stock Status</label>
+                    <select name="StockStatus" class="form-select">
+                        <option value="">All</option>
+                        <option value="LowStock">Low Stock</option>
+                        <option value="OutOfStock">Out of Stock</option>
+                        <option value="Normal">Normal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i>Search</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Code</th><th>Product Name</th><th>Category</th><th>Unit</th><th>Cost</th><th>Sell Price</th><th>Stock</th><th>Reorder</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="11" class="text-center text-muted py-5"><i class="fas fa-boxes fa-3x mb-3 d-block opacity-25"></i>No products found.</td></tr>
+                        }
+                        @{ int sno = (currentPage - 1) * 20 + 1; }
+                        @foreach (var p in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno</td>
+                                <td><code class="small">@p.ProductCode</code></td>
+                                <td class="fw-semibold">@p.ProductName</td>
+                                <td><span class="badge bg-light text-dark border">@p.CategoryName</span></td>
+                                <td class="text-muted">@p.UnitShort</td>
+                                <td>₹@p.CostPrice.ToString("F2")</td>
+                                <td class="fw-semibold">₹@p.SellingPrice.ToString("F2")</td>
+                                <td>
+                                    <span class="fw-bold @(p.StockStatus == "OutOfStock" ? "text-danger" : p.StockStatus == "LowStock" ? "text-warning" : "text-success")">
+                                        @p.CurrentStock
+                                    </span>
+                                </td>
+                                <td class="text-muted">@p.ReorderLevel</td>
+                                <td>
+                                    @if (p.StockStatus == "OutOfStock")      { <span class="badge bg-danger">Out of Stock</span> }
+                                    else if (p.StockStatus == "LowStock")    { <span class="badge bg-warning text-dark">Low Stock</span> }
+                                    else                                      { <span class="badge bg-success">In Stock</span> }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@p.ProductId" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                                        <a asp-action="Adjust" asp-route-id="@p.ProductId" class="btn btn-outline-warning" title="Adjust Stock"><i class="fas fa-sliders-h"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            sno++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted">Page @currentPage of @totalPages (@totalCount total)</small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item"><a class="page-link" asp-action="Index" asp-route-PageNumber="@(currentPage - 1)">«</a></li>
+                        }
+                        @for (int n = Math.Max(1, currentPage - 2); n <= Math.Min(totalPages, currentPage + 2); n++)
+                        {
+                            <li class="page-item @(n == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@n">@n</a>
+                            </li>
+                        }
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item"><a class="page-link" asp-action="Index" asp-route-PageNumber="@(currentPage + 1)">»</a></li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

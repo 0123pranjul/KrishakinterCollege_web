@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Custom Tests";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom py-3">
+            <div>
+                <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-vial me-2 text-info"></i>Custom Tests</h5>
+                <small class="text-muted">Teacher-created unit tests and quizzes</small>
+            </div>
+            <button class="btn btn-info btn-sm px-3 text-white" onclick="loadModal(0)">
+                <i class="fas fa-plus me-1"></i> Add Test
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="ctTable" class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="6%">#</th>
+                            <th>Test Name</th>
+                            <th>Teacher</th>
+                            <th>Class</th>
+                            <th>Section</th>
+                            <th>Subject</th>
+                            <th width="10%" class="text-center">Max Marks</th>
+                            <th width="12%" class="text-center">Test Date</th>
+                            <th width="10%" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ctModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-vial me-2"></i>Add Test</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="ctModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let table;
+        $(document).ready(() => {
+            table = $('#ctTable').DataTable({
+                ajax: { url: '@Url.Action("GetAll","CustomTest")', type: 'GET', dataSrc: 'data' },
+                columns: [
+                    { data: 'testId', className: 'text-center' },
+                    { data: 'testName' },
+                    { data: 'teacherName' },
+                    { data: 'className' },
+                    { data: 'sectionName' },
+                    { data: 'subjectName' },
+                    { data: 'maxMarks', className: 'text-center fw-semibold' },
+                    { data: 'testDate', className: 'text-center' },
+                    {
+                        data: 'testId', className: 'text-center', orderable: false,
+                        render: id => `<button class="btn btn-sm btn-outline-primary me-1" onclick="loadModal(${id})"><i class="fas fa-edit"></i></button>
+                                       <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord(${id})"><i class="fas fa-trash"></i></button>`
+                    }
+                ]
+            });
+        });
+
+        function loadModal(id) {
+            $('#modalTitle').html(id === 0 ? '<i class="fas fa-plus me-2"></i>Add Test' : '<i class="fas fa-edit me-2"></i>Edit Test');
+            $.get('@Url.Action("CreateOrEdit","CustomTest")', { id }, html => {
+                $('#ctModalBody').html(html);
+                $('#ctModal').modal('show');
+                $('#btnSave').off('click').on('click', () => {
+                    $.post($('#ctForm').attr('action'), $('#ctForm').serialize(), res => {
+                        if (res.success) { $('#ctModal').modal('hide'); table.ajax.reload(); toastr.success(res.message); }
+                        else toastr.error(res.message);
+                    });
+                });
+            });
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({ title: 'Delete Test?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes!' })
+                .then(r => { if (r.isConfirmed) $.post('@Url.Action("Delete","CustomTest")', { id }, res => { if (res.success) { table.ajax.reload(); toastr.success(res.message); } else toastr.error(res.message); }); });
+        }
+    </script>
+}

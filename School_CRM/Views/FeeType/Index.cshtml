@@ -1,0 +1,233 @@
+﻿@{
+    ViewData["Title"] = "Fee Types";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-tags me-2 text-primary"></i>Fee Type Management
+                    </h3>
+                    <button class="btn btn-sm btn-primary" onclick="loadFeeTypeModal(0)">
+                        <i class="fas fa-plus"></i> Add Fee Type
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="feeTypeTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fee Name</th>
+                                    <th>Type</th>
+                                    <th>Created Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="feeTypeModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-tag me-2"></i>Add Fee Type
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="feeTypeModalBody">
+                @* Content loaded dynamically via AJAX *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Fee Type Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+        loadDataTable();
+        });
+
+        function loadDataTable() {
+        table = $('#feeTypeTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "FeeType")',
+        type: 'GET',
+        dataSrc: 'data'
+        },
+        columns: [
+        {
+        data: null, width: '6%', className: 'text-center',
+        render: function (data, type, row, meta) {
+        return meta.row + meta.settings._iDisplayStart + 1;
+        }
+        },
+        { data: 'feeName',     width: '32%' },
+        {
+        data: 'feeTypeBadge', width: '18%', className: 'text-center',
+        render: function (data) {
+        if (data === 'Monthly')
+            return '<span class="badge bg-primary"><i class="fas fa-calendar-alt me-1"></i>Monthly</span>';
+        if (data === 'Optional')
+            return '<span class="badge bg-success"><i class="fas fa-user-check me-1"></i>Optional</span>';
+        return '<span class="badge bg-secondary"><i class="fas fa-receipt me-1"></i>One Time</span>';
+        }
+        },
+        { data: 'createdDate', width: '17%', className: 'text-center' },
+        {
+        data: 'status', width: '10%', className: 'text-center',
+        render: function (data) {
+        return data === 'Active'
+        ? '<span class="badge bg-success">Active</span>'
+        : '<span class="badge bg-danger">Inactive</span>';
+        }
+        },
+        {
+        data: 'feeTypeId', width: '20%', className: 'text-center',
+        render: function (data) {
+        return `<div class="btn-group btn-group-sm">
+        <button class="btn btn-info edit-btn" title="Edit" data-id="${data}">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-success view-btn" title="View" data-id="${data}">
+        <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}">
+        <i class="fas fa-trash"></i>
+        </button>
+        </div>`;
+        }
+        }
+        ],
+        language: { emptyTable: "No fee types found" },
+        order: [],
+        columnDefs: [
+            { orderable: false, targets: 0 }
+        ]
+        });
+        }
+
+        // Load Create/Edit Modal
+        function loadFeeTypeModal(id) {
+        $.ajax({
+        url: '@Url.Action("CreateOrEdit", "FeeType")/' + id,
+        type: 'GET',
+        success: function (data) {
+        $('#feeTypeModalBody').html(data);
+        $('#modalTitle').html(id == 0
+        ? '<i class="fas fa-tag me-2"></i>Add Fee Type'
+        : '<i class="fas fa-edit me-2"></i>Edit Fee Type');
+
+        var form = $("#feeTypeForm");
+        form.removeData("validator");
+        form.removeData("unobtrusiveValidation");
+        $.validator.unobtrusive.parse(form);
+
+        $('#feeTypeModal').modal('show');
+        },
+        error: function () {
+        toastr.error("Failed to load form!");
+        }
+        });
+        }
+
+        // Edit Button
+        $(document).on('click', '.edit-btn', function () {
+        loadFeeTypeModal($(this).data('id'));
+        });
+
+        // View Button
+        $(document).on('click', '.view-btn', function () {
+        $.ajax({
+        url: '@Url.Action("View", "FeeType")/' + $(this).data('id'),
+        type: 'GET',
+        success: function (data) {
+        $('#viewModalContent').html(data);
+        $('#viewModal').modal('show');
+        },
+        error: function () { toastr.error("Failed to load details!"); }
+        });
+        });
+
+        // Delete Button
+        $(document).on('click', '.delete-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({
+        title: 'Are you sure?',
+        text: "This fee type will be deactivated!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post('@Url.Action("Delete", "FeeType")', { id: id }, function (data) {
+        if (data.success) {
+        table.ajax.reload();
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+        });
+
+        // Save Button
+        $(document).on('click', '#btnSave', function () {
+        var form = $('#feeTypeForm');
+        if (form.valid()) {
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function (data) {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Fee Type');
+        if (data.success) {
+        $('#feeTypeModal').modal('hide');
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else { 
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+    </script>
+}

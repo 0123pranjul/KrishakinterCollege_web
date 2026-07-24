@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "Vehicles";
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<style>
+    .row-warn td { background: #fffbeb !important; }
+    .row-expired td { background: #fef2f2 !important; }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-bus text-primary me-2"></i>Vehicle Management</h4>
+            <small class="text-muted">Manage school transport vehicles</small>
+        </div>
+        <button class="btn btn-primary" onclick="openVehicleModal(0)">
+            <i class="fas fa-plus me-1"></i>Add Vehicle
+        </button>
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex gap-3 mb-3 small">
+        <span><span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">⚠ Expiring Soon</span> within 30 days</span>
+        <span><span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fca5a5">⚠ Expired</span> past expiry</span>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tblVehicles" class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Reg. Number</th>
+                            <th>Type</th>
+                            <th>Make / Model</th>
+                            <th>Year</th>
+                            <th>Capacity</th>
+                            <th>Insurance Expiry</th>
+                            <th>Fitness Expiry</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="vehicleModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+    let vehicleTable;
+
+    function loadVehicles() {
+        $.get('/TransportVehicle/GetAll', function (r) {
+            if (!r.success) return;
+            if (vehicleTable) { vehicleTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(v => {
+                const insClass = v.insuranceExpired ? 'text-danger fw-semibold' : v.insuranceWarn ? 'text-warning fw-semibold' : '';
+                const fitClass = v.fitnessExpired ? 'text-danger fw-semibold' : v.fitnessWarn ? 'text-warning fw-semibold' : '';
+                const rowClass = (v.insuranceExpired || v.fitnessExpired) ? 'row-expired' : (v.insuranceWarn || v.fitnessWarn) ? 'row-warn' : '';
+                return `<tr class="${rowClass}">
+                    <td>${sno++}</td>
+                    <td><span class="fw-semibold">${v.registrationNumber}</span></td>
+                    <td><span class="badge bg-primary-subtle text-primary">${v.vehicleType}</span></td>
+                    <td>${v.make || ''} ${v.model || ''}</td>
+                    <td>${v.manufactureYear || '-'}</td>
+                    <td><span class="badge bg-info-subtle text-info">${v.maxCapacity}</span></td>
+                    <td class="${insClass}">${v.insuranceExpiry}${v.insuranceExpired ? ' <i class="fas fa-exclamation-triangle"></i>' : v.insuranceWarn ? ' <i class="fas fa-exclamation-circle"></i>' : ''}</td>
+                    <td class="${fitClass}">${v.fitnessExpiry}${v.fitnessExpired ? ' <i class="fas fa-exclamation-triangle"></i>' : v.fitnessWarn ? ' <i class="fas fa-exclamation-circle"></i>' : ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openVehicleModal(${v.vehicleId})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteVehicle(${v.vehicleId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            $('#tblVehicles tbody').html(rows.join(''));
+            vehicleTable = $('#tblVehicles').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function openVehicleModal(id) {
+        $('#vehicleModal').modal('show');
+        $('#vehicleModalContent').load('/TransportVehicle/CreateOrEdit?id=' + id);
+    }
+
+    function saveVehicle(form) {
+        const data = {};
+        $(form).serializeArray().forEach(f => data[f.name] = f.value);
+        const id = data['VehicleId'] || 0;
+        $.ajax({
+            url: `/TransportVehicle/CreateOrEdit?id=${id}`,
+            type: 'POST',
+            data: $(form).serialize(),
+            success: function (r) {
+                if (r.success) {
+                    toastr.success(r.message);
+                    $('#vehicleModal').modal('hide');
+                    loadVehicles();
+                } else {
+                    toastr.error(r.message);
+                }
+            }
+        });
+        return false;
+    }
+
+    function deleteVehicle(id) {
+        Swal.fire({ title: 'Delete Vehicle?', text: 'This action cannot be undone.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportVehicle/Delete', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadVehicles(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    $(document).ready(function () { loadVehicles(); });
+</script>
+}

@@ -1,0 +1,270 @@
+﻿@{
+    ViewData["Title"] = "Enquiry Management";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+}
+
+<div class="container-fluid">
+
+    <!-- Stats -->
+    <div class="row g-3 mb-3" id="statsRow">
+        @{
+            var statItems = new[] {
+                ("statNew",        "New",           "#dbeafe","#1e3a8a","fa-star"),
+                ("statFollowUp",   "Follow Up",     "#fef3c7","#78350f","fa-phone"),
+                ("statInterested", "Interested",    "#d1fae5","#065f46","fa-thumbs-up"),
+                ("statConverted",  "Converted",     "#ede9fe","#4c1d95","fa-check-circle"),
+                ("statTotal",      "Total",         "#f1f5f9","#475569","fa-list"),
+            };
+        }
+        @foreach (var (id, label, bg, color, icon) in statItems)
+        {
+            <div class="col-6 col-md">
+                <div class="card border-0 text-center py-2"
+                     style="background:@bg;border-radius:10px">
+                    <div class="fw-bold fs-4" id="@id"
+                         style="color:@color">-</div>
+                    <div class="small" style="color:@color">
+                        <i class="fas @icon me-1"
+                           style="font-size:0.7rem"></i>@label
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between
+                    align-items-center flex-wrap gap-2">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                Enquiry List
+            </h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- Filters -->
+                <select id="fStatus" class="form-select form-select-sm"
+                        style="width:130px"
+                        onchange="loadEnquiries()">
+                    <option value="">All Status</option>
+                    <option>New</option>
+                    <option>FollowUp</option>
+                    <option>Interested</option>
+                    <option>NotInterested</option>
+                    <option>Converted</option>
+                </select>
+                <select id="fSource" class="form-select form-select-sm"
+                        style="width:130px"
+                        onchange="loadEnquiries()">
+                    <option value="">All Sources</option>
+                    <option>Walk-in</option>
+                    <option>Website</option>
+                    <option>Referral</option>
+                    <option>Campaign</option>
+                    <option>Social Media</option>
+                </select>
+                <a href="/Enquiry/PublicForm" target="_blank"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i>
+                    Public Form
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="enquiryTable"
+                       class="table table-bordered table-hover table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Parent / Mobile</th>
+                            <th>Class</th>
+                            <th>Source</th>
+                            <th>Date</th>
+                            <th>Follow Ups</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="enquiryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        .status-new          { background:#dbeafe;color:#1e3a8a; }
+        .status-followup     { background:#fef3c7;color:#78350f; }
+        .status-interested   { background:#d1fae5;color:#065f46; }
+        .status-notinterested{ background:#fee2e2;color:#7f1d1d; }
+        .status-converted    { background:#ede9fe;color:#4c1d95; }
+    </style>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+            loadEnquiries();
+        });
+
+        const statusBadge = s => {
+            const map = {
+                'New':           'status-new',
+                'FollowUp':      'status-followup',
+                'Interested':    'status-interested',
+                'NotInterested': 'status-notinterested',
+                'Converted':     'status-converted'
+            };
+            return `<span class="badge ${map[s]||'bg-secondary'}
+                          px-2">${s||'-'}</span>`;
+        };
+
+        const sourceBadge = s => {
+            const map = {
+                'Walk-in':     ['#fef3c7','#78350f','fa-walking'],
+                'Website':     ['#dbeafe','#1e3a8a','fa-globe'],
+                'Referral':    ['#d1fae5','#065f46','fa-user-friends'],
+                'Campaign':    ['#fee2e2','#7f1d1d','fa-bullhorn'],
+                'Social Media':['#ede9fe','#4c1d95','fa-share-alt']
+            };
+            const c = map[s] || ['#f1f5f9','#475569','fa-question'];
+            return `<span class="badge px-2"
+                          style="background:${c[0]};color:${c[1]}">
+                        <i class="fas ${c[2]} me-1"
+                           style="font-size:0.6rem"></i>${s||'-'}
+                    </span>`;
+        };
+
+        function loadEnquiries() {
+            const status = $('#fStatus').val();
+            const source = $('#fSource').val();
+
+            if ($.fn.DataTable.isDataTable('#enquiryTable'))
+                $('#enquiryTable').DataTable().destroy();
+
+            table = $('#enquiryTable').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetAll","Enquiry")',
+                    data: { status, source },
+                    dataSrc: d => {
+                        // Stats update
+                        const all = d.data || [];
+                        $('#statNew').text(
+                            all.filter(r=>r.status==='New').length);
+                        $('#statFollowUp').text(
+                            all.filter(r=>r.status==='FollowUp').length);
+                        $('#statInterested').text(
+                            all.filter(r=>r.status==='Interested').length);
+                        $('#statConverted').text(
+                            all.filter(r=>r.status==='Converted').length);
+                        $('#statTotal').text(all.length);
+                        return all;
+                    }
+                },
+                columns: [
+                    { data: 'enquiryId', width:'5%',
+                      render: (d,t,r,meta) => meta.row+1 },
+                    {
+                        data: null, width:'18%',
+                        render: d =>
+                            `<strong>${d.studentName||'-'}</strong><br>
+                             <small class="text-muted">
+                                 ${d.gender||''} ${d.city
+                                     ? '| '+d.city : ''}
+                             </small>`
+                    },
+                    {
+                        data: null, width:'18%',
+                        render: d =>
+                            `${d.parentName||'-'}<br>
+                             <small class="text-primary fw-bold">
+                                 <i class="fas fa-phone"
+                                    style="font-size:0.6rem"></i>
+                                 ${d.mobileNo||'-'}
+                             </small>`
+                    },
+                    { data: 'className', width:'10%' },
+                    {
+                        data: 'source', width:'12%',
+                        render: d => sourceBadge(d)
+                    },
+                    { data: 'enquiryDate', width:'10%' },
+                    {
+                        data: 'followUpCount', width:'8%',
+                        className:'text-center',
+                        render: d =>
+                            `<span class="badge bg-secondary">${d}</span>`
+                    },
+                    {
+                        data: 'status', width:'10%',
+                        className:'text-center',
+                        render: d => statusBadge(d)
+                    },
+                    {
+                        data: null, orderable:false,
+                        className:'text-center', width:'12%',
+                        render: (d,t,row) => `
+                            <div class="btn-group btn-group-sm">
+                                <a href="/Enquiry/Detail/${row.enquiryId}"
+                                   class="btn btn-primary"
+                                   title="View Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                ${row.status !== 'Converted' ? `
+                                <a href="/Enquiry/ConvertToAdmission/${row.enquiryId}"
+                                   class="btn btn-success"
+                                   title="Admit">
+                                    <i class="fas fa-user-graduate"></i>
+                                </a>` : ''}
+                                <button class="btn btn-danger"
+                                        onclick="deleteEnquiry(${row.enquiryId})"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>`
+                    }
+                ],
+                order: [[5,'desc']],
+                pageLength: 25,
+                language: {
+                    emptyTable:'No enquiries found',
+                    search:'Search:'
+                }
+            });
+        }
+
+        function deleteEnquiry(id) {
+            Swal.fire({
+                title:'Delete Enquiry?',
+                icon:'warning',
+                showCancelButton:true,
+                confirmButtonColor:'#dc3545',
+                confirmButtonText:'Yes, Delete!'
+            }).then(res => {
+                if (!res.isConfirmed) return;
+                $.ajax({
+                    url:'@Url.Action("Delete","Enquiry")',
+                    type:'POST',
+                    contentType:'application/json',
+                    data:JSON.stringify(id),
+                    success: r => {
+                        if (r.success) {
+                            toastr.success(r.message);
+                            loadEnquiries();
+                        } else toastr.error(r.message);
+                    }
+                });
+            });
+        }
+    </script>
+}

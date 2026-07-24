@@ -1,0 +1,194 @@
+@model School_CRM.Models.DTOs.MemberDashboardDto
+@{
+    ViewData["Title"] = "My Library";
+    var userType = ViewBag.UserType as string ?? "Student";
+}
+
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-book text-primary me-2"></i>My Library</h2>
+            <small class="text-muted">Your books, fines, and history</small>
+        </div>
+        <a asp-controller="LibraryBook" asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-search me-1"></i>Search Books
+        </a>
+    </div>
+
+    <!-- Block Alert -->
+    @if (Model.IsBlocked)
+    {
+        <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+            <i class="fas fa-ban fa-2x me-3"></i>
+            <div>
+                <strong>Account Blocked</strong><br />
+                @Model.BlockReason<br />
+                <small>Please contact the librarian to resolve this issue.</small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success d-flex align-items-center mb-4 py-2" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <small>Account Active — You can borrow books from the library.</small>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <i class="fas fa-book-open fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold mb-0">@Model.CurrentIssuedCount</h3>
+                    <small class="text-muted">Books Issued</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <i class="fas fa-plus-circle fa-2x text-success mb-2"></i>
+                    <h3 class="fw-bold mb-0">@Model.RemainingLimit</h3>
+                    <small class="text-muted">Can Borrow More</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <i class="fas fa-rupee-sign fa-2x @(Model.PendingFine > 0 ? "text-danger" : "text-muted") mb-2"></i>
+                    <h3 class="fw-bold mb-0 @(Model.PendingFine > 0 ? "text-danger" : "")">₹@Model.PendingFine.ToString("F2")</h3>
+                    <small class="text-muted">Pending Fine</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <div class="mb-2">
+                        <div class="progress" style="height: 8px;">
+                            @{
+                                int pct = Model.MaxAllowed > 0 ? (int)((double)Model.CurrentIssuedCount / Model.MaxAllowed * 100) : 0;
+                            }
+                            <div class="progress-bar @(pct >= 100 ? "bg-danger" : pct >= 75 ? "bg-warning" : "bg-success")"
+                                 style="width: @pct%"></div>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold mb-0">@Model.CurrentIssuedCount / @Model.MaxAllowed</h6>
+                    <small class="text-muted">Issue Limit</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Books -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-book-open me-2 text-primary"></i>Currently Issued Books</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Accession No.</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.CurrentBooks.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-book fa-2x mb-2 d-block opacity-25"></i>
+                                    No books currently issued
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var book in Model.CurrentBooks)
+                        {
+                            <tr class="@(book.IsOverdue ? "table-danger" : book.Status == "Due Soon" ? "table-warning" : "")">
+                                <td class="fw-semibold">@book.BookTitle</td>
+                                <td class="text-muted">@book.Author</td>
+                                <td><code>@book.AccessionNo</code></td>
+                                <td>@book.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td class="@(book.IsOverdue ? "text-danger fw-bold" : "")">
+                                    @book.DueDate.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @if (book.IsOverdue)
+                                    {
+                                        <span class="badge bg-danger">OVERDUE (@Math.Abs(book.DaysRemaining) days)</span>
+                                    }
+                                    else if (book.Status == "Due Soon")
+                                    {
+                                        <span class="badge bg-warning text-dark">Due in @book.DaysRemaining days</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue History -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-history me-2 text-secondary"></i>Issue History</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Return Date</th>
+                            <th>Fine</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.IssueHistory.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3">No history found</td></tr>
+                        }
+                        @foreach (var item in Model.IssueHistory)
+                        {
+                            <tr>
+                                <td>@item.BookTitle</td>
+                                <td>@item.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(item.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                <td class="@(item.FineAmount > 0 ? (item.IsFinePaid ? "text-success" : "text-danger") : "")">
+                                    @(item.FineAmount > 0 ? $"₹{item.FineAmount:F2}" : "-")
+                                    @if (item.FineAmount > 0 && item.IsFinePaid)
+                                    {
+                                        <i class="fas fa-check-circle text-success ms-1" title="Paid"></i>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(item.TransactionStatus == "Returned" ? "bg-success" : item.TransactionStatus == "Lost" ? "bg-danger" : "bg-warning text-dark")">
+                                        @item.TransactionStatus
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

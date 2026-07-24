@@ -1,0 +1,347 @@
+@{
+    ViewData["Title"] = "Routes";
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-route text-primary me-2"></i>Route Management</h4>
+            <small class="text-muted">Manage routes and stops</small>
+        </div>
+        <button class="btn btn-primary" onclick="openRouteModal(0)">
+            <i class="fas fa-plus me-1"></i>Add Route
+        </button>
+    </div>
+
+    <!-- Session Filter -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-2 px-3 d-flex align-items-center gap-3">
+            <label class="form-label mb-0 fw-semibold small">Session:</label>
+            <select id="selSession" class="form-select form-select-sm" style="max-width:200px" onchange="loadRoutes()">
+                @foreach (var s in sessions)
+                {
+                    <option value="@s.SessionId">@s.SessionName</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tblRoutes" class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Route Name</th>
+                            <th>Session</th>
+                            <th>Capacity</th>
+                            <th>Assigned</th>
+                            <th>Utilisation</th>
+                            <th>Stops</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routesBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Route Modal -->
+<div class="modal fade" id="routeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="routeModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Stops Panel Modal -->
+<div class="modal fade" id="stopsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Manage Stops – <span id="stopsRouteLabel"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-success btn-sm" onclick="openStopForm(0)"><i class="fas fa-plus me-1"></i>Add Stop</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="tblStops" class="table table-bordered align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:50px">Order</th>
+                                <th>Stop Name</th>
+                                <th>Arrival</th>
+                                <th>Departure</th>
+                                <th>Fare (₹)</th>
+                                <th>Landmark</th>
+                                <th>GPS</th>
+                                <th>Reorder</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stopsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stop Form Modal -->
+<div class="modal fade" id="stopFormModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stopFormTitle"><i class="fas fa-map-pin me-2 text-danger"></i>Add Stop</h5>
+                <button type="button" class="btn-close" onclick="$('#stopFormModal').modal('hide'); $('#stopsModal').modal('show');"></button>
+            </div>
+            <form id="stopForm" onsubmit="return saveStop(this)">
+                <input type="hidden" id="stopId" name="StopId" value="0" />
+                <input type="hidden" id="stopRouteId" name="RouteId" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Stop Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="stopName" name="StopName" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Order</label>
+                            <input type="number" class="form-control" id="stopOrder" name="StopOrder" min="1" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Arrival Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="arrTime" name="ScheduledArrivalTime" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Departure Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="depTime" name="ScheduledDepartureTime" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Fare Amount (₹) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="fareAmt" name="FareAmount" step="0.01" min="0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Landmark</label>
+                            <input type="text" class="form-control" id="landmark" name="Landmark" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Latitude</label>
+                            <input type="number" class="form-control" id="lat" name="Latitude" step="0.000001" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Longitude</label>
+                            <input type="number" class="form-control" id="lng" name="Longitude" step="0.000001" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="$('#stopFormModal').modal('hide'); $('#stopsModal').modal('show');">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Save Stop</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+    let routeTable, activeRouteId = 0;
+
+    function loadRoutes() {
+        const sessionId = $('#selSession').val() || 0;
+        $.get('/TransportRoute/GetAll', { sessionId }, function (r) {
+            if (!r.success) return;
+            if (routeTable) { routeTable.destroy(); }
+            let sno = 1;
+            const rows = r.data.map(rt => {
+                const pct = rt.utilisationPct;
+                const badgeColor = pct >= 90 ? 'danger' : pct >= 70 ? 'warning' : 'success';
+                return `<tr>
+                    <td>${sno++}</td>
+                    <td class="fw-semibold">${rt.routeName}</td>
+                    <td>${rt.sessionName}</td>
+                    <td>${rt.maxStudentCapacity}</td>
+                    <td>${rt.assignedCount}</td>
+                    <td><span class="badge bg-${badgeColor}-subtle text-${badgeColor} border border-${badgeColor}">${pct}%</span></td>
+                    <td><span class="badge bg-secondary">${rt.stopCount}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-warning me-1" onclick="openStopsPanel(${rt.routeId}, '${rt.routeName.replace(/'/g,'\\\'')}')" title="Manage Stops"><i class="fas fa-map-marker-alt"></i></button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openRouteModal(${rt.routeId})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRoute(${rt.routeId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            $('#routesBody').html(rows.length ? rows.join('') : '<tr><td colspan="8" class="text-center text-muted py-4">No routes found.</td></tr>');
+            routeTable = $('#tblRoutes').DataTable({ pageLength: 25, order: [] });
+        });
+    }
+
+    function openRouteModal(id) {
+        $('#routeModal').modal('show');
+        $('#routeModalContent').load('/TransportRoute/CreateOrEdit?id=' + id);
+    }
+
+    function saveRoute(form) {
+        const id = $(form).find('[name=RouteId]').val() || 0;
+        $.ajax({
+            url: `/TransportRoute/CreateOrEdit?id=${id}`,
+            type: 'POST',
+            data: $(form).serialize(),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#routeModal').modal('hide'); loadRoutes(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    function deleteRoute(id) {
+        Swal.fire({ title: 'Delete Route?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportRoute/Delete', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadRoutes(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    // ── STOPS ─────────────────────────────────────────────────────────────────
+
+    function openStopsPanel(routeId, routeName) {
+        activeRouteId = routeId;
+        $('#stopsRouteLabel').text(routeName);
+        $('#stopsModal').modal('show');
+        loadStops(routeId);
+    }
+
+    function loadStops(routeId) {
+        $.get('/TransportRoute/GetStops', { routeId }, function (r) {
+            if (!r.success) return;
+            const rows = r.data.map((s, i) => `<tr id="stopRow_${s.stopId}" data-stop-id="${s.stopId}" data-order="${s.stopOrder}">
+                <td class="text-center fw-bold">${s.stopOrder}</td>
+                <td class="fw-semibold">${s.stopName}</td>
+                <td>${s.arrivalTime}</td>
+                <td>${s.departureTime}</td>
+                <td>₹${Number(s.fareAmount).toFixed(2)}</td>
+                <td class="text-muted">${s.landmark || '-'}</td>
+                <td class="text-center">${s.latitude ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+                <td>
+                    <button class="btn btn-xs btn-outline-secondary px-1 py-0" onclick="moveStop(${s.stopId}, -1)" title="Move Up"><i class="fas fa-chevron-up"></i></button>
+                    <button class="btn btn-xs btn-outline-secondary px-1 py-0" onclick="moveStop(${s.stopId}, 1)" title="Move Down"><i class="fas fa-chevron-down"></i></button>
+                </td>
+                <td>
+                    <button class="btn btn-xs btn-outline-primary me-1" onclick="openStopForm(${s.stopId}, ${JSON.stringify(s).replace(/"/g, '&quot;')})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-xs btn-outline-danger" onclick="deleteStop(${s.stopId})" title="Delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`);
+            $('#stopsBody').html(rows.length ? rows.join('') : '<tr><td colspan="9" class="text-center text-muted py-3">No stops added yet.</td></tr>');
+        });
+    }
+
+    function moveStop(stopId, direction) {
+        const rows = $('#stopsBody tr[data-stop-id]');
+        const order = [];
+        rows.each(function (i) { order.push({ stopId: parseInt($(this).data('stop-id')), newOrder: i + 1 }); });
+
+        const idx = order.findIndex(s => s.stopId === stopId);
+        const newIdx = idx + direction;
+        if (newIdx < 0 || newIdx >= order.length) return;
+
+        const temp = order[idx];
+        order[idx] = order[newIdx];
+        order[newIdx] = temp;
+        order.forEach((s, i) => s.newOrder = i + 1);
+
+        $.ajax({
+            url: '/TransportRoute/ReorderStops', type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(order),
+            success: function (r) {
+                if (r.success) loadStops(activeRouteId);
+                else toastr.error(r.message);
+            }
+        });
+    }
+
+    function openStopForm(id, stopData) {
+        $('#stopsModal').modal('hide');
+        setTimeout(() => {
+            $('#stopFormTitle').text(id === 0 ? 'Add Stop' : 'Edit Stop');
+            $('#stopId').val(id);
+            $('#stopRouteId').val(activeRouteId);
+            if (stopData) {
+                $('#stopName').val(stopData.stopName || '');
+                $('#stopOrder').val(stopData.stopOrder || '');
+                $('#arrTime').val(stopData.arrivalTime || '');
+                $('#depTime').val(stopData.departureTime || '');
+                $('#fareAmt').val(stopData.fareAmount || '');
+                $('#landmark').val(stopData.landmark || '');
+                $('#lat').val(stopData.latitude || '');
+                $('#lng').val(stopData.longitude || '');
+            } else {
+                $('#stopForm')[0].reset();
+                $('#stopId').val(0);
+                $('#stopRouteId').val(activeRouteId);
+            }
+            $('#stopFormModal').modal('show');
+        }, 300);
+    }
+
+    function saveStop(form) {
+        const data = {
+            StopId: parseInt($('#stopId').val()),
+            RouteId: parseInt($('#stopRouteId').val()),
+            StopName: $('#stopName').val(),
+            StopOrder: parseInt($('#stopOrder').val()) || 0,
+            ScheduledArrivalTime: $('#arrTime').val(),
+            ScheduledDepartureTime: $('#depTime').val(),
+            FareAmount: parseFloat($('#fareAmt').val()),
+            Landmark: $('#landmark').val(),
+            Latitude: $('#lat').val() ? parseFloat($('#lat').val()) : null,
+            Longitude: $('#lng').val() ? parseFloat($('#lng').val()) : null,
+            IsActive: true
+        };
+        $.ajax({
+            url: '/TransportRoute/SaveStop', type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (r) {
+                if (r.success) {
+                    toastr.success(r.message);
+                    $('#stopFormModal').modal('hide');
+                    setTimeout(() => { $('#stopsModal').modal('show'); loadStops(activeRouteId); loadRoutes(); }, 300);
+                } else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    function deleteStop(id) {
+        Swal.fire({ title: 'Delete Stop?', text: 'Students assigned to this stop must be moved first.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportRoute/DeleteStop', { stopId: id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadStops(activeRouteId); loadRoutes(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    $(document).ready(function () { loadRoutes(); });
+</script>
+}

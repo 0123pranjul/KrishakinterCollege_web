@@ -1,0 +1,42 @@
+@model List<School_CRM.Models.AsmMaintenanceLog>
+@{ ViewData["Title"] = "Maintenance History"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-history text-secondary me-2"></i>Maintenance History</h2>
+        <a asp-controller="Asset" asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Type</th><th>Description</th><th>Vendor</th><th>Start Date</th><th>Completion</th><th>Cost</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any()) { <tr><td colspan="8" class="text-center text-muted py-4">No maintenance records found.</td></tr> }
+                        @{ int sno = 1; }
+                        @foreach (var m in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno++</td>
+                                <td><span class="badge bg-light text-dark border">@m.MaintenanceType</span></td>
+                                <td class="text-muted small">@m.Description.Substring(0, Math.Min(60, m.Description.Length))@(m.Description.Length > 60 ? "..." : "")</td>
+                                <td class="text-muted small">@(m.Vendor?.VendorName ?? m.ServicedBy ?? "-")</td>
+                                <td>@m.StartDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(m.CompletionDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                <td>@(m.Cost > 0 ? $"₹{m.Cost:F2}" : "-")</td>
+                                <td>
+                                    <span class="badge @(m.Status == "Completed" ? "bg-success" : m.Status == "InProgress" ? "bg-warning text-dark" : m.Status == "Cancelled" ? "bg-danger" : "bg-secondary")">
+                                        @m.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

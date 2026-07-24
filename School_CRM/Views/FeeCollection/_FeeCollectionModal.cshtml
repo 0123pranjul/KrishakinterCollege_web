@@ -1,0 +1,622 @@
+﻿@model School_CRM.Models.TblFeeCollection
+
+@{
+    var sessions = ViewBag.Sessions     as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var payModes = ViewBag.PaymentModes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    bool isEdit  = Model.FeeCollectionId > 0;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+<style>
+/* ── Calendar ── */
+.mcal-cell {
+    cursor:pointer; border-radius:10px; padding:8px 4px; text-align:center;
+    transition:all .15s; border:2px solid #e5e7eb; background:#fff; position:relative;
+}
+.mcal-cell.paid     { background:#d1fae5; border-color:#10b981; cursor:not-allowed; }
+.mcal-cell.partial  { background:#fef9c3; border-color:#f59e0b; cursor:pointer; }
+.mcal-cell.selected { background:#dbeafe; border-color:#2563eb; box-shadow:0 0 0 3px #bfdbfe; }
+.mcal-cell:hover:not(.paid) { border-color:#2563eb; background:#f0f9ff; }
+.mcal-cell .mcal-name { font-size:13px; font-weight:700; }
+.mcal-cell .mcal-year { font-size:10px; color:#9ca3af; }
+.mcal-cell .mcal-badge{ font-size:9px; margin-top:2px; display:block; }
+
+/* ── Fee breakdown table ── */
+.fee-row-mandatory td { background:#f0fdf4; }
+.fee-row-optional  td { background:#eff6ff; }
+.fee-row-extra     td { background:#fefce8; }
+.fee-row-total     td { background:#1e40af; color:#fff !important; font-weight:700; }
+
+/* ── Payment grid ── */
+.pay-box { border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; background:#fff; }
+.pay-box .pay-label { font-size:11px; color:#6b7280; margin-bottom:3px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+.pay-box .pay-value { font-size:20px; font-weight:700; }
+.pay-box-total  { background:#1e3a8a; color:#fff; border:none; }
+.pay-box-total .pay-label  { color:#bfdbfe; }
+.pay-box-total .pay-value  { color:#fff; }
+.pay-box-paid   { background:#f0fdf4; border-color:#10b981; }
+.pay-box-paid   .pay-value { color:#065f46; }
+.pay-box-due    { background:#fef2f2; border-color:#ef4444; }
+.pay-box-due    .pay-value { color:#991b1b; }
+</style>
+
+<form id="feeCollectionForm"
+      asp-action="CreateOrEdit"
+      asp-controller="FeeCollection"
+      asp-route-id="@Model.FeeCollectionId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="FeeCollectionId" />
+
+    <div class="row g-3">
+
+        <!-- ══ COLUMN LEFT: Student + Calendar ══════════════════════════════ -->
+        <div class="col-lg-5">
+
+            <!-- Student Card -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-primary text-white py-2 d-flex align-items-center gap-2">
+                    <i class="fas fa-user-graduate"></i>
+                    <span class="fw-semibold">Student</span>
+                </div>
+                <div class="card-body pt-3 pb-2">
+                    @if (isEdit)
+                    {
+                        <input type="hidden" name="StudentId" value="@Model.StudentId" />
+                        <div class="form-control bg-light py-2">
+                            <i class="fas fa-user-graduate me-2 text-primary"></i>
+                            <strong>@(ViewBag.SelectedStudent?.DisplayName ?? "-")</strong>
+                        </div>
+                    }
+                    else
+                    {
+                        <select name="StudentId" id="studentSelect2" style="width:100%" required>
+                            <option value=""></option>
+                        </select>
+                        <div class="form-text mt-1"><i class="fas fa-search me-1"></i>Name, Roll No ya Admission No type karo</div>
+                    }
+
+                    <!-- Info chips -->
+                    <div id="studentInfoBar" style="display:none" class="mt-2 d-flex gap-2 flex-wrap">
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1" style="font-size:11px">
+                            <i class="fas fa-hashtag me-1"></i><span id="sib_roll">-</span>
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1" style="font-size:11px">
+                            <i class="fas fa-chalkboard me-1"></i><span id="sib_class">-</span>
+                        </span>
+                        <span class="badge bg-warning bg-opacity-25 text-warning-emphasis border border-warning px-2 py-1" style="font-size:11px">
+                            <i class="fas fa-layer-group me-1"></i><span id="sib_section">-</span>
+                        </span>
+                    </div>
+
+                    <!-- Session -->
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold small mb-1">Academic Session <span class="text-danger">*</span></label>
+                        <select asp-for="SessionId" class="form-select form-select-sm" id="sessionSelect"
+                                asp-items="@(new SelectList(sessions,"SessionId","SessionName",Model.SessionId))" required>
+                            <option value="">-- Select Session --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Card -->
+            @if (!isEdit)
+            {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center"
+                     style="background:linear-gradient(135deg,#1e40af,#1d4ed8); color:#fff">
+                    <span class="fw-semibold"><i class="fas fa-calendar-alt me-2"></i>Fee Calendar</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-light btn-sm px-2 py-0" onclick="changeCalYear(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="fw-bold" id="calYearLabel" style="min-width:44px;text-align:center">@DateTime.Now.Year</span>
+                        <button type="button" class="btn btn-sm btn-light btn-sm px-2 py-0" onclick="changeCalYear(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    <!-- Legend -->
+                    <div class="d-flex gap-3 mb-2 px-1" style="font-size:11px">
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#d1fae5;border:1px solid #10b981"></span> Paid</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fef9c3;border:1px solid #f59e0b"></span> Partial</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#dbeafe;border:1px solid #2563eb"></span> Selected</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fff;border:1px solid #e5e7eb"></span> Unpaid</span>
+                    </div>
+                    <div id="monthCalendar">
+                        <div class="text-center text-muted py-3 small">
+                            <i class="fas fa-user-graduate fa-2x mb-2 d-block opacity-25"></i>
+                            Student select karo — calendar auto-load hoga
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex align-items-center gap-2 px-1">
+                        <button type="button" class="btn btn-xs btn-outline-primary px-2 py-1" style="font-size:11px" onclick="selectAllUnpaid()">
+                            <i class="fas fa-check-double"></i> All Unpaid
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary px-2 py-1" style="font-size:11px" onclick="clearCalMonths()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                        <span class="ms-auto fw-semibold text-primary" style="font-size:12px" id="selectedMonthCount">0 months selected</span>
+                    </div>
+                </div>
+            </div>
+            }
+
+        </div>
+
+        <!-- ══ COLUMN RIGHT: Breakdown + Payment ═════════════════════════════ -->
+        <div class="col-lg-7 d-flex flex-column gap-3">
+
+            <!-- Fee Breakdown Card -->
+            <div class="card border-0 shadow-sm flex-grow-1">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center"
+                     style="background:linear-gradient(135deg,#065f46,#059669); color:#fff">
+                    <span class="fw-semibold"><i class="fas fa-list-alt me-2"></i>Fee Breakdown</span>
+                    <span class="badge bg-white text-success" id="perMonthLabel" style="font-size:11px"></span>
+                </div>
+                <div class="card-body p-0">
+                    <div id="feeBreakdown">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-receipt fa-2x mb-2 d-block opacity-25"></i>
+                            <small>Student + Session select karo aur month click karo</small>
+                        </div>
+                    </div>
+                    <div id="feeDetailInputs"></div>
+                </div>
+            </div>
+
+            <!-- Payment Details Card -->
+            <div class="card border-0 shadow-sm" id="paymentCard">
+                <div class="card-header py-2" style="background:linear-gradient(135deg,#92400e,#d97706); color:#fff">
+                    <span class="fw-semibold"><i class="fas fa-money-bill-wave me-2"></i>Payment Details</span>
+                </div>
+                <div class="card-body">
+
+                    <!-- Summary row (multi month) -->
+                    <div id="multiSummaryRow" class="row g-2 mb-3" style="display:none !important">
+                        <div class="col-4">
+                            <div class="pay-box pay-box-total text-center">
+                                <div class="pay-label">Total Payable</div>
+                                <div class="pay-value" id="ps_total">₹0</div>
+                                <div style="font-size:10px;color:#bfdbfe;margin-top:2px" id="ps_months_label"></div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="pay-box pay-box-paid text-center">
+                                <div class="pay-label">Amount Paid</div>
+                                <div class="pay-value" id="ps_paid">₹0</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="pay-box pay-box-due text-center">
+                                <div class="pay-label">Balance Due</div>
+                                <div class="pay-value" id="ps_due">₹0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input row -->
+                    <div class="row g-2">
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-semibold mb-1">Discount (₹)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input asp-for="DiscountAmount" type="number" step="0.01" min="0"
+                                       class="form-control" id="discountInput"
+                                       value="@(Model.DiscountAmount ?? 0)" placeholder="0.00" />
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-semibold mb-1">Fine / Late Fee (₹)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input asp-for="FineAmount" type="number" step="0.01" min="0"
+                                       class="form-control" id="fineInput"
+                                       value="@(Model.FineAmount ?? 0)" placeholder="0.00" />
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-semibold mb-1">Paid Amount <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input asp-for="PaidAmount" type="number" step="0.01" min="0"
+                                       class="form-control fw-bold" id="paidAmountInput"
+                                       placeholder="0.00" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-semibold mb-1">Net Payable</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" id="netPayable"
+                                       class="form-control bg-light fw-bold text-primary" readonly value="0.00" />
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <label class="form-label small fw-semibold mb-1">Payment Mode <span class="text-danger">*</span></label>
+                            <select asp-for="PaymentMode" class="form-select form-select-sm"
+                                    asp-items="@(new SelectList(payModes,"Value","Text",Model.PaymentMode))" required>
+                                <option value="">-- Select Mode --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <label class="form-label small fw-semibold mb-1">Payment Date <span class="text-danger">*</span></label>
+                            <input asp-for="PaymentDate" type="date" class="form-control form-control-sm"
+                                   value="@(Model.PaymentDate.HasValue ? Model.PaymentDate.Value.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd"))"
+                                   required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Due Balance</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" id="dueAmountDisplay"
+                                       class="form-control bg-light fw-bold text-danger" readonly value="0.00" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden for edit mode -->
+                    <input type="hidden" asp-for="TotalAmount" id="totalAmountInput" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        @if (isEdit)
+        {
+            <button type="button" id="btnSave" class="btn btn-primary px-4">
+                <i class="fas fa-save me-1"></i> Save Collection
+            </button>
+        }
+        else
+        {
+            <button type="button" id="btnSaveMulti" class="btn btn-success px-4">
+                <i class="fas fa-check-circle me-1"></i> Collect Fee
+            </button>
+        }
+    </div>
+</form>
+
+<script>
+    // ── State ─────────────────────────────────────────────────────────────────
+    var perMonthAmt    = 0;
+    var paidMonthsData = [];
+    var feeTypeIds     = [];
+    var feeAmounts     = [];
+    var calYear        = new Date().getFullYear();
+    var feeLoaded      = false;
+    var MNAMES = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+
+    // ── Select2 Init ──────────────────────────────────────────────────────────
+    $(function () {
+        if ($('#studentSelect2').length) {
+            function initS2() {
+                if (typeof $.fn.select2 === 'undefined') { setTimeout(initS2,100); return; }
+                $('#studentSelect2').select2({
+                    theme:'bootstrap-5',
+                    placeholder:'Name, Roll No ya Admission No type karo...',
+                    minimumInputLength:1, allowClear:true,
+                    dropdownParent: $('#studentSelect2').closest('.modal-body'),
+                    ajax:{
+                        url:'@Url.Action("SearchStudentsForFeeDetail","FeeCollection")',
+                        dataType:'json', delay:300,
+                        data:function(p){return{term:p.term,page:p.page||1};},
+                        processResults:function(d,p){p.page=p.page||1;return{results:d.results,pagination:d.pagination};},
+                        cache:true
+                    },
+                    templateResult:function(s){
+                        if(s.loading)return $('<span><i class="fas fa-spinner fa-spin me-1"></i>Searching...</span>');
+                        if(!s.id)return s.text;
+                        var cls=[s.className,s.sectionName].filter(Boolean).join(' - ');
+                        return $(`<div class="py-1">
+                            <div style="font-weight:600;font-size:14px">${s.name||s.text}</div>
+                            <div style="font-size:11px;color:#6b7280">Roll: ${s.roll||'-'}${cls?' &bull; '+cls:''}${s.sessionName?' &bull; '+s.sessionName:''}</div>
+                        </div>`);
+                    },
+                    templateSelection:function(s){
+                        if(!s.id)return s.text;
+                        return (s.name||s.text)+(s.roll?' | Roll: '+s.roll:'');
+                    }
+                });
+
+                $('#studentSelect2').on('select2:select', function(e){
+                    var d=e.params.data;
+                    $('#sib_roll').text(d.roll||'-');
+                    $('#sib_class').text(d.className||'-');
+                    $('#sib_section').text(d.sectionName||'-');
+                    $('#studentInfoBar').slideDown(150);
+                    if(d.sessionId) $('#sessionSelect').val(d.sessionId);
+                    // Auto load calendar + fee
+                    autoLoad();
+                });
+                $('#studentSelect2').on('select2:clear', function(){
+                    $('#studentInfoBar').slideUp(150);
+                    resetAll();
+                });
+            }
+            initS2();
+        }
+
+        // Session change → reload
+        $('#sessionSelect').on('change', function(){
+            if($('#studentSelect2').val() || $('input[name="StudentId"]').val()) autoLoad();
+        });
+    });
+
+    // ── Auto Load (student + session change pe) ───────────────────────────────
+    function autoLoad() {
+        var studentId = $('#studentSelect2').val() || $('input[name="StudentId"]').val();
+        var sessionId = $('#sessionSelect').val();
+        if (!studentId || !sessionId) return;
+
+        // Load calendar status
+        $.get('@Url.Action("GetMonthsStatus","FeeCollection")', { studentId, sessionId }, function(res){
+            paidMonthsData = res.paidMonths || [];
+            renderCalendar();
+        });
+
+        // Load fee structure immediately
+        loadFeeStructure(studentId, sessionId);
+    }
+
+    function loadFeeStructure(studentId, sessionId) {
+        $.get('@Url.Action("GetStudentFeeInfo","FeeCollection")', { studentId, sessionId }, function(res){
+            if(!res.success) {
+                $('#feeBreakdown').html('<div class="text-center text-danger py-3"><i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>'+res.message+'</div>');
+                return;
+            }
+            renderFeeBreakdown(res);
+            feeLoaded = true;
+        });
+    }
+
+    // ── Calendar ──────────────────────────────────────────────────────────────
+    function renderCalendar() {
+        $('#calYearLabel').text(calYear);
+        var html = '<div class="row g-1">';
+        for(var m=1; m<=12; m++){
+            var paid   = paidMonthsData.find(p=>p.month===m && p.year===calYear);
+            var isFull = paid && paid.isFull;
+            var isPart = paid && !paid.isFull;
+            var cls    = isFull?'paid': isPart?'partial':'unpaid';
+            var badge  = isFull
+                ? '<span class="mcal-badge"><span class="badge bg-success" style="font-size:8px">Paid</span></span>'
+                : isPart
+                ? '<span class="mcal-badge"><span class="badge bg-warning text-dark" style="font-size:8px">Partial</span></span>'
+                : '<span class="mcal-badge" style="visibility:hidden;font-size:8px">-</span>';
+            html += `<div class="col-3">
+              <div class="mcal-cell ${cls}" data-month="${m}" data-year="${calYear}"
+                   ${isFull?'data-disabled="true"':''} onclick="toggleMonth(this)">
+                <div class="mcal-name">${MNAMES[m-1].substring(0,3)}</div>
+                <div class="mcal-year">${calYear}</div>
+                ${badge}
+              </div>
+            </div>`;
+        }
+        html += '</div>';
+        $('#monthCalendar').html(html);
+        updateMonthCount();
+    }
+
+    function changeCalYear(d) { calYear+=d; renderCalendar(); }
+
+    function toggleMonth(el) {
+        if($(el).data('disabled')) return;
+        if($(el).hasClass('selected')) {
+            $(el).removeClass('selected').addClass(getOriginalClass($(el).data('month'), $(el).data('year')));
+        } else {
+            var orig = getOriginalClass($(el).data('month'), $(el).data('year'));
+            $(el).removeClass('unpaid partial').addClass('selected');
+        }
+        updateMonthCount();
+        updateTotals();
+        // Refresh breakdown to show selected months
+        updateBreakdownHeader();
+    }
+
+    function getOriginalClass(m, y) {
+        var paid = paidMonthsData.find(p=>p.month===m && p.year===y);
+        return paid ? (paid.isFull?'paid':'partial') : 'unpaid';
+    }
+
+    function selectAllUnpaid() {
+        $('.mcal-cell.unpaid, .mcal-cell.partial').each(function(){
+            $(this).removeClass('unpaid partial').addClass('selected');
+        });
+        updateMonthCount(); updateTotals(); updateBreakdownHeader();
+    }
+
+    function clearCalMonths() {
+        renderCalendar(); // restores from paidMonthsData
+    }
+
+    function updateMonthCount() {
+        var cnt = $('.mcal-cell.selected').length;
+        $('#selectedMonthCount').text(cnt+' month'+(cnt!==1?'s':'')+' selected');
+    }
+
+    // ── Fee Breakdown ─────────────────────────────────────────────────────────
+    function renderFeeBreakdown(res) {
+        feeTypeIds=[]; feeAmounts=[];
+        var mandatory=[], optional=[], extra=[];
+        var inputs='';
+
+        res.fees.forEach(function(f){
+            var amt=parseFloat(f.amount||0);
+            var ob=f.isOverridden?'<span class="badge bg-warning text-dark ms-1" style="font-size:9px">Override</span>':'';
+            var item={name:f.feeName, amt:amt, badge:ob, cat:f.feeCategory};
+            if(f.feeCategory==='Optional') optional.push(item);
+            else mandatory.push(item);
+            if(f.feeTypeId){ feeTypeIds.push(f.feeTypeId); feeAmounts.push(amt); inputs+=`<input type="hidden" name="FeeTypeIds" value="${f.feeTypeId}"/><input type="hidden" name="FeeAmounts" value="${amt}"/>`; }
+        });
+        if(res.extraCharges) res.extraCharges.forEach(function(e){
+            extra.push({name:e.feeName, amt:parseFloat(e.amount||0), reason:e.reason||''});
+            inputs+=`<input type="hidden" name="FeeTypeIds" value="0"/><input type="hidden" name="FeeAmounts" value="${parseFloat(e.amount||0)}"/>`;
+        });
+
+        var mandTotal = mandatory.reduce((s,f)=>s+f.amt,0);
+        var optTotal  = optional .reduce((s,f)=>s+f.amt,0);
+        var extTotal  = extra    .reduce((s,f)=>s+f.amt,0);
+        perMonthAmt   = mandTotal+optTotal+extTotal;
+
+        var html = '<table class="table table-sm mb-0" style="font-size:13px">';
+        html += '<thead><tr class="table-secondary"><th>Fee Type</th><th class="text-center" style="width:80px">Category</th><th class="text-end" style="width:90px">Amount</th></tr></thead><tbody>';
+
+        if(mandatory.length){
+            html += `<tr><td colspan="3" class="py-1 px-3" style="background:#f0fdf4;font-size:11px;font-weight:700;color:#065f46;letter-spacing:.5px">MANDATORY FEES</td></tr>`;
+            mandatory.forEach(f=>{
+                html += `<tr class="fee-row-mandatory"><td class="ps-3">${f.name}${f.badge}</td>
+                    <td class="text-center"><span class="badge bg-secondary" style="font-size:9px">Mandatory</span></td>
+                    <td class="text-end fw-semibold text-success pe-3">₹${f.amt.toFixed(2)}</td></tr>`;
+            });
+            html += `<tr style="background:#dcfce7"><td class="ps-3 text-end text-success" colspan="2"><small>Mandatory Subtotal</small></td><td class="text-end fw-bold text-success pe-3">₹${mandTotal.toFixed(2)}</td></tr>`;
+        }
+        if(optional.length){
+            html += `<tr><td colspan="3" class="py-1 px-3" style="background:#eff6ff;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:.5px">OPTIONAL FEES</td></tr>`;
+            optional.forEach(f=>{
+                html += `<tr class="fee-row-optional"><td class="ps-3">${f.name}${f.badge}</td>
+                    <td class="text-center"><span class="badge bg-info text-dark" style="font-size:9px">Optional</span></td>
+                    <td class="text-end fw-semibold text-primary pe-3">₹${f.amt.toFixed(2)}</td></tr>`;
+            });
+            html += `<tr style="background:#dbeafe"><td class="ps-3 text-end text-primary" colspan="2"><small>Optional Subtotal</small></td><td class="text-end fw-bold text-primary pe-3">₹${optTotal.toFixed(2)}</td></tr>`;
+        }
+        if(extra.length){
+            html += `<tr><td colspan="3" class="py-1 px-3" style="background:#fefce8;font-size:11px;font-weight:700;color:#92400e;letter-spacing:.5px">EXTRA CHARGES (Unpaid)</td></tr>`;
+            extra.forEach(f=>{
+                html += `<tr class="fee-row-extra"><td class="ps-3">${f.name} <small class="text-muted">${f.reason}</small></td>
+                    <td class="text-center"><span class="badge bg-warning text-dark" style="font-size:9px">Extra</span></td>
+                    <td class="text-end fw-semibold text-danger pe-3">₹${f.amt.toFixed(2)}</td></tr>`;
+            });
+        }
+
+        html += `<tr class="fee-row-total"><td class="ps-3" colspan="2">PER MONTH TOTAL</td><td class="text-end pe-3">₹${perMonthAmt.toFixed(2)}</td></tr>`;
+        html += '</tbody></table>';
+
+        $('#feeBreakdown').html(html);
+        $('#feeDetailInputs').html(inputs);
+        $('#totalAmountInput').val(perMonthAmt.toFixed(2));
+        updateBreakdownHeader();
+        updateTotals();
+    }
+
+    function updateBreakdownHeader() {
+        var cnt = $('.mcal-cell.selected').length || 1;
+        var lbl = cnt > 1
+            ? `${cnt} months × ₹${perMonthAmt.toFixed(2)} = ₹${(perMonthAmt*cnt).toFixed(2)}`
+            : perMonthAmt > 0 ? `₹${perMonthAmt.toFixed(2)} / month` : '';
+        $('#perMonthLabel').text(lbl);
+    }
+
+    // ── Payment Totals ────────────────────────────────────────────────────────
+    function updateTotals() {
+        var cnt      = Math.max($('.mcal-cell.selected').length, 1);
+        var discount = parseFloat($('#discountInput').val())   || 0;
+        var fine     = parseFloat($('#fineInput').val())       || 0;
+        var paid     = parseFloat($('#paidAmountInput').val()) || 0;
+        var gross    = perMonthAmt * cnt;
+        var net      = gross - discount + fine;
+        if(net<0) net=0;
+        var due      = Math.max(net-paid, 0);
+
+        $('#netPayable')      .val(net.toFixed(2));
+        $('#dueAmountDisplay').val(due.toFixed(2));
+        $('#dueAmountDisplay').toggleClass('text-danger',due>0).toggleClass('text-success',due<=0);
+
+        // Big summary boxes
+        var selCnt = $('.mcal-cell.selected').length;
+        if(selCnt > 0 && perMonthAmt > 0){
+            $('#multiSummaryRow').css('display','').show();
+            $('#ps_total').text('₹'+net.toFixed(2));
+            $('#ps_paid') .text('₹'+paid.toFixed(2));
+            $('#ps_due')  .text('₹'+due.toFixed(2));
+            $('#ps_months_label').text(selCnt+' month'+(selCnt!==1?'s':'')+' × ₹'+perMonthAmt.toFixed(2));
+        } else {
+            $('#multiSummaryRow').hide();
+        }
+        updateBreakdownHeader();
+    }
+
+    $('#discountInput, #fineInput, #paidAmountInput').on('input', updateTotals);
+
+    function resetAll() {
+        paidMonthsData=[]; feeTypeIds=[]; feeAmounts=[]; perMonthAmt=0; feeLoaded=false;
+        $('#feeBreakdown').html('<div class="text-center text-muted py-4"><i class="fas fa-receipt fa-2x mb-2 d-block opacity-25"></i><small>Student + Session select karo aur month click karo</small></div>');
+        $('#feeDetailInputs').html('');
+        $('#totalAmountInput').val('');
+        $('#netPayable, #dueAmountDisplay').val('0.00');
+        $('#multiSummaryRow').hide();
+        $('#perMonthLabel').text('');
+        $('#selectedMonthCount').text('0 months selected');
+        $('#monthCalendar').html('<div class="text-center text-muted py-3 small"><i class="fas fa-user-graduate fa-2x mb-2 d-block opacity-25"></i>Student select karo — calendar auto-load hoga</div>');
+    }
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+    $(document).on('click', '#btnSaveMulti', function(){
+        var studentId = $('#studentSelect2').val() || $('input[name="StudentId"]').val();
+        var sessionId = $('#sessionSelect').val();
+        var payMode   = $('select[name="PaymentMode"]').val();
+        var selCells  = $('.mcal-cell.selected');
+
+        if(!studentId)       { toastr.warning('Student select karo!'); return; }
+        if(!sessionId)       { toastr.warning('Session select karo!'); return; }
+        if(!selCells.length) { toastr.warning('Calendar se kam se kam ek month select karo!'); return; }
+        if(!payMode)         { toastr.warning('Payment mode select karo!'); return; }
+        if(perMonthAmt<=0)   { toastr.warning('Fee structure load nahi hua — student aur session check karo!'); return; }
+
+        var months=[], years=[];
+        selCells.each(function(){ months.push($(this).data('month')); years.push($(this).data('year')); });
+
+        var btn=$(this).prop('disabled',true).html('<i class="fas fa-spinner fa-spin me-1"></i>Saving...');
+        var fd={
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+            StudentId:studentId, SessionId:sessionId,
+            PerMonthAmount:perMonthAmt,
+            DiscountAmount:parseFloat($('#discountInput').val())||0,
+            FineAmount:    parseFloat($('#fineInput').val())||0,
+            TotalPaidAmount:parseFloat($('#paidAmountInput').val())||0,
+            PaymentMode:payMode,
+            PaymentDate:$('input[name="PaymentDate"]').val()
+        };
+        months.forEach(function(m,i){ fd['SelectedMonths['+i+']']=m; fd['SelectedYears['+i+']']=years[i]; });
+        feeTypeIds.forEach(function(id,i){ fd['FeeTypeIds['+i+']']=id; fd['FeeAmounts['+i+']']=feeAmounts[i]; });
+
+        $.post('@Url.Action("CollectMultiMonth","FeeCollection")', fd, function(res){
+            btn.prop('disabled',false).html('<i class="fas fa-check-circle me-1"></i>Collect Fee');
+            if(res.success){ $('#collectionModal').modal('hide'); if(typeof table!=='undefined') table.ajax.reload(null,false); toastr.success(res.message); }
+            else toastr.error(res.message);
+        }).fail(function(){ btn.prop('disabled',false).html('<i class="fas fa-check-circle me-1"></i>Collect Fee'); toastr.error('Server error!'); });
+    });
+
+    $(document).on('click', '#btnSave', function(){
+        var form=$('#feeCollectionForm');
+        if(!form.valid()) return;
+        var btn=$(this).prop('disabled',true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function(res){
+            btn.prop('disabled',false).html('<i class="fas fa-save me-1"></i>Save Collection');
+            if(res.success){ $('#collectionModal').modal('hide'); if(typeof table!=='undefined') table.ajax.reload(null,false); toastr.success(res.message); }
+            else toastr.error(res.message);
+        });
+    });
+
+    // Edit mode init
+    (function(){
+        var total=parseFloat('@(Model.TotalAmount ?? 0)');
+        if(total>0){ perMonthAmt=total; updateTotals(); }
+        // Edit mode: auto load calendar
+        var sid=$('input[name="StudentId"]').val();
+        var sess=$('#sessionSelect').val();
+        if(sid && sess) autoLoad();
+    })();
+</script>

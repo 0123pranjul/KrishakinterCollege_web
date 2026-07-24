@@ -1,0 +1,746 @@
+﻿@{
+    ViewData["Title"] = "Class-Section Mapping";
+}
+
+<style>
+    .class-card {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .class-card:hover {
+        border-color: #4361ee;
+        box-shadow: 0 4px 16px rgba(67,97,238,0.15);
+        transform: translateY(-2px);
+    }
+    .class-card.selected {
+        border-color: #4361ee;
+        background: #eef0fd;
+        box-shadow: 0 4px 16px rgba(67,97,238,0.2);
+    }
+    .section-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 2px solid;
+        cursor: pointer;
+        transition: all 0.15s;
+        user-select: none;
+    }
+    .section-chip.mapped {
+        background: #d1fae5;
+        border-color: #6ee7b7;
+        color: #065f46;
+    }
+    .section-chip.unmapped {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+    }
+    .section-chip:hover {
+        transform: scale(1.05);
+    }
+    .section-chip.selected-chip {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1e3a8a;
+    }
+    .summary-card {
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        transition: all 0.15s;
+    }
+    .summary-card:hover {
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+    .section-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #d1fae5;
+        color: #065f46;
+        margin: 2px;
+    }
+</style>
+
+<div class="container-fluid">
+
+    <!-- ── Header + Session Filter ── -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center
+                        flex-wrap gap-3">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-layer-group me-2
+                                  text-primary"></i>
+                        Class — Section Mapping
+                    </h5>
+                    <div class="text-muted small">
+                        Assign sections to classes per session
+                    </div>
+                </div>
+                <div class="ms-auto d-flex gap-2
+                            align-items-center flex-wrap">
+                    <label class="fw-bold small mb-0">
+                        Session:
+                    </label>
+                    <select id="sessionFilter"
+                            class="form-select form-select-sm"
+                            style="width:180px"
+                            onchange="onSessionChange()">
+                        <option value="">-- Select --</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm"
+                            onclick="showBulkModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Stats Row ── -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#dbeafe;border-radius:10px">
+                <div class="fw-bold fs-4 text-primary"
+                     id="statClasses">-</div>
+                <div class="small text-primary">
+                    <i class="fas fa-chalkboard me-1"></i>
+                    Total Classes
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#d1fae5;border-radius:10px">
+                <div class="fw-bold fs-4 text-success"
+                     id="statSections">-</div>
+                <div class="small text-success">
+                    <i class="fas fa-list me-1"></i>
+                    Total Sections
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#ede9fe;border-radius:10px">
+                <div class="fw-bold fs-4 text-purple"
+                     style="color:#4c1d95" id="statMappings">-</div>
+                <div class="small" style="color:#4c1d95">
+                    <i class="fas fa-link me-1"></i>
+                    Total Mappings
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 text-center py-2"
+                 style="background:#fef3c7;border-radius:10px">
+                <div class="fw-bold fs-4 text-warning"
+                     id="statAvgSec">-</div>
+                <div class="small text-warning">
+                    <i class="fas fa-calculator me-1"></i>
+                    Avg Sections/Class
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- ── LEFT: Summary Cards ── -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex
+                            justify-content-between
+                            align-items-center">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-chalkboard me-2
+                                  text-primary"></i>
+                        Class-wise Summary
+                    </h6>
+                    <span class="badge bg-primary"
+                          id="summaryCount">0</span>
+                </div>
+                <div class="card-body p-2"
+                     style="max-height:520px;overflow-y:auto">
+                    <div id="summaryList">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-layer-group fa-3x
+                                      mb-3 opacity-25"></i>
+                            <div class="small">
+                                Select a session to view mappings
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── RIGHT: Full Table ── -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex
+                            justify-content-between
+                            align-items-center">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-table me-2
+                                  text-success"></i>
+                        All Mappings
+                    </h6>
+                    <input type="text" id="searchBox"
+                           class="form-control form-control-sm"
+                           style="width:160px"
+                           placeholder="Search..."
+                           oninput="filterTable()">
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered
+                                      table-hover table-sm mb-0"
+                               id="mappingTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Class</th>
+                                    <th>Section</th>
+                                    <th>Session</th>
+                                    <th class="text-center">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="mappingBody">
+                                <tr>
+                                    <td colspan="5"
+                                        class="text-center
+                                               text-muted py-4">
+                                        Select session to load
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══ Bulk Mapping Modal ══ -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-layer-group me-2"></i>
+                    Add / Edit Class-Section Mapping
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            Session
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select id="modalSession"
+                                class="form-select"
+                                onchange="onModalChange()">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            Class
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select id="modalClass"
+                                class="form-select"
+                                onchange="loadCurrentMappings()">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section Chips -->
+                <div id="sectionChipsArea" style="display:none">
+                    <div class="d-flex justify-content-between
+                                align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">
+                            Select Sections
+                            <span class="text-muted small fw-normal">
+                                (click to toggle)
+                            </span>
+                        </label>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-success
+                                           btn-sm"
+                                    onclick="selectAllSections()">
+                                All
+                            </button>
+                            <button class="btn btn-outline-secondary
+                                           btn-sm"
+                                    onclick="clearAllSections()">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="sectionChips"
+                         class="d-flex flex-wrap gap-2 p-3 rounded"
+                         style="background:#f8f9fa;
+                                min-height:80px">
+                    </div>
+
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-circle text-success me-1"
+                           style="font-size:0.5rem"></i>
+                        Green = Already mapped
+                        &nbsp;&nbsp;
+                        <i class="fas fa-circle text-primary me-1"
+                           style="font-size:0.5rem"></i>
+                        Blue = Selected to add
+                        &nbsp;&nbsp;
+                        <i class="fas fa-circle text-secondary me-1"
+                           style="font-size:0.5rem"></i>
+                        Gray = Not mapped
+                    </div>
+                </div>
+
+                <div id="chipsPlaceholder"
+                     class="text-center text-muted py-3">
+                    <i class="fas fa-hand-point-up me-1"></i>
+                    Select session and class to see sections
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button"
+                        class="btn btn-primary fw-bold"
+                        onclick="saveBulkMapping()">
+                    <i class="fas fa-save me-1"></i>
+                    Save Mapping
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let allSections  = [];
+        let allMappings  = [];
+        let mappedIds    = [];
+        let selectedIds  = [];
+
+        const colors = [
+            '#4361ee','#7209b7','#2dc653',
+            '#f77f00','#e63946','#06d6a0',
+            '#118ab2','#ef476f','#ffd166'
+        ];
+
+        $(document).ready(function () {
+            loadDropdowns();
+        });
+
+        // ── Load Dropdowns ───────────────────────────────────
+        function loadDropdowns() {
+            // Sessions
+            $.get('@Url.Action("GetSessions","ClassSection")',
+                function (data) {
+                    data.forEach(s => {
+                        const opt =
+                            `<option value="${s.sessionId}">
+                                ${s.sessionName}
+                             </option>`;
+                        $('#sessionFilter, #modalSession')
+                            .append(opt);
+                    });
+                    // Auto-select first session
+                    if (data.length) {
+                        $('#sessionFilter').val(data[0].sessionId);
+                        onSessionChange();
+                    }
+                });
+
+            // Classes
+            $.get('@Url.Action("GetClasses","ClassSection")',
+                function (data) {
+                    data.forEach(c =>
+                        $('#modalClass').append(
+                            `<option value="${c.classId}">
+                                ${c.className}
+                             </option>`
+                        )
+                    );
+                });
+
+            // Sections
+            $.get('@Url.Action("GetSections","ClassSection")',
+                function (data) {
+                    allSections = data;
+                });
+        }
+
+        // ── Session Change ────────────────────────────────────
+        function onSessionChange() {
+            const sessionId = $('#sessionFilter').val();
+            if (!sessionId) return;
+            loadSummary(sessionId);
+            loadMappings(sessionId);
+        }
+
+        // ── Load Summary Cards ────────────────────────────────
+        function loadSummary(sessionId) {
+            $.get('@Url.Action("GetSummary","ClassSection")',
+                { sessionId }, function (res) {
+                    const data = res.data || [];
+
+                    // Stats
+                    const totalMappings = data.reduce(
+                        (a, c) => a + c.count, 0);
+                    const avgSec = data.length > 0
+                        ? (totalMappings / data.length).toFixed(1)
+                        : 0;
+
+                    $('#statClasses').text(data.length);
+                    $('#statSections').text(totalMappings);
+                    $('#statMappings').text(totalMappings);
+                    $('#statAvgSec').text(avgSec);
+                    $('#summaryCount').text(data.length);
+
+                    if (!data.length) {
+                        $('#summaryList').html(`
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-layer-group fa-2x
+                                          mb-2 opacity-25"></i>
+                                <div class="small">
+                                    No mappings for this session
+                                </div>
+                            </div>`);
+                        return;
+                    }
+
+                    let html = '';
+                    data.forEach((c, i) => {
+                        const clr = colors[i % colors.length];
+                        const sections = c.sections.map(s =>
+                            `<span class="section-badge"
+                                   style="background:${clr}22;
+                                          color:${clr}">
+                                 ${s.sectionName}
+                             </span>`
+                        ).join('');
+
+                        html += `
+                            <div class="summary-card">
+                                <div class="d-flex
+                                            justify-content-between
+                                            align-items-center mb-1">
+                                    <span class="fw-bold"
+                                          style="color:${clr}">
+                                        <i class="fas fa-chalkboard
+                                                  me-1"
+                                           style="font-size:0.8rem">
+                                        </i>
+                                        ${c.className}
+                                    </span>
+                                    <div class="d-flex gap-1">
+                                        <span class="badge"
+                                              style="background:${clr}22;
+                                                     color:${clr}">
+                                            ${c.count} section${
+                                                c.count>1?'s':''}
+                                        </span>
+                                        <button class="btn btn-sm"
+                                                style="padding:1px 6px;
+                                                       font-size:0.7rem"
+                                                onclick="editClass(
+                                                    ${c.classId},
+                                                    '${c.className}')"
+                                                title="Edit">
+                                            <i class="fas fa-edit
+                                                      text-primary">
+                                            </i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>${sections}</div>
+                            </div>`;
+                    });
+                    $('#summaryList').html(html);
+                });
+        }
+
+        // ── Load Mappings Table ───────────────────────────────
+        function loadMappings(sessionId) {
+            $.get('@Url.Action("GetAll","ClassSection")',
+                { sessionId }, function (res) {
+                    allMappings = res.data || [];
+                    renderTable(allMappings);
+                });
+        }
+
+        function renderTable(data) {
+            if (!data.length) {
+                $('#mappingBody').html(`
+                    <tr>
+                        <td colspan="5"
+                            class="text-center text-muted py-4">
+                            No mappings found
+                        </td>
+                    </tr>`);
+                return;
+            }
+
+            let html = '';
+            data.forEach((r, i) => {
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td>
+                        <span class="badge"
+                              style="background:#dbeafe;
+                                     color:#1e3a8a">
+                            <i class="fas fa-chalkboard me-1"
+                               style="font-size:0.6rem"></i>
+                            ${r.className}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge"
+                              style="background:#d1fae5;
+                                     color:#065f46">
+                            <i class="fas fa-users me-1"
+                               style="font-size:0.6rem"></i>
+                            ${r.sectionName}
+                        </span>
+                    </td>
+                    <td>
+                        <small class="text-muted">
+                            ${r.sessionName}
+                        </small>
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-danger btn-sm"
+                                onclick="deleteMapping(${r.id})"
+                                title="Delete">
+                            <i class="fas fa-trash"
+                               style="font-size:0.7rem"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            $('#mappingBody').html(html);
+        }
+
+        function filterTable() {
+            const q = $('#searchBox').val().toLowerCase();
+            const filtered = q
+                ? allMappings.filter(r =>
+                    r.className.toLowerCase().includes(q) ||
+                    r.sectionName.toLowerCase().includes(q))
+                : allMappings;
+            renderTable(filtered);
+        }
+
+        // ── Show Bulk Modal ───────────────────────────────────
+        function showBulkModal() {
+            selectedIds = [];
+            mappedIds   = [];
+            $('#modalClass').val('');
+            $('#sectionChipsArea').hide();
+            $('#chipsPlaceholder').show();
+
+            // Sync session
+            const curSession = $('#sessionFilter').val();
+            if (curSession) $('#modalSession').val(curSession);
+
+            new bootstrap.Modal(
+                document.getElementById('bulkModal')).show();
+        }
+
+        function editClass(classId, className) {
+            showBulkModal();
+            setTimeout(() => {
+                const curSession = $('#sessionFilter').val();
+                if (curSession) {
+                    $('#modalSession').val(curSession);
+                    $('#modalClass').val(classId);
+                    loadCurrentMappings();
+                }
+            }, 300);
+        }
+
+        function onModalChange() {
+            $('#modalClass').val('');
+            selectedIds = [];
+            mappedIds   = [];
+            $('#sectionChipsArea').hide();
+            $('#chipsPlaceholder').show();
+        }
+
+        // ── Load Current Mappings for Selected Class ──────────
+        function loadCurrentMappings() {
+            const classId   = $('#modalClass').val();
+            const sessionId = $('#modalSession').val();
+
+            if (!classId || !sessionId) return;
+
+            $.get('@Url.Action("GetMappedSections",
+                   "ClassSection")',
+                { classId, sessionId }, function (data) {
+                    mappedIds   = data.map(x => x.sectionId);
+                    selectedIds = [...mappedIds];
+                    renderChips();
+                    $('#sectionChipsArea').show();
+                    $('#chipsPlaceholder').hide();
+                });
+        }
+
+        function renderChips() {
+            let html = '';
+            allSections.forEach((s, i) => {
+                const isMapped   =
+                    mappedIds.includes(s.sectionId);
+                const isSelected =
+                    selectedIds.includes(s.sectionId);
+                const cls = isSelected
+                    ? (isMapped ? 'mapped' : 'selected-chip')
+                    : 'unmapped';
+                const icon = isSelected
+                    ? 'fa-check-circle' : 'fa-circle';
+                const clr = colors[i % colors.length];
+
+                html += `
+                    <div class="section-chip ${cls}"
+                         id="chip_${s.sectionId}"
+                         onclick="toggleChip(${s.sectionId})"
+                         style="${isSelected
+                             ? `border-color:${clr};
+                                color:${clr};
+                                background:${clr}15` : ''}">
+                        <i class="fas ${icon}"
+                           style="font-size:0.7rem"></i>
+                        ${s.sectionName}
+                    </div>`;
+            });
+            $('#sectionChips').html(html ||
+                '<div class="text-muted small">No sections available</div>');
+        }
+
+        function toggleChip(sectionId) {
+            if (selectedIds.includes(sectionId)) {
+                selectedIds = selectedIds.filter(
+                    x => x !== sectionId);
+            } else {
+                selectedIds.push(sectionId);
+            }
+            renderChips();
+        }
+
+        function selectAllSections() {
+            selectedIds = allSections.map(s => s.sectionId);
+            renderChips();
+        }
+
+        function clearAllSections() {
+            selectedIds = [];
+            renderChips();
+        }
+
+        // ── Save Bulk Mapping ─────────────────────────────────
+        function saveBulkMapping() {
+            const classId   = parseInt($('#modalClass').val());
+            const sessionId = parseInt($('#modalSession').val());
+
+            if (!classId) {
+                toastr.warning('Select class!'); return;
+            }
+            if (!sessionId) {
+                toastr.warning('Select session!'); return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("BulkSave","ClassSection")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    classId,
+                    sessionId,
+                    sectionIds: selectedIds
+                }),
+                success: r => {
+                    if (r.success) {
+                        toastr.success(r.message);
+                        bootstrap.Modal.getInstance(
+                            document.getElementById('bulkModal'))
+                            .hide();
+                        const sid = $('#sessionFilter').val();
+                        loadSummary(sid);
+                        loadMappings(sid);
+                    } else {
+                        toastr.error(r.message);
+                    }
+                },
+                error: () => toastr.error('Error saving!')
+            });
+        }
+
+        // ── Delete Mapping ────────────────────────────────────
+        function deleteMapping(id) {
+            Swal.fire({
+                title: 'Delete Mapping?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Delete!'
+            }).then(res => {
+                if (!res.isConfirmed) return;
+                $.ajax({
+                    url: '@Url.Action("Delete","ClassSection")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(id),
+                    success: r => {
+                        if (r.success) {
+                            toastr.success(r.message);
+                            const sid =
+                                $('#sessionFilter').val();
+                            loadSummary(sid);
+                            loadMappings(sid);
+                        } else {
+                            toastr.error(r.message);
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+}

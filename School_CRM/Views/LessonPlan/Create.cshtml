@@ -1,0 +1,177 @@
+@model School_CRM.Models.TblLessonPlan
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Create Lesson Plan" : "Edit Lesson Plan";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Summernote CSS -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+
+<style>
+    .form-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: #ffffff;
+    }
+    .form-header {
+        background: #f8fafc;
+        padding: 20px 25px;
+        border-bottom: 1px solid #e2e8f0;
+        border-radius: 12px 12px 0 0;
+    }
+    .form-title {
+        color: #1e293b;
+        font-weight: 700;
+        margin: 0;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+    }
+    .note-editor.note-frame {
+        border-radius: 8px;
+        border-color: #cbd5e1;
+    }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card form-card">
+                <div class="form-header d-flex justify-content-between align-items-center">
+                    <h4 class="form-title">
+                        <i class="fas @(Model.Id == 0 ? "fa-plus-circle text-primary" : "fa-edit text-warning") me-2"></i>
+                        @(Model.Id == 0 ? "Create New Lesson Plan" : "Edit Lesson Plan")
+                    </h4>
+                    <a href="@Url.Action("Index", "LessonPlan")" class="btn btn-outline-secondary btn-sm rounded-pill">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger rounded-3">
+                            <div asp-validation-summary="All" class="mb-0"></div>
+                        </div>
+                    }
+
+                    <form asp-action="Save" method="post" id="planForm">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Plan Title <span class="text-danger">*</span></label>
+                                <input asp-for="PlanTitle" class="form-control form-control-lg" placeholder="e.g., Introduction to Algebra - Part 1" required />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Class <span class="text-danger">*</span></label>
+                                <select asp-for="ClassId" class="form-select" required>
+                                    <option value="">-- Select Class --</option>
+                                    @foreach (var c in ViewBag.Classes)
+                                    {
+                                        <option value="@c.ClassId">@c.ClassName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Subject <span class="text-danger">*</span></label>
+                                <select asp-for="SubjectId" class="form-select" required>
+                                    <option value="">-- Select Subject --</option>
+                                    @foreach (var s in ViewBag.Subjects)
+                                    {
+                                        <option value="@s.SubjectId">@s.SubjectName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teacher (Temporary) <span class="text-danger">*</span></label>
+                                <select asp-for="EmployeeId" class="form-select" required>
+                                    <option value="">-- Select Teacher --</option>
+                                    @foreach (var t in ViewBag.Teachers)
+                                    {
+                                        <option value="@t.Id">@t.Name</option>
+                                    }
+                                </select>
+                                <small class="text-muted">Since login is not active, select a teacher.</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                                <input asp-for="StartDate" type="date" class="form-control" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date <span class="text-danger">*</span></label>
+                                <input asp-for="EndDate" type="date" class="form-control" required />
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="mb-4">
+                            <label class="form-label">Learning Objectives <span class="text-danger">*</span></label>
+                            <textarea asp-for="Objectives" class="summernote" required></textarea>
+                            <small class="text-muted">What should students be able to do by the end of this lesson?</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Teaching Methodology <span class="text-danger">*</span></label>
+                            <textarea asp-for="TeachingMethod" class="summernote" required></textarea>
+                            <small class="text-muted">Step-by-step procedure, activities, and interactions.</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Required Materials / Resources</label>
+                            <textarea asp-for="RequiredMaterials" class="form-control" rows="3" placeholder="e.g., Projector, Graph Paper, Textbook Page 45"></textarea>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5">
+                                <i class="fas fa-paper-plane me-2"></i> Submit Plan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Summernote JS -->
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.summernote').summernote({
+                height: 200,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
+
+            $('#planForm').submit(function() {
+                // Ensure summernote content is synced to textarea before submit
+                if ($('#Objectives').summernote('isEmpty')) {
+                    alert('Learning Objectives are required.');
+                    return false;
+                }
+                if ($('#TeachingMethod').summernote('isEmpty')) {
+                    alert('Teaching Methodology is required.');
+                    return false;
+                }
+                return true;
+            });
+        });
+    </script>
+}

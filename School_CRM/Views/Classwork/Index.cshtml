@@ -1,0 +1,266 @@
+@{
+    ViewData["Title"] = "Classwork & Logbook";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+<style>
+    /* Modern Aesthetic CSS */
+    .logbook-header {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .filter-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: #ffffff;
+        margin-bottom: 25px;
+    }
+    .table-container {
+        border-radius: 12px;
+        background: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .dt-buttons .btn {
+        border-radius: 6px;
+        margin-right: 5px;
+    }
+    table.dataTable thead th {
+        background-color: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="logbook-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1 fw-bold"><i class="fas fa-book me-2"></i>Classwork & Logbook</h4>
+            <p class="mb-0 text-white-75">Maintain daily teaching records and topics covered.</p>
+        </div>
+        <div>
+            <button class="btn btn-light rounded-pill fw-bold" id="btnAddNewLog">
+                <i class="fas fa-plus text-warning me-1"></i> Add Log
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filter-card p-3">
+        <div class="row align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Start Date</label>
+                <input type="date" id="filterStartDate" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">End Date</label>
+                <input type="date" id="filterEndDate" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <button id="btnFilter" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Apply Filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered" id="logTable" width="100%">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Class</th>
+                        <th>Section</th>
+                        <th>Subject</th>
+                        <th>Teacher</th>
+                        <th>Topic Covered</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Log -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold">Add Daily Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                        <input type="date" id="txtLogDate" class="form-control" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Teacher <span class="text-danger">*</span></label>
+                        <select id="ddlTeacher" class="form-select" required></select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Class <span class="text-danger">*</span></label>
+                        <select id="ddlClass" class="form-select" required></select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Section <span class="text-danger">*</span></label>
+                        <select id="ddlSection" class="form-select" disabled required></select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Subject <span class="text-danger">*</span></label>
+                        <select id="ddlSubject" class="form-select" required></select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Topic Covered <span class="text-danger">*</span></label>
+                    <input type="text" id="txtTopicCovered" class="form-control" placeholder="What did you teach today?" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Remarks</label>
+                    <textarea id="txtRemarks" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveLog">Save Log</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Set Default Dates
+            let today = new Date();
+            let lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 7);
+
+            function formatDate(date) {
+                let d = new Date(date), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+                return [year, month, day].join('-');
+            }
+
+            $('#filterStartDate').val(formatDate(lastWeek));
+            $('#filterEndDate').val(formatDate(today));
+            $('#txtLogDate').val(formatDate(today));
+
+            // Initialize DataTable
+            var table = $('#logTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+                ajax: {
+                    url: '/Classwork/GetLogs',
+                    data: function (d) {
+                        d.startDate = $('#filterStartDate').val();
+                        d.endDate = $('#filterEndDate').val();
+                    }
+                },
+                columns: [
+                    { data: 'logDate' },
+                    { data: 'className' },
+                    { data: 'sectionName' },
+                    { data: 'subjectName' },
+                    { data: 'teacherName' },
+                    { data: 'topicCovered' },
+                    { data: 'remarks' }
+                ],
+                order: [[0, 'desc']]
+            });
+
+            $('#btnFilter').click(function () {
+                table.ajax.reload();
+            });
+
+            // Load Form Data
+            $.get('/Classwork/GetFormData', function (res) {
+                let classOptions = '<option value="">Select Class</option>';
+                res.classes.forEach(c => classOptions += `<option value="${c.id}">${c.name}</option>`);
+                $('#ddlClass').html(classOptions);
+
+                let subjectOptions = '<option value="">Select Subject</option>';
+                res.subjects.forEach(s => subjectOptions += `<option value="${s.id}">${s.name}</option>`);
+                $('#ddlSubject').html(subjectOptions);
+
+                let teacherOptions = '<option value="">Select Teacher</option>';
+                res.teachers.forEach(t => teacherOptions += `<option value="${t.id}">${t.name}</option>`);
+                $('#ddlTeacher').html(teacherOptions);
+            });
+
+            $('#ddlClass').change(function () {
+                let classId = $(this).val();
+                if (classId) {
+                    $.get('/Classwork/GetSectionsByClass?classId=' + classId, function (data) {
+                        let options = '<option value="">Select Section</option>';
+                        data.forEach(s => options += `<option value="${s.id}">${s.name}</option>`);
+                        $('#ddlSection').html(options).prop('disabled', false);
+                    });
+                } else {
+                    $('#ddlSection').html('<option value="">Select Section</option>').prop('disabled', true);
+                }
+            });
+
+            $('#btnAddNewLog').click(function () {
+                $('#logModal').modal('show');
+            });
+
+            $('#btnSaveLog').click(function () {
+                let data = {
+                    classId: $('#ddlClass').val(),
+                    sectionId: $('#ddlSection').val(),
+                    subjectId: $('#ddlSubject').val(),
+                    employeeId: $('#ddlTeacher').val(),
+                    logDate: $('#txtLogDate').val(),
+                    topicCovered: $('#txtTopicCovered').val().trim(),
+                    remarks: $('#txtRemarks').val().trim()
+                };
+
+                if (!data.classId || !data.sectionId || !data.subjectId || !data.employeeId || !data.topicCovered || !data.logDate) {
+                    alert('Please fill all required fields.');
+                    return;
+                }
+
+                $.post('/Classwork/SaveLog', data, function (res) {
+                    if (res.success) {
+                        $('#logModal').modal('hide');
+                        $('#txtTopicCovered').val('');
+                        $('#txtRemarks').val('');
+                        table.ajax.reload();
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                });
+            });
+        });
+    </script>
+}

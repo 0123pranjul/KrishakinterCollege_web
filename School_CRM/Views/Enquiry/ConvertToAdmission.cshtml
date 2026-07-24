@@ -1,0 +1,365 @@
+﻿@model School_CRM.Models.TblEnquiry
+@{
+    ViewData["Title"] = "Convert to Admission";
+    var classes = ViewBag.Classes as List<School_CRM.Models.TblClass>
+                   ?? new();
+    var sessions = ViewBag.Sessions as
+                   List<School_CRM.Models.TblAcademicSession> ?? new();
+    var sections = ViewBag.Sections as
+                   List<School_CRM.Models.TblSection> ?? new();
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <!-- Header -->
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div style="width:48px;height:48px;
+                    border-radius:12px;
+                    background:linear-gradient(135deg,
+                    #4361ee,#7209b7);
+                    display:flex;align-items:center;
+                    justify-content:center;
+                    font-size:1.5rem;color:white">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">Convert to Admission</h4>
+                    <div class="text-muted small">
+                        Enquiry #@Model.EnquiryId —
+                        @Model.StudentName
+                    </div>
+                </div>
+                <a href="/Enquiry/Detail/@Model.EnquiryId"
+                       class="btn btn-outline-secondary btn-sm ms-auto">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+
+            <!-- Enquiry Summary -->
+            <div class="alert alert-primary mb-3">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <small class="text-muted">Student</small>
+                        <div class="fw-bold">@Model.StudentName</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Parent</small>
+                        <div>@Model.ParentName</div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Mobile</small>
+                        <div class="fw-bold text-primary">
+                            @Model.MobileNo
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Interest Class</small>
+                        <div>@Model.InterestedClass?.ClassName</div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Source</small>
+                        <div>@Model.Source</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+
+                    <!-- Section 1: Student Details -->
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="fas fa-user me-2"></i>
+                        Student Details
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Student Name
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="admStudentName"
+                                   class="form-control"
+                                   value="@Model.StudentName">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Date of Birth
+                            </label>
+                            <input type="date" id="admDOB"
+                                   class="form-control"
+                                   value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Gender
+                            </label>
+                            <select id="admGender"
+                                    class="form-select">
+                                <option value="">Select</option>
+                                @foreach (var g in new[]
+                                {
+                                    "Male","Female","Other"
+                                })
+                                {
+                                    <option selected="@(Model.Gender
+                                                                                                                        == g)">@g</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">
+                                Address
+                            </label>
+                            <input type="text" id="admAddress"
+                                   class="form-control"
+                                   value="@Model.Address">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                City
+                            </label>
+                            <input type="text" id="admCity"
+                                   class="form-control"
+                                   value="@Model.City">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Section 2: Admission Details -->
+                    <h6 class="fw-bold text-success mb-3">
+                        <i class="fas fa-school me-2"></i>
+                        Admission Details
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Session
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select id="admSession"
+                                    class="form-select">
+                                <option value="">-- Select --</option>
+                                @foreach (var s in sessions)
+                                {
+                                    <option value="@s.SessionId"
+                                            selected="@(s.SessionId
+                                                                                                                                    == Model.SessionId)">
+                                        @s.SessionName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Class
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select id="admClass"
+                                    class="form-select"
+                                    onchange="loadSections()">
+                                <option value="">-- Select --</option>
+                                @foreach (var c in classes)
+                                {
+                                    <option value="@c.ClassId"
+                                            selected="@(c.ClassId
+                                                                                                                                    == Model.InterestedClassId)">
+                                        @c.ClassName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Section
+                            </label>
+                            <select id="admSection"
+                                    class="form-select">
+                                <option value="">-- Select --</option>
+                                @foreach (var s in sections)
+                                {
+                                    <option value="@s.SectionId">
+                                        @s.SectionName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Admission Date
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="admDate"
+                                   class="form-control"
+                                   value="@DateTime.Today
+                            .ToString(" yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Joining Date
+                            </label>
+                            <input type="date" id="admJoiningDate"
+                                   class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Admission Type
+                            </label>
+                            <select id="admType" class="form-select">
+                                <option value="New">New</option>
+                                <option value="Transfer">
+                                    Transfer
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                Remarks
+                            </label>
+                            <textarea id="admRemarks"
+                                  class="form-control" rows="2"
+                                      placeholder="Optional remarks">
+                            </textarea>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="/Enquiry/Detail/@Model.EnquiryId"
+                           class="btn btn-secondary">Cancel</a>
+                        <button class="btn btn-success px-4 fw-bold"
+                                onclick="saveAdmission()"
+                                id="btnAdmit">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            Confirm Admission
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        const enquiryId = @Model.EnquiryId;
+
+        function loadSections() {
+        const classId = $('#admClass').val();
+        if (!classId) return;
+        $.get('@Url.Action("GetSections", "Enquiry")',
+        { classId }, function (data) {
+        $('#admSection').html(
+        '<option value="">-- Select --</option>');
+        data.forEach(s =>
+        $('#admSection').append(
+        `<option value="${s.sectionId}">
+        ${s.sectionName}
+        </option>`
+        )
+        );
+        });
+        }
+
+        function saveAdmission() {
+        const name    = $('#admStudentName').val().trim();
+        const session = $('#admSession').val();
+        const cls     = $('#admClass').val();
+        const date    = $('#admDate').val();
+
+        if (!name) {
+        toastr.warning('Enter student name!'); return;
+        }
+        if (!session) {
+        toastr.warning('Select session!'); return;
+        }
+        if (!cls) {
+        toastr.warning('Select class!'); return;
+        }
+        if (!date) {
+        toastr.warning('Select admission date!'); return;
+        }
+
+        Swal.fire({
+        title: 'Confirm Admission?',
+        html: `Admit <strong>${name}</strong> to
+        the school?<br>
+        <small class="text-muted">
+        A new student record will be created.
+        </small>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'Yes, Admit!'
+        }).then(res => {
+        if (!res.isConfirmed) return;
+
+        $('#btnAdmit').prop('disabled', true)
+        .html('<i class="fas fa-spinner fa-spin me-2"></i>' +
+        'Processing...');
+
+        $.ajax({
+        url: '@Url.Action("SaveAdmission", "Enquiry")',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+        enquiryId,
+        studentName:   name,
+        dateOfBirth:   $('#admDOB').val() || null,
+        gender:        $('#admGender').val(),
+        address:       $('#admAddress').val(),
+        city:          $('#admCity').val(),
+        sessionId: parseInt(session),
+        classId:   parseInt(cls),
+        sectionId: parseInt(
+        $('#admSection').val()) || null,
+        admissionDate: date,
+        joiningDate: $('#admJoiningDate').val()
+        || null,
+        admissionType: $('#admType').val(),
+        remarks:       $('#admRemarks').val()
+        }),
+        success: r => {
+        if (r.success) {
+        Swal.fire({
+        title: 'Admitted!',
+        html: `${name} has been admitted.<br>
+        <strong>Admission ID:
+        ${r.admissionId}</strong>`,
+        icon: 'success',
+        confirmButtonText: 'Go to Enquiries'
+        }).then(() => {
+        window.location =
+        '/Enquiry/Index';
+        });
+        } else {
+        toastr.error(r.message);
+        $('#btnAdmit').prop('disabled', false)
+        .html('<i class="fas fa-user-graduate' +
+        ' me-2"></i>Confirm Admission');
+        }
+        },
+        error: function () {
+        toastr.error('Error!');
+        $('#btnAdmit').prop('disabled', false)
+        .html('<i class="fas fa-user-graduate' +
+        ' me-2"></i>Confirm Admission');
+        }
+        });
+        });
+        }
+
+        // Auto load sections if class pre-selected
+        $(document).ready(function () {
+        if ($('#admClass').val()) loadSections();
+        });
+    </script>
+}

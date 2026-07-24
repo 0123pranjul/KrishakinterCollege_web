@@ -1,0 +1,131 @@
+@model School_CRM.Models.DTOs.AssetMemberDashboardDto
+@{ ViewData["Title"] = "My Assets"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-box-open text-primary me-2"></i>My Assets</h2>
+            <small class="text-muted">Assets issued to you</small>
+        </div>
+        <a asp-controller="Asset" asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-search me-1"></i>Browse Assets
+        </a>
+    </div>
+
+    <!-- Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center py-3 bg-primary text-white">
+                <div class="card-body">
+                    <i class="fas fa-box fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.MyIssuedAssets.Count</h3>
+                    <small>Currently Issued</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center py-3 bg-danger text-white">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.MyIssuedAssets.Count(x => x.IsOverdue)</h3>
+                    <small>Overdue</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center py-3 bg-success text-white">
+                <div class="card-body">
+                    <i class="fas fa-history fa-2x mb-2 opacity-75"></i>
+                    <h3 class="fw-bold mb-0">@Model.MyIssueHistory.Count</h3>
+                    <small>Past Issues</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Assets -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-box-open me-2 text-primary"></i>Currently Issued Assets</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Asset</th><th>Tag</th><th>Category</th><th>Issue Date</th><th>Expected Return</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.MyIssuedAssets.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-4">No assets currently issued</td></tr>
+                        }
+                        @foreach (var a in Model.MyIssuedAssets)
+                        {
+                            <tr class="@(a.IsOverdue ? "table-danger" : a.Status == "Due Soon" ? "table-warning" : "")">
+                                <td class="fw-semibold">@a.AssetName</td>
+                                <td><code>@a.AssetTag</code></td>
+                                <td>@a.CategoryName</td>
+                                <td>@a.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(a.ExpectedReturnDate?.ToString("dd/MM/yyyy") ?? "Permanent")</td>
+                                <td>
+                                    @if (a.IsOverdue)
+                                    {
+                                        <span class="badge bg-danger">OVERDUE (@Math.Abs(a.DaysRemaining ?? 0) days)</span>
+                                    }
+                                    else if (a.Status == "Due Soon")
+                                    {
+                                        <span class="badge bg-warning text-dark">Due in @a.DaysRemaining days</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-history me-2 text-secondary"></i>Issue History</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Asset</th><th>Tag</th><th>Issue Date</th><th>Return Date</th><th>Condition</th><th>Fine</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.MyIssueHistory.Any())
+                        {
+                            <tr><td colspan="7" class="text-center text-muted py-3">No history</td></tr>
+                        }
+                        @foreach (var h in Model.MyIssueHistory)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@h.AssetName</td>
+                                <td><code>@h.AssetTag</code></td>
+                                <td>@h.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(h.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                <td>@(h.ConditionOnReturn ?? "-")</td>
+                                <td class="@(h.DamageFine > 0 ? "text-danger fw-semibold" : "")">
+                                    @(h.DamageFine > 0 ? $"₹{h.DamageFine:F2}" : "-")
+                                </td>
+                                <td>
+                                    <span class="badge @(h.TransactionStatus == "Returned" ? "bg-success" : h.TransactionStatus == "Lost" ? "bg-danger" : "bg-warning text-dark")">
+                                        @h.TransactionStatus
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

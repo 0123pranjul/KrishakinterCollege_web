@@ -1,0 +1,529 @@
+@model School_CRM.Models.ViewModels.IdCardGenerateVM
+@{
+    ViewData["Title"] = "Generate ID Cards";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    /* Premium UI Styles */
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+    
+    .qr-container img, .qr-container canvas {
+        width: 45px !important;
+        height: 45px !important;
+        margin: 0 auto;
+    }
+
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+        cursor: pointer;
+    }
+
+    /* Print Preview Modal Styles */
+    #printPreviewModal .modal-dialog {
+        max-width: 95%;
+    }
+    #printPreviewModal .modal-content {
+        background-color: #f0f2f5;
+    }
+    
+    /* 3D Flip Card UI for Preview (Screen only) */
+    .id-card-scene {
+        perspective: 1000px;
+        display: inline-block;
+        margin: 10px;
+    }
+    .id-card-wrapper {
+        position: relative;
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+        cursor: pointer;
+    }
+    .id-card-scene:hover .id-card-wrapper {
+        transform: rotateY(180deg);
+    }
+    .id-card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 8px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        background-color: white;
+        overflow: hidden;
+        border: 1px solid #ddd;
+    }
+    .id-card-back {
+        transform: rotateY(180deg);
+    }
+
+    /* CR80 Standard Size Settings */
+    /* Vertical: 54mm x 85.6mm */
+    .id-card-vertical { width: 54mm; height: 85.6mm; }
+    /* Horizontal: 85.6mm x 54mm */
+    .id-card-horizontal { width: 85.6mm; height: 54mm; }
+
+    /* Content Layout within ID Card */
+    .card-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .card-content * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+    
+    /* Print CSS */
+    @@media print {
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body * { visibility: hidden; }
+        #printableArea, #printableArea * { visibility: visible; }
+        #printableArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2mm; /* Small gap between cards on sheet */
+            justify-content: flex-start;
+        }
+        
+        /* Remove 3D effects and show both front and back sequentially for printing */
+        .id-card-scene { margin: 0; padding: 0; perspective: none; break-inside: avoid; margin-bottom: 5mm; }
+        .id-card-wrapper { transform: none !important; transition: none !important; position: static; display: flex; gap: 2mm; }
+        
+        /* Render Front and Back side-by-side or below depending on orientation */
+        .id-card-face { position: relative; transform: none !important; box-shadow: none !important; border: 1px dashed #ccc; }
+        
+        @@page {
+            size: A4;
+            margin: 5mm;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-0 fw-bold text-primary"><i class="bi bi-printer me-2"></i>Generate ID Cards</h3>
+            <p class="text-muted mb-0">Select a template, filter students, and print.</p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-gear me-1"></i> Manage Templates
+        </a>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card border-0 rounded-4 glass-panel mb-4">
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-medium text-secondary">Select Template <span class="text-danger">*</span></label>
+                    <select id="TemplateId" class="form-select border-0 bg-white shadow-sm" onchange="loadTemplateDetails()">
+                        <option value="">-- Choose Template --</option>
+                        @foreach(var t in Model.Templates)
+                        {
+                            <option value="@t.TemplateId">@t.TemplateName (@t.Orientation)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-medium text-secondary">Class</label>
+                    <select id="ClassId" class="form-select border-0 bg-white shadow-sm" onchange="loadSections()">
+                        <option value="">All Classes</option>
+                        @foreach(var c in Model.Classes)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-medium text-secondary">Section</label>
+                    <select id="SectionId" class="form-select border-0 bg-white shadow-sm">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-medium text-secondary">Search Student</label>
+                    <div class="input-group shadow-sm rounded">
+                        <input type="text" id="SearchQuery" class="form-control border-0" placeholder="Name, Roll No...">
+                        <button class="btn btn-primary" onclick="loadStudents()"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student List Section -->
+    <div class="card border-0 rounded-4 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-dark fw-semibold">Students List <span class="badge bg-primary ms-2" id="studentCount">0</span></h5>
+            <button class="btn btn-success rounded-pill px-4 shadow-sm" onclick="generatePreview()" id="btnGenerate" disabled>
+                <i class="bi bi-magic me-1"></i> Generate Preview
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0" id="studentTable">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th class="ps-4" style="width: 40px;">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </th>
+                            <th>Photo</th>
+                            <th>Student Name</th>
+                            <th>Roll / Adm No</th>
+                            <th>Class (Sec)</th>
+                            <th>Father's Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTbody">
+                        <tr><td colspan="6" class="text-center py-5 text-muted">Select filters and search to load students.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Preview Modal -->
+<div class="modal fade" id="printPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header border-bottom shadow-sm bg-white">
+                <div>
+                    <h5 class="modal-title fw-bold text-primary mb-0"><i class="bi bi-eye me-2"></i>ID Card Preview</h5>
+                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Hover over a card to flip it (Screen only). Both sides will print side-by-side.</small>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 me-2" onclick="downloadPDF()">
+                        <i class="bi bi-file-pdf me-1"></i> Download PDF
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 me-2" onclick="printCards()">
+                        <i class="bi bi-printer-fill me-1"></i> Print Cards
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="printableArea" class="d-flex flex-wrap justify-content-center">
+                    <!-- Cards will be injected here via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Include QR Code & HTML2PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        let currentTemplate = null;
+        let studentsData = [];
+
+        // Load Sections based on Class
+        function loadSections() {
+            const classId = $('#ClassId').val();
+            const sectionSelect = $('#SectionId');
+            sectionSelect.empty().append('<option value="">All Sections</option>');
+            
+            if (classId) {
+                $.get(`/IdCard/GetSections?classId=${classId}`, function (data) {
+                    data.forEach(s => {
+                        sectionSelect.append(`<option value="${s.id}">${s.name}</option>`);
+                    });
+                });
+            }
+        }
+
+        // Load Template Details
+        function loadTemplateDetails() {
+            const tempId = $('#TemplateId').val();
+            if(!tempId) {
+                currentTemplate = null;
+                checkGenerateBtn();
+                return;
+            }
+            $.get(`/IdCard/GetTemplateDetails?templateId=${tempId}`, function(res) {
+                if(res.success) {
+                    currentTemplate = res.data;
+                    // parse config
+                    try {
+                        currentTemplate.config = JSON.parse(currentTemplate.fieldsConfigJson);
+                    } catch(e) {
+                        currentTemplate.config = {};
+                    }
+                    checkGenerateBtn();
+                }
+            });
+        }
+
+        // Load Students List
+        function loadStudents() {
+            const classId = $('#ClassId').val();
+            const sectionId = $('#SectionId').val();
+            const search = $('#SearchQuery').val();
+            const tbody = $('#studentTbody');
+            
+            tbody.html('<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>');
+            
+            $.get(`/IdCard/GetStudents?classId=${classId}&sectionId=${sectionId}&searchQuery=${search}`, function(res) {
+                if(res.success) {
+                    studentsData = res.data;
+                    $('#studentCount').text(studentsData.length);
+                    tbody.empty();
+                    
+                    if(studentsData.length === 0) {
+                        tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No students found.</td></tr>');
+                        return;
+                    }
+
+                    studentsData.forEach(s => {
+                        const photoHtml = s.photoPath ? `<img src="${s.photoPath}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;">` : `<div class="bg-secondary rounded-circle text-white d-flex align-items-center justify-content-center" style="width:40px;height:40px;"><i class="bi bi-person"></i></div>`;
+                        const row = `
+                            <tr>
+                                <td class="ps-4">
+                                    <input class="form-check-input student-checkbox" type="checkbox" value="${s.studentId}">
+                                </td>
+                                <td>${photoHtml}</td>
+                                <td class="fw-medium">${s.studentName}</td>
+                                <td><span class="badge bg-light text-dark border">${s.rollNo || '-'}</span> / ${s.admissionNo || '-'}</td>
+                                <td>${s.className} (${s.sectionName})</td>
+                                <td class="text-muted small">${s.fatherName || '-'}</td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                    
+                    bindCheckboxes();
+                }
+            });
+        }
+
+        // Checkbox logic
+        function bindCheckboxes() {
+            $('.student-checkbox').on('change', checkGenerateBtn);
+            $('#selectAll').on('change', function() {
+                $('.student-checkbox').prop('checked', $(this).prop('checked'));
+                checkGenerateBtn();
+            });
+        }
+
+        function checkGenerateBtn() {
+            const anyChecked = $('.student-checkbox:checked').length > 0;
+            const tempSelected = currentTemplate != null;
+            $('#btnGenerate').prop('disabled', !(anyChecked && tempSelected));
+        }
+
+        // HTML Generator for a single ID Card (Front and Back)
+        function generateCardHtml(student, isFlat = false) {
+            const t = currentTemplate;
+            const c = t.config;
+            const orientationClass = t.orientation === 'Vertical' ? 'id-card-vertical' : 'id-card-horizontal';
+            
+            // Safe fallbacks
+            const sName = t.schoolName || 'Your School Name';
+            const sAddr = t.schoolAddress || '';
+            const sContact = t.schoolContact || '';
+            const theme = t.themeColor || '#0d6efd';
+            
+            // Generate Avatar
+            const photoSrc = student.photoPath ? student.photoPath : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.studentName)}&background=random&color=fff&size=200`;
+
+            // Build Front
+            let frontHtml = `
+                <div class="card-content d-flex flex-column text-center" style="font-family: 'Poppins', sans-serif; background-image: url('${t.backgroundFrontPath || ''}');">
+                    <!-- Header -->
+                    <div class="text-white p-2" style="background-color: ${theme};">
+                        ${t.schoolLogoPath ? `<img src="${t.schoolLogoPath}" style="max-height: 28px; margin-bottom: 4px;" />` : ''}
+                        <div class="mb-0 text-truncate" style="font-size: ${t.orientation === 'Vertical' ? '12px' : '14px'}; font-weight: 700; line-height: 1.1; letter-spacing: 0.5px;">${sName}</div>
+                    </div>
+                    <!-- Photo -->
+                    <div class="mt-3 mb-2">
+                        <img src="${photoSrc}" style="width: ${t.orientation === 'Vertical' ? '65px' : '65px'}; height: ${t.orientation === 'Vertical' ? '80px' : '80px'}; object-fit: cover; border: 3px solid ${theme}; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+                    </div>
+                    <!-- Details -->
+                    <div class="px-2 flex-grow-1" style="font-size: ${t.orientation === 'Vertical' ? '10px' : '11px'}; color: #222;">
+                        <div class="fw-bold mb-1 text-truncate" style="color: ${theme}; font-size: 13px; font-weight: 700;">${student.studentName}</div>
+                        <div class="d-flex justify-content-center gap-2 fw-bold mb-2 pb-1 border-bottom" style="font-size: 9px; color: #555;">
+                            <span>Class: ${student.className}</span>
+                            <span>Sec: ${student.sectionName}</span>
+                        </div>
+                        <div class="text-start px-1 mt-1" style="line-height: 1.4; font-size: 9px; font-weight: 500;">
+                            <div class="d-flex mb-1"><strong style="width: 55px; flex-shrink: 0; color: #444;">Roll No:</strong> <span class="text-truncate fw-semibold">${student.rollNo || '-'}</span></div>
+                            <div class="d-flex mb-1"><strong style="width: 55px; flex-shrink: 0; color: #444;">Adm No:</strong> <span class="text-truncate fw-semibold">${student.admissionNo || '-'}</span></div>
+                            ${c.ShowDOB ? `<div class="d-flex mb-1"><strong style="width: 55px; flex-shrink: 0; color: #444;">DOB:</strong> <span class="text-truncate fw-semibold">${student.dateOfBirth}</span></div>` : ''}
+                            ${c.ShowBloodGroup ? `<div class="d-flex mb-1"><strong style="width: 55px; flex-shrink: 0; color: #444;">Blood Gp:</strong> <span class="text-truncate fw-semibold" style="color: red;">${student.bloodGroup || '-'}</span></div>` : ''}
+                            ${c.ShowPhone ? `<div class="d-flex mb-1"><strong style="width: 55px; flex-shrink: 0; color: #444;">Phone:</strong> <span class="text-truncate fw-semibold">${student.phone || '-'}</span></div>` : ''}
+                        </div>
+                    </div>
+                    <!-- Footer / Signature -->
+                    <div class="mt-auto pb-2 w-100 px-3 d-flex justify-content-between align-items-end">
+                        <div style="font-size: 8px; text-align: left; width: 50%; font-weight: 500; color: #666;">Student Sign</div>
+                        <div style="width: 50%; text-align: right;">
+                            ${t.principalSignaturePath ? `<img src="${t.principalSignaturePath}" style="max-height: 22px;" />` : ''}
+                            <div style="font-size: 8px; margin-top: 2px; color: ${theme}; font-weight: 700;">Principal</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Build Back
+            let backHtml = `
+                <div class="card-content d-flex flex-column text-center" style="font-family: 'Poppins', sans-serif; background-image: url('${t.backgroundBackPath || ''}'); background-color: #fff;">
+                    <div class="p-2 text-white" style="background-color: ${theme}; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
+                        TERMS & CONDITIONS
+                    </div>
+                    <div class="px-2 py-2 text-start flex-grow-1" style="font-size: 8px; line-height: 1.4; color: #333; font-weight: 500;">
+                        <ul class="ps-3 mb-2">
+                            <li class="mb-1">This card is property of ${sName}.</li>
+                            <li class="mb-1">Please wear this ID card at all times within school premises.</li>
+                            <li>If found, please return to the school address.</li>
+                        </ul>
+                        <div class="mt-2 border-top pt-2">
+                            ${c.ShowFatherName ? `<div class="text-truncate mb-1"><strong style="color: #444;">Father's Name:</strong> ${student.fatherName || '-'}</div>` : ''}
+                            ${c.ShowAddress ? `<div class="text-truncate-2" style="white-space: normal; line-height: 1.3;"><strong style="color: #444;">Address:</strong> ${student.address || '-'}</div>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-auto pb-2 w-100 text-center">
+                        ${c.EnableQrCode ? `<div id="qr-${student.studentId}" class="d-inline-block p-1 bg-white rounded border shadow-sm mb-1 qr-container"></div>` : ''}
+                        
+                        <div class="mt-1 px-2 text-truncate-2" style="font-size: 9px; font-weight: 700; color: ${theme}; line-height: 1.2; white-space: normal;">
+                            ${sAddr}<br>${sContact}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (isFlat) {
+                return `
+                    <div class="id-card-face ${orientationClass}" style="position: relative; transform: none; box-shadow: none; border: 1px dashed #ccc; margin: 2mm; page-break-inside: avoid; break-inside: avoid;">
+                        ${frontHtml}
+                    </div>
+                    <div class="id-card-face ${orientationClass}" style="position: relative; transform: none; box-shadow: none; border: 1px dashed #ccc; margin: 2mm; page-break-inside: avoid; break-inside: avoid;">
+                        ${backHtml}
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="id-card-scene ${orientationClass}">
+                        <div class="id-card-wrapper ${orientationClass}">
+                            <!-- Front Face -->
+                            <div class="id-card-face id-card-front">
+                                ${frontHtml}
+                            </div>
+                            <!-- Back Face -->
+                            <div class="id-card-face id-card-back">
+                                ${backHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Cards
+        function renderCards(isFlat = false) {
+            const container = $('#printableArea');
+            container.empty();
+            
+            const selectedIds = $('.student-checkbox:checked').map(function() { return parseInt($(this).val()); }).get();
+            const selectedStudents = studentsData.filter(s => selectedIds.includes(s.studentId));
+            
+            selectedStudents.forEach(student => {
+                container.append(generateCardHtml(student, isFlat));
+            });
+            
+            // Generate QR Codes after HTML is injected
+            if(currentTemplate.config && currentTemplate.config.EnableQrCode) {
+                setTimeout(() => {
+                    selectedStudents.forEach(student => {
+                        // Find all instances of this student's QR code (could be multiple if switching modes)
+                        $(`.qr-container[id="qr-${student.studentId}"]`).each(function() {
+                            const qrText = `Name: ${student.studentName}\nRoll No: ${student.rollNo || 'N/A'}\nAdm No: ${student.admissionNo || 'N/A'}\nClass: ${student.className} (${student.sectionName})`;
+                            new QRCode(this, {
+                                text: qrText,
+                                width: 128,
+                                height: 128,
+                                colorDark : currentTemplate.themeColor || "#000000",
+                                colorLight : "#ffffff",
+                                correctLevel : QRCode.CorrectLevel.L
+                            });
+                        });
+                    });
+                }, 200);
+            }
+        }
+
+        // Generate and Show Preview
+        function generatePreview() {
+            renderCards(false); // Render in 3D Screen Mode
+            new bootstrap.Modal(document.getElementById('printPreviewModal')).show();
+        }
+
+        // Trigger Browser Print
+        function printCards() {
+            renderCards(true); // Render as flat cards
+            setTimeout(() => {
+                window.print();
+                // Restore 3D mode after print dialog closes
+                setTimeout(() => renderCards(false), 1000); 
+            }, 2000); // give QR codes plenty of time to render
+        }
+
+        // Download as PDF using html2pdf
+        function downloadPDF() {
+            renderCards(true); // Render as flat cards
+            const element = document.getElementById('printableArea');
+            
+            const opt = {
+                margin:       5,
+                filename:     'ID_Cards.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const originalDisplay = element.style.display;
+            element.style.display = 'flex';
+            element.style.flexWrap = 'wrap';
+            element.style.gap = '2mm';
+            
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    element.style.display = originalDisplay;
+                    renderCards(false); // Restore 3D mode
+                });
+            }, 2000); // give QR codes plenty of time to render
+        }
+    </script>
+}

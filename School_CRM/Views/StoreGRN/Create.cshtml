@@ -1,0 +1,206 @@
+@model School_CRM.Models.DTOs.InvStockReceiptDto
+@{ ViewData["Title"] = "Receive Stock (GRN)"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-truck text-primary me-2"></i>Receive Stock (GRN)</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    @if (TempData["Error"] != null) { <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]</div> }
+
+    <form asp-action="Create" method="post" id="grnForm">
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <!-- Header -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0">Receipt Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Link to PO (optional)</label>
+                            <select asp-for="POId" class="form-select" id="poSelect" onchange="loadPOItems()">
+                                <option value="">Direct Purchase (No PO)</option>
+                                @if (ViewBag.PendingPOs is Microsoft.AspNetCore.Mvc.Rendering.SelectList poList)
+                                {
+                                    @foreach (var item in poList)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="SupplierId" class="form-label fw-semibold">Supplier <span class="text-danger">*</span></label>
+                            <select asp-for="SupplierId" class="form-select" asp-items="ViewBag.Suppliers">
+                                <option value="">Select Supplier</option>
+                            </select>
+                            <span asp-validation-for="SupplierId" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ReceiptDate" class="form-label fw-semibold">Receipt Date</label>
+                            <input asp-for="ReceiptDate" type="date" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="InvoiceNo" class="form-label fw-semibold">Invoice No.</label>
+                            <input asp-for="InvoiceNo" class="form-control" placeholder="Supplier invoice number" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="InvoiceAmount" class="form-label fw-semibold">Invoice Amount (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input asp-for="InvoiceAmount" type="number" step="0.01" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Remarks" class="form-label fw-semibold">Remarks</label>
+                            <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between py-3">
+                        <h6 class="fw-bold mb-0">Received Items</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addGRNRow()">
+                            <i class="fas fa-plus me-1"></i>Add Item
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:35%">Product</th>
+                                        <th style="width:12%">Ordered</th>
+                                        <th style="width:12%">Received</th>
+                                        <th style="width:15%">Unit Price</th>
+                                        <th style="width:12%">Batch No.</th>
+                                        <th style="width:9%">Expiry</th>
+                                        <th style="width:5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grnItemsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top text-end py-3">
+                        <span class="fw-bold">Total: </span>
+                        <span class="fw-bold fs-5 text-success" id="grnTotal">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-success btn-lg px-5">
+                        <i class="fas fa-check me-2"></i>Receive Stock
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    let grnIdx = 0;
+
+    function addGRNRow(productId, productName, orderedQty, unitPrice, poItemId) {
+        const idx = grnIdx++;
+        const row = `
+        <tr id="grnrow_${idx}">
+            <td>
+                <input type="hidden" name="Items[${idx}].ProductId" id="gpid_${idx}" value="${productId || ''}" />
+                <input type="hidden" name="Items[${idx}].POItemId" value="${poItemId || 0}" />
+                <input type="text" class="form-control form-control-sm" placeholder="Search product..."
+                       id="gpsearch_${idx}" value="${productName || ''}"
+                       oninput="searchGRNProduct(${idx}, this.value)" autocomplete="off" />
+                <div id="gpdrop_${idx}" class="dropdown-menu w-100" style="display:none;position:absolute;z-index:1000;max-height:180px;overflow-y:auto;"></div>
+            </td>
+            <td><input type="text" class="form-control form-control-sm bg-light" value="${orderedQty || '-'}" readonly /></td>
+            <td><input type="number" name="Items[${idx}].ReceivedQty" class="form-control form-control-sm" min="1" value="1" oninput="calcGRNRow(${idx})" /></td>
+            <td><input type="number" name="Items[${idx}].UnitCostPrice" step="0.01" class="form-control form-control-sm" id="gpprice_${idx}" value="${unitPrice || 0}" oninput="calcGRNRow(${idx})" /></td>
+            <td><input type="text" name="Items[${idx}].BatchNo" class="form-control form-control-sm" placeholder="Optional" /></td>
+            <td><input type="date" name="Items[${idx}].ExpiryDate" class="form-control form-control-sm" /></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeGRNRow(${idx})"><i class="fas fa-times"></i></button></td>
+        </tr>`;
+        document.getElementById('grnItemsBody').insertAdjacentHTML('beforeend', row);
+        if (productId) calcGRNRow(idx);
+    }
+
+    function removeGRNRow(idx) {
+        document.getElementById(`grnrow_${idx}`)?.remove();
+        calcGRNTotal();
+    }
+
+    let grnSearchTimers = {};
+    async function searchGRNProduct(idx, q) {
+        clearTimeout(grnSearchTimers[idx]);
+        if (q.length < 2) { document.getElementById(`gpdrop_${idx}`).style.display = 'none'; return; }
+        grnSearchTimers[idx] = setTimeout(async () => {
+            const resp = await fetch(`/Store/Product/Search?q=${encodeURIComponent(q)}`);
+            const data = await resp.json();
+            const drop = document.getElementById(`gpdrop_${idx}`);
+            drop.innerHTML = '';
+            data.forEach(p => {
+                const a = document.createElement('a');
+                a.className = 'dropdown-item small';
+                a.href = '#';
+                a.textContent = `${p.productCode} - ${p.productName}`;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    document.getElementById(`gpid_${idx}`).value     = p.productId;
+                    document.getElementById(`gpsearch_${idx}`).value  = p.productName;
+                    document.getElementById(`gpprice_${idx}`).value   = p.costPrice;
+                    drop.style.display = 'none';
+                    calcGRNRow(idx);
+                };
+                drop.appendChild(a);
+            });
+            drop.style.display = data.length ? 'block' : 'none';
+        }, 300);
+    }
+
+    function calcGRNRow(idx) {
+        const qty   = parseFloat(document.querySelector(`[name="Items[${idx}].ReceivedQty"]`)?.value || 0);
+        const price = parseFloat(document.getElementById(`gpprice_${idx}`)?.value || 0);
+        calcGRNTotal();
+    }
+
+    function calcGRNTotal() {
+        let total = 0;
+        document.querySelectorAll('[name$=".ReceivedQty"]').forEach((qtyEl, i) => {
+            const idx = qtyEl.name.match(/\[(\d+)\]/)?.[1];
+            if (idx !== undefined) {
+                const qty   = parseFloat(qtyEl.value || 0);
+                const price = parseFloat(document.getElementById(`gpprice_${idx}`)?.value || 0);
+                total += qty * price;
+            }
+        });
+        document.getElementById('grnTotal').textContent = '₹' + total.toFixed(2);
+    }
+
+    async function loadPOItems() {
+        const poId = document.getElementById('poSelect').value;
+        document.getElementById('grnItemsBody').innerHTML = '';
+        grnIdx = 0;
+        if (!poId) { addGRNRow(); return; }
+
+        const resp = await fetch(`/Store/StockReceipt/GetPOItems/${poId}`);
+        const items = await resp.json();
+        if (items.length) {
+            items.forEach(item => addGRNRow(item.productId, item.productName, item.orderQty, item.unitCostPrice, item.poItemId));
+        } else {
+            addGRNRow();
+        }
+    }
+
+    // Start with one row
+    addGRNRow();
+</script>
+}

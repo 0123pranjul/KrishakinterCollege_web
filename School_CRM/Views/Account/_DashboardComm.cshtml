@@ -1,0 +1,87 @@
+@* ═══════════════════════════════════════════════════════════
+   _DashboardComm.cshtml  —  Premium Communication Stats + Events
+   ═══════════════════════════════════════════════════════════ *@
+@{
+    int commAnn  = ViewBag.CommAnnouncements ?? 0;
+    int commEvt  = ViewBag.CommEvents        ?? 0;
+    int commNoti = ViewBag.CommUnreadNoti    ?? 0;
+    int commMsg  = ViewBag.CommMessages      ?? 0;
+    var upcomingEvents = ViewBag.UpcomingEvents as List<School_CRM.Models.CommEvent> ?? new();
+}
+
+<div class="row g-3">
+    <!-- Communication Stats -->
+    <div class="col-xl-8">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-satellite-dish me-2 text-primary"></i>Communication Hub</span>
+                <a href="/Communication/Announcements" class="btn-link-sm">Manage</a>
+            </div>
+            <div class="dash-card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <div class="stat-tile blue-tile">
+                            <div class="stat-tile-val counter" data-target="@commAnn">0</div>
+                            <div class="stat-tile-lbl"><i class="fas fa-bullhorn me-1"></i>Announcements</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-tile teal-tile">
+                            <div class="stat-tile-val counter" data-target="@commEvt">0</div>
+                            <div class="stat-tile-lbl"><i class="fas fa-calendar-alt me-1"></i>Upcoming Events</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-tile amber-tile">
+                            <div class="stat-tile-val counter" data-target="@commNoti">0</div>
+                            <div class="stat-tile-lbl"><i class="fas fa-bell me-1"></i>Unread Notifications</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-tile indigo-tile">
+                            <div class="stat-tile-val counter" data-target="@commMsg">0</div>
+                            <div class="stat-tile-lbl"><i class="fas fa-envelope me-1"></i>Unread Messages</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="col-xl-4">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <span><i class="fas fa-calendar-week me-2" style="color:#d97706;"></i>Upcoming Events</span>
+                <span class="badge rounded-pill" style="background:rgba(217,119,6,0.1);color:#d97706;font-size:.65rem;padding:3px 8px;">This Week</span>
+            </div>
+            <div class="dash-card-body">
+                @if (upcomingEvents.Any())
+                {
+                    @foreach (var ev in upcomingEvents.Take(4))
+                    {
+                        <div class="d-flex align-items-center gap-3 mb-3 p-2" style="background:rgba(241,245,249,0.5);border-radius:12px;transition:all 0.2s;">
+                            <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,@(string.IsNullOrEmpty(ev.Color) ? "#1e40af" : ev.Color),@(string.IsNullOrEmpty(ev.Color) ? "#4f46e5" : ev.Color));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span class="text-white fw-bold small">@ev.StartDate.Day</span>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="small fw-bold text-dark text-truncate">@ev.EventTitle</div>
+                                <div class="text-muted" style="font-size:.68rem;">
+                                    @ev.StartDate.ToString("dd MMM") &nbsp;·&nbsp;
+                                    <span class="badge rounded-pill" style="background:rgba(79,70,229,0.08);color:#4f46e5;font-size:.6rem;padding:2px 6px;">@ev.EventType</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted small py-3">
+                        <i class="fas fa-calendar-times mb-2 d-block" style="font-size:1.5rem;opacity:.3;"></i>
+                        No upcoming events this week
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

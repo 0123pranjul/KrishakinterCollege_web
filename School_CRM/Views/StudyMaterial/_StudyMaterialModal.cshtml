@@ -1,0 +1,51 @@
+@model School_CRM.Models.TblStudyMaterial
+
+<form id="smForm" asp-action="CreateOrEdit" asp-controller="StudyMaterial" asp-route-id="@Model.MaterialId" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="MaterialId" />
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input asp-for="Title" class="form-control" placeholder="Material title" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="TeacherId" class="form-label fw-semibold">Teacher <span class="text-danger">*</span></label>
+            <select asp-for="TeacherId" class="form-select" asp-items="@(new SelectList(ViewBag.Teachers, "TeacherId", "TeacherName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SubjectId" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            <select asp-for="SubjectId" class="form-select" asp-items="@(new SelectList(ViewBag.Subjects, "SubjectId", "SubjectName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClassId" class="form-label fw-semibold">Class <span class="text-danger">*</span></label>
+            <select asp-for="ClassId" class="form-select" asp-items="@(new SelectList(ViewBag.Classes, "ClassId", "ClassName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SectionId" class="form-label fw-semibold">Section <span class="text-danger">*</span></label>
+            <select asp-for="SectionId" class="form-select" asp-items="@(new SelectList(ViewBag.Sections, "SectionId", "SectionName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label asp-for="Content" class="form-label fw-semibold">Content / Notes</label>
+            <textarea asp-for="Content" class="form-control" rows="3" placeholder="Notes or description..."></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-semibold">Attach File (PDF, DOC, etc.)</label>
+            <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png" />
+            @if (!string.IsNullOrEmpty(Model.FilePath)) {
+                <small class="text-success"><i class="fas fa-paperclip me-1"></i>File already attached. Upload new to replace.</small>
+            }
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Material</button>
+    </div>
+</form>

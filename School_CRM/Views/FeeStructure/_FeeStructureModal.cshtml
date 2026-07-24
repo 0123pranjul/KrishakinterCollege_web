@@ -1,0 +1,166 @@
+@model School_CRM.Models.TblFeeStructure
+
+@{
+    var sessions = ViewBag.Sessions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var classes  = ViewBag.Classes  as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var feeTypes = ViewBag.FeeTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<form id="feeStructureForm"
+      asp-action="CreateOrEdit"
+      asp-controller="FeeStructure"
+      asp-route-id="@Model.FeeStructureId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="FeeStructureId" />
+
+    <div class="row g-3">
+
+        <!-- Session -->
+        <div class="col-md-6">
+            <label asp-for="SessionId" class="form-label fw-semibold">
+                Academic Session <span class="text-danger">*</span>
+            </label>
+            <select asp-for="SessionId"
+                    class="form-select"
+                    asp-items="@(new SelectList(sessions, "SessionId", "SessionName", Model.SessionId))"
+                    required>
+                <option value="">-- Select Session --</option>
+            </select>
+            <span asp-validation-for="SessionId" class="text-danger small"></span>
+        </div>
+
+        <!-- Class -->
+        <div class="col-md-6">
+            <label asp-for="ClassId" class="form-label fw-semibold">
+                Class <span class="text-danger">*</span>
+            </label>
+            <select asp-for="ClassId"
+                    class="form-select"
+                    asp-items="@(new SelectList(classes, "ClassId", "ClassName", Model.ClassId))"
+                    required>
+                <option value="">-- Select Class --</option>
+            </select>
+            <span asp-validation-for="ClassId" class="text-danger small"></span>
+        </div>
+
+        <!-- Fee Type -->
+        <div class="col-md-6">
+            <label asp-for="FeeTypeId" class="form-label fw-semibold">
+                Fee Type <span class="text-danger">*</span>
+            </label>
+            <select asp-for="FeeTypeId"
+                    class="form-select"
+                    id="feeTypeSelect"
+                    asp-items="@(new SelectList(feeTypes, "FeeTypeId", "FeeName", Model.FeeTypeId))"
+                    required>
+                <option value="">-- Select Fee Type --</option>
+            </select>
+            <span asp-validation-for="FeeTypeId" class="text-danger small"></span>
+        </div>
+
+        <!-- Amount -->
+        <div class="col-md-6">
+            <label asp-for="Amount" class="form-label fw-semibold">
+                Amount (₹) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input asp-for="Amount"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       class="form-control"
+                       placeholder="0.00"
+                       required />
+            </div>
+            <span asp-validation-for="Amount" class="text-danger small"></span>
+        </div>
+
+        <!-- Fee Type Info Preview -->
+        <div class="col-12" id="feeTypeInfoCard" style="display:none">
+            <div class="alert alert-primary py-2 mb-0">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="fas fa-info-circle fa-lg"></i>
+                    </div>
+                    <div class="col">
+                        <span class="fw-semibold" id="previewFeeName"></span>
+                        &nbsp;—&nbsp;
+                        <span id="previewFeeRecurring"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-6">
+            <label asp-for="IsActive" class="form-label fw-semibold">
+                Status <span class="text-danger">*</span>
+            </label>
+            <select asp-for="IsActive"
+                    class="form-select"
+                    asp-items="@(new SelectList(new[] {
+                        new { Value = "true",  Text = "Active"   },
+                        new { Value = "false", Text = "Inactive" }
+                    }, "Value", "Text", Model.IsActive?.ToString().ToLower()))"
+                    required>
+                <option value="">-- Select Status --</option>
+            </select>
+            <span asp-validation-for="IsActive" class="text-danger small"></span>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer px-0 pb-0 mt-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" id="btnSave" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Structure
+        </button>
+    </div>
+
+</form>
+
+<script>
+    // FeeType data for preview (from ViewBag)
+    var feeTypeData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (ViewBag.FeeTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>())
+        .Select(f => new {
+            feeTypeId   = (int)f.FeeTypeId,
+            feeName     = (string)f.FeeName,
+            isRecurring = (string)f.IsRecurring
+        })
+    ));
+
+    // Show fee type info on load (edit mode)
+    (function () {
+        var val = $('#feeTypeSelect').val();
+        if (val) showFeeTypePreview(parseInt(val));
+    })();
+
+    // FeeType change → show preview
+    $(document).on('change', '#feeTypeSelect', function () {
+        var val = $(this).val();
+        if (val) {
+            showFeeTypePreview(parseInt(val));
+        } else {
+            $('#feeTypeInfoCard').slideUp(200);
+        }
+    });
+
+    function showFeeTypePreview(id) {
+        var ft = feeTypeData.find(f => f.feeTypeId === id);
+        if (ft) {
+            $('#previewFeeName').text(ft.feeName);
+            var badge = ft.isRecurring === 'Monthly'
+                ? '<span class="badge bg-primary">Monthly (Recurring)</span>'
+                : '<span class="badge bg-secondary">One Time</span>';
+            $('#previewFeeRecurring').html(badge);
+            $('#feeTypeInfoCard').slideDown(200);
+        }
+    }
+</script>

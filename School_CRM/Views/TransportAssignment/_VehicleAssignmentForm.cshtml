@@ -1,0 +1,74 @@
+@model School_CRM.Models.TblTrnVehicleAssignment
+@{
+    bool isNew = Model.AssignmentId == 0;
+    var routes = ViewBag.Routes as List<School_CRM.Models.TblTrnRoute> ?? new();
+    var vehicles = ViewBag.Vehicles as List<School_CRM.Models.TblTrnVehicle> ?? new();
+    var drivers = ViewBag.Drivers as List<School_CRM.Models.TblTrnDriver> ?? new();
+    var conductors = ViewBag.Conductors as List<School_CRM.Models.TblTrnConductor> ?? new();
+}
+
+<div class="modal-header">
+    <h5 class="modal-title"><i class="fas fa-link me-2 text-primary"></i>@(isNew ? "Add Vehicle Assignment" : "Edit Vehicle Assignment")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form onsubmit="return saveVehicleAssignment(this)">
+    <input type="hidden" name="AssignmentId" value="@Model.AssignmentId" />
+    <div class="modal-body">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label fw-semibold">Route <span class="text-danger">*</span></label>
+                <select class="form-select" name="RouteId" required>
+                    <option value="">-- Select Route --</option>
+                    @foreach (var r in routes)
+                    {
+                        <option value="@r.RouteId" selected="@(Model.RouteId == r.RouteId)">@r.RouteName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Vehicle <span class="text-danger">*</span></label>
+                <select class="form-select" name="VehicleId" required>
+                    <option value="">-- Select Vehicle --</option>
+                    @foreach (var v in vehicles)
+                    {
+                        <option value="@v.VehicleId" selected="@(Model.VehicleId == v.VehicleId)">@v.RegistrationNumber (@v.VehicleType)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Driver <span class="text-danger">*</span></label>
+                <select class="form-select" name="DriverId" required>
+                    <option value="">-- Select Driver --</option>
+                    @foreach (var d in drivers)
+                    {
+                        <option value="@d.DriverId" selected="@(Model.DriverId == d.DriverId)">@d.DriverName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Conductor (Optional)</label>
+                <select class="form-select" name="ConductorId">
+                    <option value="">-- None --</option>
+                    @foreach (var c in conductors)
+                    {
+                        <option value="@c.ConductorId" selected="@(Model.ConductorId == c.ConductorId)">@c.ConductorName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Assigned From <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="AssignedFrom"
+                       value="@Model.AssignedFrom.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Assigned To <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="AssignedTo"
+                       value="@Model.AssignedTo.ToString("yyyy-MM-dd")" required />
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Assignment</button>
+    </div>
+</form>

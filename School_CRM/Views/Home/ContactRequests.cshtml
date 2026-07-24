@@ -1,0 +1,190 @@
+@model List<School_CRM.Controllers.ContactQueryDto>
+@{
+    ViewData["Title"] = "Contact Queries";
+    var activeCount = Model?.Count(q => q.IsActive) ?? 0;
+    var inactiveCount = Model?.Count(q => !q.IsActive) ?? 0;
+    var totalCount = Model?.Count ?? 0;
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Stats Row (Matching Enquiry Stats card grid) -->
+    <div class="row g-3 mb-4" id="statsRow">
+        <div class="col-6 col-md-4">
+            <div class="card border-0 text-center py-3" style="background: #d1fae5; border-radius: 10px;">
+                <div class="fw-bold fs-4" id="statActive" style="color: #065f46;">@activeCount</div>
+                <div class="small" style="color: #065f46;">
+                    <i class="fas fa-check-circle me-1" style="font-size: 0.75rem;"></i>Active Queries
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 text-center py-3" style="background: #fee2e2; border-radius: 10px;">
+                <div class="fw-bold fs-4" id="statInactive" style="color: #7f1d1d;">@inactiveCount</div>
+                <div class="small" style="color: #7f1d1d;">
+                    <i class="fas fa-ban me-1" style="font-size: 0.75rem;"></i>Inactive Queries
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 text-center py-3" style="background: #f1f5f9; border-radius: 10px;">
+                <div class="fw-bold fs-4" id="statTotal" style="color: #475569;">@totalCount</div>
+                <div class="small" style="color: #475569;">
+                    <i class="fas fa-list me-1" style="font-size: 0.75rem;"></i>Total Queries
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main List Card (Matching Enquiry Index Style) -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 bg-white" style="border-bottom: 1px solid #edf2f9;">
+            <h5 class="mb-0 fw-bold text-gray-800 d-flex align-items-center gap-2">
+                <i class="fas fa-envelope-open-text text-primary"></i>
+                Contact Queries List
+            </h5>
+            <div class="d-flex gap-2">
+                <a href="/Home/contacts" target="_blank" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" style="border-radius: 6px;">
+                    <i class="fas fa-external-link-alt"></i> Public Contact Page
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="contactTable" class="table table-bordered table-hover table-sm align-middle" style="font-size: 13px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center" style="width: 5%;">#</th>
+                            <th style="width: 20%;">Name</th>
+                            <th style="width: 20%;">Contact Info</th>
+                            <th style="width: 15%;">Subject</th>
+                            <th style="width: 25%;">Message</th>
+                            <th style="width: 15%;">Submitted On</th>
+                            <th class="text-center" style="width: 10%;">Status</th>
+                            <th class="text-center" style="width: 10%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null)
+                        {
+                            int index = 1;
+                            @foreach (var query in Model)
+                            {
+                                <tr data-id="@query.QueryId">
+                                    <td class="text-center fw-semibold text-secondary">@index</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@query.Name</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-primary">
+                                            <i class="fas fa-phone me-1" style="font-size: 0.7rem;"></i>@query.Mobile
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(query.Email))
+                                        {
+                                            <div class="text-muted small">
+                                                <i class="fas fa-envelope me-1" style="font-size: 0.7rem;"></i>@query.Email
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="fw-medium text-gray-800">@(query.Subject ?? "General Inquiry")</td>
+                                    <td>
+                                        <div class="text-muted" style="max-height: 90px; overflow-y: auto; white-space: pre-line; min-width: 220px; line-height: 1.5;">@query.Message</div>
+                                    </td>
+                                    <td class="text-secondary">@query.CreatedAt.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                                    <td class="text-center">
+                                        <span class="badge px-2 py-1.5 status-badge @(query.IsActive ? "status-active" : "status-inactive")" style="border-radius: 6px; font-size: 11px;">
+                                            @(query.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-toggle-status d-inline-flex align-items-center gap-1" style="border-radius: 6px;" onclick="toggleStatus(@query.QueryId)">
+                                            <i class="fas fa-toggle-on"></i> Toggle
+                                        </button>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Stylesheets for DataTables and Toastr (matching Enquiry page assets) -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <!-- Scripts -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-inactive { background: #fee2e2; color: #7f1d1d; }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.1em 0.5em;
+        }
+        
+        table.dataTable thead th {
+            border-bottom: 2px solid #edf2f9 !important;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            $('#contactTable').DataTable({
+                pageLength: 25,
+                language: {
+                    emptyTable: 'No contact queries found',
+                    search: 'Search:'
+                },
+                order: [[5, 'desc']]
+            });
+        });
+
+        function toggleStatus(id) {
+            const row = $(`tr[data-id="${id}"]`);
+            const btn = row.find('.btn-toggle-status');
+            const badge = row.find('.status-badge');
+            
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: '/Home/ToggleQueryStatus/' + id,
+                type: 'POST',
+                success: function (res) {
+                    btn.prop('disabled', false);
+                    if (res.success) {
+                        const actCountEl = $('#statActive');
+                        const inactCountEl = $('#statInactive');
+                        let activeVal = parseInt(actCountEl.text()) || 0;
+                        let inactiveVal = parseInt(inactCountEl.text()) || 0;
+
+                        if (badge.hasClass('status-active')) {
+                            badge.removeClass('status-active').addClass('status-inactive').text('Inactive');
+                            actCountEl.text(Math.max(0, activeVal - 1));
+                            inactCountEl.text(inactiveVal + 1);
+                        } else {
+                            badge.removeClass('status-inactive').addClass('status-active').text('Active');
+                            actCountEl.text(activeVal + 1);
+                            inactCountEl.text(Math.max(0, inactiveVal - 1));
+                        }
+                        toastr.success(res.message);
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function () {
+                    btn.prop('disabled', false);
+                    toastr.error('An error occurred while toggling status.');
+                }
+            });
+        }
+    </script>
+}

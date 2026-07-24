@@ -1,0 +1,48 @@
+@model School_CRM.Models.TblCustomTest
+
+<form id="ctForm" asp-action="CreateOrEdit" asp-controller="CustomTest" asp-route-id="@Model.TestId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="TestId" />
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="TestName" class="form-label fw-semibold">Test Name <span class="text-danger">*</span></label>
+            <input asp-for="TestName" class="form-control" placeholder="e.g. Unit Test 1, Quiz" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="TeacherId" class="form-label fw-semibold">Teacher <span class="text-danger">*</span></label>
+            <select asp-for="TeacherId" class="form-select" asp-items="@(new SelectList(ViewBag.Teachers, "TeacherId", "TeacherName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SubjectId" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            <select asp-for="SubjectId" class="form-select" asp-items="@(new SelectList(ViewBag.Subjects, "SubjectId", "SubjectName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ClassId" class="form-label fw-semibold">Class <span class="text-danger">*</span></label>
+            <select asp-for="ClassId" class="form-select" asp-items="@(new SelectList(ViewBag.Classes, "ClassId", "ClassName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="SectionId" class="form-label fw-semibold">Section <span class="text-danger">*</span></label>
+            <select asp-for="SectionId" class="form-select" asp-items="@(new SelectList(ViewBag.Sections, "SectionId", "SectionName"))" required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="MaxMarks" class="form-label fw-semibold">Max Marks <span class="text-danger">*</span></label>
+            <input asp-for="MaxMarks" class="form-control" type="number" step="0.01" min="1" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="TestDate" class="form-label fw-semibold">Test Date <span class="text-danger">*</span></label>
+            <input asp-for="TestDate" class="form-control" type="date" required />
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Test</button>
+    </div>
+</form>

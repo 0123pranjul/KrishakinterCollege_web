@@ -1,0 +1,594 @@
+@{
+    var trip = ViewBag.Trip as School_CRM.Models.TblTrnTrip;
+    ViewData["Title"] = $"Track Trip #{trip?.TripId}";
+}
+
+<!-- OpenLayers CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@8.2.0/dist/ol.css" />
+
+<style>
+    /* ── Full-page Google Maps feel ── */
+    body, html { overflow: hidden; }
+
+    .track-wrapper {
+        display: flex;
+        height: calc(100vh - 60px);
+        position: relative;
+    }
+
+    /* Map takes full width */
+    #trackMap {
+        flex: 1;
+        height: 100%;
+        background: #e8e0d8;
+    }
+
+    /* Side panel — slides over map on right */
+    .track-panel {
+        width: 340px;
+        min-width: 300px;
+        background: #fff;
+        box-shadow: -4px 0 20px rgba(0,0,0,.12);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 10;
+    }
+
+    .track-panel-header {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        color: #fff;
+        padding: 14px 16px 12px;
+        flex-shrink: 0;
+    }
+
+    .track-panel-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+    /* Stop list items */
+    .stop-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .stop-item:hover { background: #f8fafc; }
+    .stop-item.passed { background: #f0fdf4; }
+    .stop-item.active { background: #eff6ff; border-left: 3px solid #3b82f6; }
+
+    .stop-dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: #fff;
+    }
+
+    .stop-connector {
+        width: 2px;
+        height: 18px;
+        background: #cbd5e1;
+        margin: 2px 13px;
+    }
+
+    /* Floating status card on map */
+    .map-overlay-card {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.18);
+        padding: 12px 20px;
+        min-width: 280px;
+        max-width: 420px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    /* Animated bus icon on map */
+    .bus-pulse {
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: #ef4444;
+        box-shadow: 0 0 0 0 rgba(239,68,68,.5);
+        animation: busPulse 1.5s infinite;
+        display: inline-block;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    @@keyframes busPulse {
+        0%   { box-shadow: 0 0 0 0   rgba(239,68,68,.5); }
+        70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0);  }
+        100% { box-shadow: 0 0 0 0   rgba(239,68,68,0);   }
+    }
+
+    /* OL Zoom controls — google maps style position */
+    .ol-zoom {
+        top: auto !important;
+        bottom: 120px !important;
+        right: 12px !important;
+        left: auto !important;
+    }
+    .ol-zoom button {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.2rem !important;
+        background: #fff !important;
+        color: #555 !important;
+        border: 1px solid #ddd !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15) !important;
+        border-radius: 4px !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* Tooltip */
+    .map-tooltip {
+        position: absolute;
+        background: #1e293b;
+        color: #fff;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: .75rem;
+        pointer-events: none;
+        display: none;
+        z-index: 200;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .map-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%; left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #1e293b;
+    }
+
+    /* Back button floating */
+    .btn-float-back {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 100;
+        background: #fff;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        padding: 8px 14px;
+        font-size: .85rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+    .btn-float-back:hover { background: #f8fafc; color: #111; }
+</style>
+
+<div class="track-wrapper">
+
+    <!-- ── Map (full area) ── -->
+    <div style="flex:1;position:relative;">
+        <div id="trackMap"></div>
+
+        <!-- Back button -->
+        <a href="/TransportTrip" class="btn-float-back">
+            <i class="fas fa-arrow-left"></i> Back to Trips
+        </a>
+
+        <!-- Floating bottom status card -->
+        <div class="map-overlay-card" id="overlayCard">
+            <div>
+                <span class="bus-pulse"></span>
+                <span id="overlayLabel" class="fw-semibold text-primary" style="font-size:.9rem">Loading...</span>
+            </div>
+            <div class="vr mx-1"></div>
+            <div style="font-size:.75rem;color:#64748b">
+                <div id="overlayNextStop">—</div>
+                <div id="overlayTime">—</div>
+            </div>
+            <span id="overlayGpsBadge" class="badge bg-secondary ms-auto">...</span>
+        </div>
+
+        <!-- Tooltip -->
+        <div class="map-tooltip" id="mapTooltip"></div>
+    </div>
+
+    <!-- ── Side Panel ── -->
+    <div class="track-panel">
+
+        <!-- Header -->
+        <div class="track-panel-header">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <div>
+                    <div class="fw-bold" style="font-size:1rem">@(trip?.Route?.RouteName ?? "Route")</div>
+                    <div style="font-size:.75rem;opacity:.8">Trip #@trip?.TripId &nbsp;|&nbsp; @trip?.TripType &nbsp;|&nbsp; @trip?.TripDate.ToString("dd MMM yyyy")</div>
+                </div>
+                <span id="tripStatusBadge" class="badge bg-white text-primary">—</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div style="background:rgba(255,255,255,.2);border-radius:4px;height:4px;margin-top:8px">
+                <div id="progressBar" style="height:100%;border-radius:4px;background:#22c55e;transition:width .5s;width:0%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1" style="font-size:.7rem;opacity:.75">
+                <span>Start</span>
+                <span id="progressLabel">0%</span>
+                <span>School</span>
+            </div>
+        </div>
+
+        <!-- Trip meta info -->
+        <div class="px-3 py-2 border-bottom" style="background:#f8fafc">
+            <div class="d-flex justify-content-between align-items-center">
+                <span style="font-size:.75rem;color:#64748b">Last updated</span>
+                <span id="lastUpdated" style="font-size:.75rem;color:#374151">—</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <span style="font-size:.75rem;color:#64748b">GPS Mode</span>
+                <span id="gpsBadge" class="badge bg-secondary" style="font-size:.7rem">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Route Stops list -->
+        <div class="track-panel-body" id="stopsList">
+            <div class="text-center text-muted py-4">
+                <div class="spinner-border spinner-border-sm"></div>
+            </div>
+        </div>
+
+        <!-- Refresh button -->
+        <div class="px-3 py-2 border-top" style="flex-shrink:0">
+            <button class="btn btn-primary btn-sm w-100" onclick="refreshTracking()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh Now
+            </button>
+            <div class="text-center text-muted mt-1" style="font-size:.7rem">Auto-refreshes every 30s</div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/ol@8.2.0/dist/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+
+<script>
+const TRIP_ID  = @trip!.TripId;
+const GHATAMPUR_CENTER = [80.1897, 26.1422]; // Krishak Inter College exact location
+
+let olMap, routeSource, markerSource, busMarker;
+let currentStops   = [];
+let refreshTimer   = null;
+
+// ── Map Init ─────────────────────────────────────────────────────────────────
+function initMap() {
+    routeSource  = new ol.source.Vector();
+    markerSource = new ol.source.Vector();
+
+    // Tile source with multiple fallback providers
+    function makeTileLayer() {
+        // Try providers in order — first one that loads wins
+        return new ol.layer.Tile({
+            source: new ol.source.OSM({
+                // Direct OSM — most reliable
+                url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attributions: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+            })
+        });
+    }
+
+    olMap = new ol.Map({
+        target: 'trackMap',
+        layers: [
+            makeTileLayer(),
+            // Route line layer
+            new ol.layer.Vector({
+                source: routeSource,
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#2563eb',
+                        width: 5,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    })
+                })
+            }),
+            // Stop markers layer
+            new ol.layer.Vector({ source: markerSource })
+        ],
+        view: new ol.View({
+            center: ol.proj.fromLonLat(GHATAMPUR_CENTER),
+            zoom: 13
+        }),
+        controls: ol.control.defaults.defaults({
+            attributionOptions: { collapsible: true }
+        })
+    });
+
+    // Tooltip on hover
+    const tip = document.getElementById('mapTooltip');
+    olMap.on('pointermove', function(e) {
+        const feat = olMap.forEachFeatureAtPixel(e.pixel, f => f);
+        if (feat && feat.get('tooltip')) {
+            tip.innerHTML  = feat.get('tooltip');
+            tip.style.display = 'block';
+            const px = olMap.getPixelFromCoordinate(feat.getGeometry().getCoordinates());
+            tip.style.left = (px[0] - tip.offsetWidth / 2) + 'px';
+            tip.style.top  = (px[1] - tip.offsetHeight - 14) + 'px';
+            olMap.getTargetElement().style.cursor = 'pointer';
+        } else {
+            tip.style.display = 'none';
+            olMap.getTargetElement().style.cursor = '';
+        }
+    });
+
+    // Click on stop → zoom
+    olMap.on('click', function(e) {
+        const feat = olMap.forEachFeatureAtPixel(e.pixel, f => f);
+        if (feat && feat.get('stopOrder')) {
+            olMap.getView().animate({ center: feat.getGeometry().getCoordinates(), zoom: 15, duration: 400 });
+        }
+    });
+}
+
+// ── Draw Route ────────────────────────────────────────────────────────────────
+function drawRoute(stops, currentStopName) {
+    routeSource.clear();
+    markerSource.clear();
+    busMarker = null;
+
+    const valid = stops.filter(s => s.latitude && s.longitude);
+    if (valid.length < 2) return;
+
+    // Route line
+    const coords = valid.map(s => ol.proj.fromLonLat([+s.longitude, +s.latitude]));
+    routeSource.addFeature(new ol.Feature({ geometry: new ol.geom.LineString(coords) }));
+
+    // Stop markers
+    const colors = ['#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb'];
+    valid.forEach(function(s, idx) {
+        const isSchool = idx === valid.length - 1;
+        const isActive = s.stopName === currentStopName || (s.StopName === currentStopName);
+        const coord    = ol.proj.fromLonLat([+s.longitude, +s.latitude]);
+        const order    = s.stopOrder || (idx + 1);
+        const name     = s.stopName || s.StopName || '';
+        const fare     = s.fareAmount || s.FareAmount || '';
+        const arrival  = s.arrivalTime || s.ArrivalTime || '';
+
+        // Shadow circle (Google Maps pin shadow effect)
+        const shadow = new ol.Feature({ geometry: new ol.geom.Point(coord) });
+        shadow.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 13,
+                fill: new ol.style.Fill({ color: 'rgba(0,0,0,.15)' })
+            })
+        }));
+        markerSource.addFeature(shadow);
+
+        // Main marker
+        const f = new ol.Feature({ geometry: new ol.geom.Point(coord) });
+        f.set('tooltip',   '<b>' + name + '</b><br>Stop ' + order + (arrival ? '  ·  ' + arrival : '') + (fare ? '<br>Fare: ₹' + fare : ''));
+        f.set('stopOrder', order);
+        f.set('stopName',  name);
+
+        const fillColor  = isSchool ? '#16a34a' : (isActive ? '#f59e0b' : '#2563eb');
+        const radius     = isSchool ? 12 : (isActive ? 11 : 9);
+
+        f.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: radius,
+                fill:   new ol.style.Fill({ color: fillColor }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 2.5 })
+            }),
+            text: new ol.style.Text({
+                text: isSchool ? '🏫' : String(order),
+                fill: new ol.style.Fill({ color: '#fff' }),
+                font: 'bold ' + (isSchool ? '10' : '9') + 'px sans-serif',
+                textBaseline: 'middle'
+            })
+        }));
+        markerSource.addFeature(f);
+    });
+
+    // Fit to route
+    const ext = routeSource.getExtent();
+    if (!ol.extent.isEmpty(ext)) {
+        olMap.getView().fit(ext, { padding: [80, 40, 120, 40], maxZoom: 15, duration: 800 });
+    }
+}
+
+// ── Bus Marker ────────────────────────────────────────────────────────────────
+function updateBusMarker(lat, lng, isLive) {
+    const coord = ol.proj.fromLonLat([parseFloat(lng), parseFloat(lat)]);
+
+    if (!busMarker) {
+        // Create bus marker
+        busMarker = new ol.Feature({ geometry: new ol.geom.Point(coord) });
+        busMarker.set('tooltip', isLive ? '🟢 Live GPS' : '🔵 Estimated Position');
+        markerSource.addFeature(busMarker);
+    } else {
+        busMarker.getGeometry().setCoordinates(coord);
+        busMarker.set('tooltip', isLive ? '🟢 Live GPS' : '🔵 Estimated Position');
+    }
+
+    // Bus icon — bigger, distinctive
+    const color  = isLive ? '#dc2626' : '#d97706';
+    const svgStr = '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">' +
+        '<circle cx="22" cy="22" r="20" fill="' + color + '" stroke="#fff" stroke-width="3"/>' +
+        '<text x="22" y="27" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold" font-family="Arial,sans-serif">BUS</text>' +
+        '</svg>';
+
+    busMarker.setStyle(new ol.style.Style({
+        image: new ol.style.Icon({
+            src:    'data:image/svg+xml,' + encodeURIComponent(svgStr),
+            anchor: [0.5, 0.5],
+            scale:  1
+        }),
+        zIndex: 999
+    }));
+}
+
+// ── Refresh Tracking Data ─────────────────────────────────────────────────────
+function refreshTracking() {
+    $.get('/TransportTrip/GetTrackingData', { tripId: TRIP_ID }, function(r) {
+        if (!r.success) { console.warn('Tracking:', r.message); return; }
+        const d = r.data;
+
+        // Trip status badge
+        const statusColors = {
+            Scheduled:  'secondary',
+            InProgress: 'warning',
+            Completed:  'success',
+            Cancelled:  'danger'
+        };
+        $('#tripStatusBadge')
+            .attr('class', 'badge bg-' + (statusColors[d.tripStatus] || 'secondary'))
+            .text(d.tripStatus);
+
+        // GPS badge
+        const isLive = d.gpsMode === 'Live';
+        $('#gpsBadge')
+            .attr('class', 'badge ' + (isLive ? 'bg-success' : 'bg-primary'))
+            .html(isLive
+                ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#fff;margin-right:4px"></span>Live GPS'
+                : '<i class="fas fa-clock me-1"></i>Schedule Est.');
+
+        // Draw route on first load
+        const currentStopName = d.position ? d.position.lastStopName : null;
+        if (d.stops && d.stops.length > 0) {
+            if (currentStops.length === 0) {
+                currentStops = d.stops;
+            }
+            drawRoute(d.stops, currentStopName);
+            renderStopsList(d.stops, d.position);
+        }
+
+        // Bus position
+        if (d.position && d.position.latitude && d.position.longitude) {
+            updateBusMarker(d.position.latitude, d.position.longitude, isLive);
+            // Animate map to bus if tracking active
+            if (d.tripStatus === 'InProgress') {
+                const busCoord = ol.proj.fromLonLat([parseFloat(d.position.longitude), parseFloat(d.position.latitude)]);
+                // Only pan if bus is outside current view
+                const view = olMap.getView();
+                if (!view.getViewStateAndExtent().extent ||
+                    !ol.extent.containsCoordinate(view.calculateExtent(olMap.getSize()), busCoord)) {
+                    view.animate({ center: busCoord, duration: 600 });
+                }
+            }
+        }
+
+        // Update progress bar
+        updateProgress(d);
+
+        // Overlay card
+        updateOverlayCard(d, isLive);
+
+        $('#lastUpdated').text(new Date().toLocaleTimeString('en-IN'));
+    });
+}
+
+function updateProgress(d) {
+    if (!d.stops || !d.stops.length) return;
+    const total     = d.stops.length - 1;
+    const lastStop  = d.position && d.position.lastStopName;
+    const passedIdx = lastStop ? d.stops.findIndex(s => (s.stopName || s.StopName) === lastStop) : -1;
+    const segFrac   = d.position ? (d.position.fractionInSegment || 0) : 0;
+    const pct       = total > 0 ? Math.round(((passedIdx + segFrac) / total) * 100) : 0;
+
+    $('#progressBar').css('width', Math.max(0, Math.min(100, pct)) + '%');
+    $('#progressLabel').text(pct + '%');
+}
+
+function updateOverlayCard(d, isLive) {
+    if (d.tripStatus === 'Scheduled') {
+        $('#overlayLabel').text('Trip not started yet');
+        $('#overlayNextStop').text('Waiting...');
+        $('#overlayTime').text('');
+    } else if (d.tripStatus === 'Completed') {
+        $('#overlayLabel').text('Trip Completed ✓');
+        $('#overlayNextStop').text('All stops covered');
+        $('#overlayTime').text('');
+    } else if (d.position) {
+        $('#overlayLabel').text(d.position.label || 'Calculating...');
+        if (d.position.nextStopName) {
+            $('#overlayNextStop').html('<i class="fas fa-chevron-right me-1 text-primary"></i>Next: <b>' + d.position.nextStopName + '</b>');
+        }
+        if (d.position.fractionInSegment !== undefined) {
+            $('#overlayTime').text(Math.round(d.position.fractionInSegment * 100) + '% in segment');
+        }
+    }
+
+    $('#overlayGpsBadge')
+        .attr('class', 'badge ms-auto ' + (isLive ? 'bg-success' : 'bg-primary'))
+        .text(isLive ? 'LIVE' : 'EST');
+}
+
+function renderStopsList(stops, position) {
+    const lastStopName = position && position.lastStopName ? position.lastStopName : null;
+    const nextStopName = position && position.nextStopName ? position.nextStopName : null;
+
+    let html = '';
+    stops.forEach(function(s, idx) {
+        const name     = s.stopName || s.StopName || '';
+        const order    = s.stopOrder || (idx + 1);
+        const arrival  = s.arrivalTime || s.ArrivalTime || '';
+        const fare     = s.fareAmount  || s.FareAmount  || 0;
+        const isSchool = idx === stops.length - 1;
+        const isPassed = (name === lastStopName);
+        const isNext   = (name === nextStopName);
+
+        const dotColor = isSchool ? '#16a34a' : isPassed ? '#22c55e' : isNext ? '#f59e0b' : '#94a3b8';
+        const rowClass = isPassed ? 'passed' : isNext ? 'active' : '';
+        const icon     = isPassed ? '✓' : isSchool ? '🏫' : String(order);
+
+        html += '<div class="stop-item ' + rowClass + '" onclick="zoomToStop(' + (s.latitude||0) + ',' + (s.longitude||0) + ')">' +
+            '<div>' +
+            '<div class="stop-dot" style="background:' + dotColor + '">' + icon + '</div>' +
+            (idx < stops.length - 1 ? '<div class="stop-connector"></div>' : '') +
+            '</div>' +
+            '<div style="flex:1">' +
+            '<div class="fw-semibold" style="font-size:.85rem">' + name + (isNext ? ' <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem">NEXT</span>' : '') + '</div>' +
+            '<div style="font-size:.72rem;color:#94a3b8">' +
+            (arrival ? '<i class="fas fa-clock me-1"></i>' + arrival : '') +
+            (fare > 0 ? '  ·  ₹' + Number(fare).toFixed(0) : '') +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    });
+
+    document.getElementById('stopsList').innerHTML = html || '<div class="text-muted small p-3">No stops data.</div>';
+}
+
+function zoomToStop(lat, lng) {
+    if (!lat || !lng) return;
+    olMap.getView().animate({ center: ol.proj.fromLonLat([+lng, +lat]), zoom: 15, duration: 400 });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+$(document).ready(function() {
+    initMap();
+    refreshTracking();
+    refreshTimer = setInterval(refreshTracking, 30000);
+});
+</script>
+}

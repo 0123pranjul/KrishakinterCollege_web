@@ -1,0 +1,99 @@
+@model School_CRM.Models.TblStudentOptionalFee
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card border-0 bg-light h-100">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-3">Student Info</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Student Name</td>
+                        <td class="fw-semibold">@(Model.Student?.StudentName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Roll No</td>
+                        <td class="fw-semibold">@(Model.Student?.RollNo ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Session</td>
+                        <td class="fw-semibold">@(Model.Session?.SessionName ?? "-")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 bg-light h-100">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-3">Fee Details</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Fee Type</td>
+                        <td class="fw-semibold">@(Model.FeeType?.FeeName ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Frequency</td>
+                        <td>
+                            @if (Model.FeeType?.IsRecurring == true)
+                            {
+                                <span class="badge bg-primary">Monthly</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">One Time</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Amount</td>
+                        <td class="fw-bold text-success fs-5">₹@Model.Amount.ToString("0.00")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status</td>
+                        <td>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactive</span>
+                            }
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Remarks))
+    {
+        <div class="col-12">
+            <div class="alert alert-secondary py-2 mb-0">
+                <i class="fas fa-sticky-note me-1 text-muted"></i>
+                <strong>Remarks:</strong> @Model.Remarks
+            </div>
+        </div>
+    }
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body py-2">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Created On</small>
+                        <span class="small fw-semibold">@(Model.CreatedDate?.ToString("dd-MM-yyyy") ?? "-")</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Last Updated</small>
+                        <span class="small fw-semibold">@(Model.UpdatedDate?.ToString("dd-MM-yyyy") ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer px-0 pb-0 mt-3">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <i class="fas fa-times"></i> Close
+    </button>
+</div>

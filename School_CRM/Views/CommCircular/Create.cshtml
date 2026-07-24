@@ -1,0 +1,97 @@
+@model School_CRM.Models.CommCircular
+@{ ViewData["Title"] = "Upload Circular"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-upload text-primary me-2"></i>Upload Circular</h2>
+            <small class="text-muted">Circular number will be auto-generated (CIR-YYYY-NNN)</small>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0">Circular Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="e.g. Annual Function Notice, Exam Schedule..." />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CircularDate" class="form-label fw-semibold">Circular Date</label>
+                            <input asp-for="CircularDate" type="date" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Brief description of the circular..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TargetType" class="form-label fw-semibold">Target Audience</label>
+                            <select asp-for="TargetType" class="form-select" id="targetTypeSelect"
+                                    onchange="toggleClassSection()">
+                                <option value="All">All (Everyone)</option>
+                                <option value="AllStudents">All Students</option>
+                                <option value="AllTeachers">All Teachers</option>
+                                <option value="ClassWise">Class-wise</option>
+                                <option value="SectionWise">Section-wise</option>
+                            </select>
+                        </div>
+
+                        <div id="classRow" class="mb-3 d-none">
+                            <label asp-for="TargetClassId" class="form-label fw-semibold">Class</label>
+                            <select asp-for="TargetClassId" class="form-select" asp-items="ViewBag.Classes">
+                                <option value="">Select Class</option>
+                            </select>
+                        </div>
+
+                        <div id="sectionRow" class="mb-3 d-none">
+                            <label asp-for="TargetSectionId" class="form-label fw-semibold">Section</label>
+                            <select asp-for="TargetSectionId" class="form-select" asp-items="ViewBag.Sections">
+                                <option value="">Select Section</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                PDF File <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" required />
+                            <small class="text-muted">PDF only, maximum 10 MB</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-upload me-2"></i>Upload Circular
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function toggleClassSection() {
+            const t = document.getElementById('targetTypeSelect').value;
+            document.getElementById('classRow').classList.toggle('d-none', t !== 'ClassWise' && t !== 'SectionWise');
+            document.getElementById('sectionRow').classList.toggle('d-none', t !== 'SectionWise');
+        }
+        toggleClassSection();
+    </script>
+}

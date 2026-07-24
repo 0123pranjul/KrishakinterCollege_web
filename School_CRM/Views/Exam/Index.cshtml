@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "Exam Management";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom py-3">
+            <div>
+                <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-file-alt me-2 text-danger"></i>Exam Management</h5>
+                <small class="text-muted">Create and manage exams per session</small>
+            </div>
+            <div>
+                <a href="@Url.Action("AdmitCardIndex", "Exam")" class="btn btn-warning btn-sm px-3 text-dark me-2">
+                    <i class="fas fa-id-card me-1"></i> Admit Cards
+                </a>
+                <button class="btn btn-danger btn-sm px-3" onclick="loadModal(0)">
+                    <i class="fas fa-plus me-1"></i> Add Exam
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="examTable" class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="8%">#</th>
+                            <th>Exam Name</th>
+                            <th>Session</th>
+                            <th width="12%" class="text-center">Status</th>
+                            <th width="12%" class="text-center">Created</th>
+                            <th width="10%" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="examModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-file-alt me-2"></i>Add Exam</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="examModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let table;
+        $(document).ready(() => {
+            table = $('#examTable').DataTable({
+                ajax: { url: '@Url.Action("GetAll","Exam")', type: 'GET', dataSrc: 'data' },
+                columns: [
+                    { data: 'examId', className: 'text-center' },
+                    { data: 'examName' },
+                    { data: 'sessionName' },
+                    { data: 'status', className: 'text-center', render: d => d === 'Active' ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>' },
+                    { data: 'createdDate', className: 'text-center' },
+                    {
+                        data: 'examId', className: 'text-center', orderable: false,
+                        render: id => `<button class="btn btn-sm btn-outline-primary me-1" onclick="loadModal(${id})"><i class="fas fa-edit"></i></button>
+                                       <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord(${id})"><i class="fas fa-trash"></i></button>`
+                    }
+                ]
+            });
+        });
+
+        function loadModal(id) {
+            $('#modalTitle').html(id === 0 ? '<i class="fas fa-plus me-2"></i>Add Exam' : '<i class="fas fa-edit me-2"></i>Edit Exam');
+            $.get('@Url.Action("CreateOrEdit","Exam")', { id }, html => {
+                $('#examModalBody').html(html);
+                $('#examModal').modal('show');
+                $('#btnSave').off('click').on('click', () => {
+                    $.post($('#examForm').attr('action'), $('#examForm').serialize(), res => {
+                        if (res.success) { $('#examModal').modal('hide'); table.ajax.reload(); toastr.success(res.message); }
+                        else toastr.error(res.message);
+                    });
+                });
+            });
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({ title: 'Delete Exam?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes!' })
+                .then(r => { if (r.isConfirmed) $.post('@Url.Action("Delete","Exam")', { id }, res => { if (res.success) { table.ajax.reload(); toastr.success(res.message); } else toastr.error(res.message); }); });
+        }
+    </script>
+}

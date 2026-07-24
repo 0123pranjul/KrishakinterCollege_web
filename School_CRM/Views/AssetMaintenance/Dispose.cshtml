@@ -1,0 +1,80 @@
+@model School_CRM.Models.DTOs.DisposalDto
+@{ ViewData["Title"] = "Dispose Asset"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-trash-alt text-danger me-2"></i>Dispose Asset</h2>
+            @if (!string.IsNullOrEmpty(Model.AssetTag)) { <small class="text-muted">Asset Tag: <code>@Model.AssetTag</code> — @Model.AssetName</small> }
+        </div>
+        <a asp-controller="AssetDashboard" asp-action="Admin" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> Disposing an asset is permanent. The asset will be marked as disposed and removed from active inventory.
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Dispose" asp-route-unitId="@Model.UnitId" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="UnitId" type="hidden" />
+                        <input asp-for="AuthorizedBy" type="hidden" />
+                        <input asp-for="CreatedBy" type="hidden" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="DisposalType" class="form-label fw-semibold">Disposal Type <span class="text-danger">*</span></label>
+                                <select asp-for="DisposalType" class="form-select">
+                                    <option value="">Select Type</option>
+                                    <option value="Sold">Sold</option>
+                                    <option value="Scrapped">Scrapped</option>
+                                    <option value="Donated">Donated</option>
+                                    <option value="Written-Off">Written-Off</option>
+                                    <option value="Transferred">Transferred</option>
+                                </select>
+                                <span asp-validation-for="DisposalType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DisposalDate" class="form-label fw-semibold">Disposal Date <span class="text-danger">*</span></label>
+                                <input asp-for="DisposalDate" type="date" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="SaleValue" class="form-label fw-semibold">Sale Value (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input asp-for="SaleValue" type="number" step="0.01" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DisposedTo" class="form-label fw-semibold">Disposed To</label>
+                                <input asp-for="DisposedTo" class="form-control" placeholder="Buyer / NGO / Scrap dealer..." />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                                <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Reason for disposal..."></textarea>
+                                <span asp-validation-for="Reason" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Remarks" class="form-label fw-semibold">Remarks</label>
+                                <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-danger px-4"
+                                    onclick="return confirm('Are you sure you want to dispose this asset? This action cannot be undone.')">
+                                <i class="fas fa-trash-alt me-2"></i>Confirm Disposal
+                            </button>
+                            <a asp-controller="AssetDashboard" asp-action="Admin" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

@@ -1,0 +1,39 @@
+@model List<School_CRM.Models.InvUnit>
+@{ ViewData["Title"] = "Units of Measure"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-ruler text-primary me-2"></i>Units of Measure</h2>
+        <a asp-action="UnitCreate" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Unit</a>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Unit Name</th><th>Short Code</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No units found.</td></tr> }
+                        @{ int sno = 1; }
+                        @foreach (var u in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno++</td>
+                                <td class="fw-semibold">@u.UnitName</td>
+                                <td><span class="badge bg-light text-dark border">@u.UnitShort</span></td>
+                                <td><span class="badge @(u.IsActive ? "bg-success" : "bg-secondary")">@(u.IsActive ? "Active" : "Inactive")</span></td>
+                                <td>
+                                    <a asp-action="UnitEdit" asp-route-id="@u.UnitId" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,40 @@
+@model School_CRM.Models.TblPeriod
+
+<form id="periodForm" asp-action="CreateOrEdit" asp-controller="Period" asp-route-id="@Model.PeriodId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="PeriodId" />
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label asp-for="PeriodName" class="form-label fw-semibold">Period Name <span class="text-danger">*</span></label>
+            <input asp-for="PeriodName" class="form-control" placeholder="e.g. Period 1, Lunch Break" required />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="SequenceNo" class="form-label fw-semibold">Sequence No <span class="text-danger">*</span></label>
+            <input asp-for="SequenceNo" class="form-control" type="number" min="1" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="StartTime" class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
+            <input asp-for="StartTime" class="form-control" type="time" required />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="EndTime" class="form-label fw-semibold">End Time <span class="text-danger">*</span></label>
+            <input asp-for="EndTime" class="form-control" type="time" required />
+        </div>
+        <div class="col-md-6">
+            <div class="form-check form-switch mt-2">
+                <input type="checkbox" name="IsBrake" value="true" class="form-check-input" @(Model.IsBrake == true ? "checked" : "") />
+                <label class="form-check-label">Is Break / Lunch Period</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check form-switch mt-2">
+                <input type="checkbox" name="IsActive" value="true" class="form-check-input" @(Model.IsActive == true ? "checked" : "") />
+                <label class="form-check-label">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button type="button" id="btnSave" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Period</button>
+    </div>
+</form>

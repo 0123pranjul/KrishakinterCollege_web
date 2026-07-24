@@ -1,0 +1,265 @@
+@{
+    ViewData["Title"] = "Report Cards";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-graduation-cap me-2 text-primary"></i>Report Card Management</h5>
+        </div>
+        <div class="card-body border-bottom">
+            <div class="row g-2 align-items-end mb-3">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Session</label>
+                    <select id="selSession" class="form-select form-select-sm">
+                        <option value="">-- Session --</option>
+                        @foreach (var s in ViewBag.Sessions) { <option value="@s.SessionId">@s.SessionName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Class</label>
+                    <select id="selClass" class="form-select form-select-sm">
+                        <option value="">-- Class --</option>
+                        @foreach (var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Section</label>
+                    <select id="selSection" class="form-select form-select-sm">
+                        <option value="">-- Section --</option>
+                        @foreach (var sec in ViewBag.Sections) { <option value="@sec.SectionId">@sec.SectionName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary btn-sm w-100" onclick="loadCards()">
+                        <i class="fas fa-search me-1"></i> Load
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success btn-sm w-100" onclick="generateCards()">
+                        <i class="fas fa-cogs me-1"></i> Generate Cards
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-warning btn-sm w-100 text-dark" onclick="bulkPublish(true)">
+                        <i class="fas fa-bullhorn me-1"></i> Bulk Publish
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytics Widgets & Leaderboard -->
+            <div id="analyticsPanel" class="row g-3 d-none">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light border rounded text-center h-100">
+                        <h6 class="text-muted fw-bold">Class Average</h6>
+                        <h3 class="fw-bold text-primary mb-0" id="classAvg">0%</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light border rounded text-center h-100">
+                        <h6 class="text-muted fw-bold">Pass vs Fail</h6>
+                        <div class="progress mt-2" style="height: 25px;">
+                            <div id="passBar" class="progress-bar bg-success fw-bold" style="width: 0%;">0%</div>
+                            <div id="failBar" class="progress-bar bg-danger fw-bold" style="width: 0%;">0%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-2 bg-light border rounded h-100">
+                        <h6 class="text-muted fw-bold text-center border-bottom pb-1">Top Rankers 🏆</h6>
+                        <div id="leaderboardList" class="small mt-2 px-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="rcTable" class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="6%">#</th>
+                            <th>Student</th>
+                            <th>Session</th>
+                            <th>Class</th>
+                            <th>Section</th>
+                            <th width="10%" class="text-center">Total</th>
+                            <th width="10%" class="text-center">Obtained</th>
+                            <th width="10%" class="text-center">%</th>
+                            <th width="8%" class="text-center">Grade</th>
+                            <th width="6%" class="text-center">Rank</th>
+                            <th width="10%" class="text-center">Status</th>
+                            <th width="10%" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rcViewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-graduation-cap me-2"></i>Report Card</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="rcViewBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let table;
+        $(document).ready(() => {
+            table = $('#rcTable').DataTable({
+                data: [],
+                columns: [
+                    { data: 'reportCardId', className: 'text-center' },
+                    { data: 'studentName' },
+                    { data: 'sessionName' },
+                    { data: 'className' },
+                    { data: 'sectionName' },
+                    { data: 'totalMarks', className: 'text-center' },
+                    { data: 'obtainedMarks', className: 'text-center fw-semibold' },
+                    { data: 'percentage', className: 'text-center' },
+                    { data: 'gradeName', className: 'text-center', render: d => `<span class="badge bg-primary fs-6">${d}</span>` },
+                    { data: 'rank', className: 'text-center', render: d => d ? `<span class="badge bg-warning text-dark">#${d}</span>` : '-' },
+                    { data: 'isPublished', className: 'text-center', render: d => d === 'Published' ? '<span class="badge bg-success">Published</span>' : '<span class="badge bg-secondary">Draft</span>' },
+                    {
+                        data: 'reportCardId', className: 'text-center', orderable: false,
+                        render: id => `<button class="btn btn-sm btn-outline-primary me-1" onclick="viewCard(${id})"><i class="fas fa-eye"></i></button>
+                                       <button class="btn btn-sm btn-outline-success" onclick="publishCard(${id})"><i class="fas fa-check"></i></button>`
+                    }
+                ]
+            });
+        });
+
+        function loadCards() {
+            const sessionId = $('#selSession').val(), classId = $('#selClass').val(), sectionId = $('#selSection').val();
+            $.get('@Url.Action("GetAll","ReportCard")', { sessionId, classId, sectionId }, res => {
+                table.clear().rows.add(res.data).draw();
+                updateAnalytics(res.data);
+            });
+        }
+
+        function updateAnalytics(data) {
+            if (!data || data.length === 0) {
+                $('#analyticsPanel').addClass('d-none');
+                return;
+            }
+            $('#analyticsPanel').removeClass('d-none');
+            
+            // 1. Average & Pass/Fail
+            let totalPct = 0, passed = 0;
+            data.forEach(x => {
+                let p = parseFloat(x.percentage.replace('%', ''));
+                totalPct += p;
+                if (p >= 33) passed++;
+            });
+            
+            let avg = (totalPct / data.length).toFixed(1);
+            $('#classAvg').text(avg + '%');
+            
+            let passPct = ((passed / data.length) * 100).toFixed(0);
+            let failPct = (100 - passPct).toFixed(0);
+            
+            $('#passBar').css('width', passPct + '%').text(passPct > 0 ? passPct + '%' : '');
+            $('#failBar').css('width', failPct + '%').text(failPct > 0 ? failPct + '%' : '');
+
+            // 2. Leaderboard
+            let leaderboardHtml = '';
+            let sorted = [...data].sort((a,b) => parseFloat(b.percentage) - parseFloat(a.percentage)).slice(0, 3);
+            
+            const medals = ['🥇', '🥈', '🥉'];
+            const colors = ['#ffd700', '#c0c0c0', '#cd7f32'];
+            
+            sorted.forEach((student, index) => {
+                leaderboardHtml += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                        <div>
+                            <span class="fs-5 me-1" title="Rank ${index+1}">${medals[index] || ''}</span>
+                            <span class="fw-bold text-dark">${student.studentName}</span>
+                        </div>
+                        <span class="badge" style="background-color: ${colors[index] || '#6c757d'}; color: #000;">${student.percentage}</span>
+                    </div>`;
+            });
+            
+            if(sorted.length === 0) leaderboardHtml = '<div class="text-muted text-center mt-3">No data available</div>';
+            $('#leaderboardList').html(leaderboardHtml);
+        }
+
+        function generateCards() {
+            const sessionId = $('#selSession').val(), classId = $('#selClass').val(), sectionId = $('#selSection').val();
+            if (!sessionId || !classId || !sectionId) { toastr.warning('Please select Session, Class and Section'); return; }
+
+            Swal.fire({ title: 'Generate Report Cards?', text: 'This will compute marks using exam weightages and generate/update report cards.', icon: 'question', showCancelButton: true, confirmButtonColor: '#198754', confirmButtonText: 'Yes, Generate!' })
+                .then(r => {
+                    if (r.isConfirmed) {
+                        Swal.fire({ title: 'Generating...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        $.ajax({
+                            url: '@Url.Action("Generate","ReportCard")', type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ sessionId: parseInt(sessionId), classId: parseInt(classId), sectionId: parseInt(sectionId) }),
+                            success: res => {
+                                Swal.close();
+                                if (res.success) { loadCards(); toastr.success(res.message); }
+                                else toastr.error(res.message);
+                            }
+                        });
+                    }
+                });
+        }
+
+        function viewCard(id) {
+            $.get('@Url.Action("ViewCard","ReportCard")', { id }, html => {
+                $('#rcViewBody').html(html);
+                $('#rcViewModal').modal('show');
+            });
+        }
+
+        function publishCard(id) {
+            Swal.fire({ title: 'Publish Report Card?', text: 'This will make the result visible to students.', icon: 'question', showCancelButton: true, confirmButtonColor: '#198754', confirmButtonText: 'Publish!' })
+                .then(r => {
+                    if (r.isConfirmed) {
+                        $.post('@Url.Action("Publish","ReportCard")', { id }, res => {
+                            if (res.success) { loadCards(); toastr.success(res.message); }
+                            else toastr.error(res.message);
+                        });
+                    }
+                });
+        }
+
+        function bulkPublish(isPublish) {
+            const sessionId = $('#selSession').val(), classId = $('#selClass').val(), sectionId = $('#selSection').val();
+            if (!sessionId || !classId) { toastr.warning('Please select Session and Class to Bulk Publish'); return; }
+
+            let actionText = isPublish ? 'Publish' : 'Unpublish';
+            
+            Swal.fire({ title: `Bulk ${actionText}?`, text: `This will ${actionText.toLowerCase()} all report cards for the selected class.`, icon: 'warning', showCancelButton: true, confirmButtonColor: isPublish ? '#198754' : '#dc3545', confirmButtonText: `Yes, ${actionText} All!` })
+                .then(r => {
+                    if (r.isConfirmed) {
+                        Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        $.ajax({
+                            url: '@Url.Action("BulkPublish","ReportCard")', type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ sessionId: parseInt(sessionId), classId: parseInt(classId), sectionId: parseInt(sectionId || 0), isPublish: isPublish }),
+                            success: res => {
+                                Swal.close();
+                                if (res.success) { loadCards(); toastr.success(res.message); }
+                                else toastr.error(res.message);
+                            }
+                        });
+                    }
+                });
+        }
+    </script>
+}

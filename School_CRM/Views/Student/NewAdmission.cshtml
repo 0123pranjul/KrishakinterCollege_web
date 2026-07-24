@@ -1,0 +1,544 @@
+@model School_CRM.Models.ViewModels.NewAdmissionViewModel
+@{
+    ViewData["Title"] = Model.StudentId == 0 ? "New Admission" : "Edit Admission";
+    bool isEdit = Model.StudentId > 0;
+}
+
+<div class="container-fluid">
+
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="mb-1 fw-bold text-primary">
+                <i class="fas fa-user-graduate me-2"></i>@ViewData["Title"]
+            </h4>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Student" asp-action="Index">Students</a></li>
+                    <li class="breadcrumb-item active">@ViewData["Title"]</li>
+                </ol>
+            </nav>
+        </div>
+        <a asp-controller="Student" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to List
+        </a>
+    </div>
+
+    <!-- Success / Error Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="NewAdmission" asp-controller="Student" method="post" enctype="multipart/form-data" id="admissionForm" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="StudentId" />
+        <input type="hidden" asp-for="PhotoUrl" id="existingPhotoUrl" />
+
+        <!-- Validation Summary -->
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none" id="validationSummary"></div>
+
+        <!-- ── Tab Navigation ─────────────────────────────────────────── -->
+        <ul class="nav nav-tabs nav-tabs-admission mb-0" id="admissionTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-basic-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-basic" type="button" role="tab">
+                    <i class="fas fa-id-card me-1"></i> Basic Info
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-address-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-address" type="button" role="tab">
+                    <i class="fas fa-map-marker-alt me-1"></i> Address
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-parent-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-parent" type="button" role="tab">
+                    <i class="fas fa-users me-1"></i> Parent / Guardian
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-session-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-session" type="button" role="tab">
+                    <i class="fas fa-school me-1"></i> Session & Class
+                </button>
+            </li>
+        </ul>
+
+        <div class="card border-top-0 rounded-top-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="tab-content" id="admissionTabContent">
+
+                    <!-- ══════════════════════════════════════════════════════
+                         TAB 1 — Basic Info
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="tab-pane fade show active" id="tab-basic" role="tabpanel">
+                        <div class="row g-4">
+
+                            <!-- Photo Column -->
+                            <div class="col-md-3 text-center">
+                                <div class="photo-upload-wrapper mx-auto">
+                                    <div class="photo-preview" id="photoPreview">
+                                        @if (!string.IsNullOrEmpty(Model.PhotoUrl))
+                                        {
+                                            <img src="@Model.PhotoUrl" id="previewImg" alt="Student Photo" />
+                                        }
+                                        else
+                                        {
+                                            <div class="photo-placeholder" id="photoPlaceholder">
+                                                <i class="fas fa-user-circle"></i>
+                                                <span>Upload Photo</span>
+                                            </div>
+                                            <img src="" id="previewImg" alt="Student Photo" class="d-none" />
+                                        }
+                                    </div>
+                                    <label for="PhotoFile" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                                        <i class="fas fa-camera me-1"></i> Choose Photo
+                                    </label>
+                                    <input type="file" asp-for="PhotoFile" id="PhotoFile"
+                                           class="d-none" accept="image/*" />
+                                    <span asp-validation-for="PhotoFile" class="text-danger small d-block mt-1"></span>
+                                    <small class="text-muted d-block mt-1">JPG, PNG, GIF (max 2 MB)</small>
+                                </div>
+                            </div>
+
+                            <!-- Fields Column -->
+                            <div class="col-md-9">
+                                <div class="row g-3">
+
+                                    <div class="col-md-6">
+                                        <label asp-for="StudentName" class="form-label fw-semibold required-label"></label>
+                                        <input asp-for="StudentName" class="form-control"
+                                               placeholder="Enter full name" />
+                                        <span asp-validation-for="StudentName" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="AdmissionNo" class="form-label fw-semibold"></label>
+                                        <input asp-for="AdmissionNo" class="form-control"
+                                               placeholder="e.g. ADM-2026-001" />
+                                        <span asp-validation-for="AdmissionNo" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="RollNo" class="form-label fw-semibold"></label>
+                                        <input asp-for="RollNo" class="form-control"
+                                               placeholder="Roll number" />
+                                        <span asp-validation-for="RollNo" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="AdmissionDate" class="form-label fw-semibold required-label"></label>
+                                        <input asp-for="AdmissionDate" class="form-control" type="date" />
+                                        <span asp-validation-for="AdmissionDate" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="DateOfBirth" class="form-label fw-semibold required-label"></label>
+                                        <input asp-for="DateOfBirth" class="form-control" type="date" />
+                                        <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="Gender" class="form-label fw-semibold required-label"></label>
+                                        <select asp-for="Gender" class="form-select">
+                                            <option value="">-- Select --</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <span asp-validation-for="Gender" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="BloodGroup" class="form-label fw-semibold"></label>
+                                        <select asp-for="BloodGroup" class="form-select">
+                                            <option value="">-- Select --</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                        <span asp-validation-for="BloodGroup" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="AadhaarNo" class="form-label fw-semibold"></label>
+                                        <input asp-for="AadhaarNo" class="form-control"
+                                               placeholder="12-digit Aadhaar" maxlength="12" />
+                                        <span asp-validation-for="AadhaarNo" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label asp-for="PreviousSchool" class="form-label fw-semibold"></label>
+                                        <input asp-for="PreviousSchool" class="form-control"
+                                               placeholder="Name of previous school (if any)" />
+                                        <span asp-validation-for="PreviousSchool" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="EmergencyContactName" class="form-label fw-semibold"></label>
+                                        <input asp-for="EmergencyContactName" class="form-control"
+                                               placeholder="Emergency contact person" />
+                                        <span asp-validation-for="EmergencyContactName" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="EmergencyContactNumber" class="form-label fw-semibold"></label>
+                                        <input asp-for="EmergencyContactNumber" class="form-control"
+                                               placeholder="10-digit mobile" maxlength="10" />
+                                        <span asp-validation-for="EmergencyContactNumber" class="text-danger small"></span>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         TAB 2 — Address
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="tab-pane fade" id="tab-address" role="tabpanel">
+                        <div class="row g-3">
+
+                            <div class="col-12">
+                                <label asp-for="AddressLine1" class="form-label fw-semibold"></label>
+                                <input asp-for="AddressLine1" class="form-control"
+                                       placeholder="House / Flat No., Street" />
+                                <span asp-validation-for="AddressLine1" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="AddressLine2" class="form-label fw-semibold"></label>
+                                <input asp-for="AddressLine2" class="form-control"
+                                       placeholder="Locality / Area (optional)" />
+                                <span asp-validation-for="AddressLine2" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="City" class="form-label fw-semibold"></label>
+                                <input asp-for="City" class="form-control" placeholder="City" />
+                                <span asp-validation-for="City" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="State" class="form-label fw-semibold"></label>
+                                <select asp-for="State" class="form-select">
+                                    <option value="">-- Select State --</option>
+                                    <option>Andhra Pradesh</option>
+                                    <option>Arunachal Pradesh</option>
+                                    <option>Assam</option>
+                                    <option>Bihar</option>
+                                    <option>Chhattisgarh</option>
+                                    <option>Goa</option>
+                                    <option>Gujarat</option>
+                                    <option>Haryana</option>
+                                    <option>Himachal Pradesh</option>
+                                    <option>Jharkhand</option>
+                                    <option>Karnataka</option>
+                                    <option>Kerala</option>
+                                    <option>Madhya Pradesh</option>
+                                    <option>Maharashtra</option>
+                                    <option>Manipur</option>
+                                    <option>Meghalaya</option>
+                                    <option>Mizoram</option>
+                                    <option>Nagaland</option>
+                                    <option>Odisha</option>
+                                    <option>Punjab</option>
+                                    <option>Rajasthan</option>
+                                    <option>Sikkim</option>
+                                    <option>Tamil Nadu</option>
+                                    <option>Telangana</option>
+                                    <option>Tripura</option>
+                                    <option>Uttar Pradesh</option>
+                                    <option>Uttarakhand</option>
+                                    <option>West Bengal</option>
+                                    <option>Delhi</option>
+                                    <option>Jammu &amp; Kashmir</option>
+                                    <option>Ladakh</option>
+                                    <option>Puducherry</option>
+                                    <option>Chandigarh</option>
+                                </select>
+                                <span asp-validation-for="State" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Pincode" class="form-label fw-semibold"></label>
+                                <input asp-for="Pincode" class="form-control"
+                                       placeholder="6-digit pincode" maxlength="6" />
+                                <span asp-validation-for="Pincode" class="text-danger small"></span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         TAB 3 — Parent / Guardian
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="tab-pane fade" id="tab-parent" role="tabpanel">
+
+                        <!-- Father / Guardian -->
+                        <div class="card border-primary mb-4">
+                            <div class="card-header bg-primary bg-opacity-10 text-primary fw-semibold">
+                                <i class="fas fa-male me-2"></i>Father / Guardian Details
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="FatherName" class="form-label fw-semibold required-label"></label>
+                                        <input asp-for="FatherName" class="form-control"
+                                               placeholder="Father / Guardian full name" />
+                                        <span asp-validation-for="FatherName" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="FatherMobile" class="form-label fw-semibold"></label>
+                                        <input asp-for="FatherMobile" class="form-control"
+                                               placeholder="10-digit mobile" maxlength="10" />
+                                        <span asp-validation-for="FatherMobile" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="FatherEmail" class="form-label fw-semibold"></label>
+                                        <input asp-for="FatherEmail" class="form-control" type="email"
+                                               placeholder="Email address" />
+                                        <span asp-validation-for="FatherEmail" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="FatherOccupation" class="form-label fw-semibold"></label>
+                                        <input asp-for="FatherOccupation" class="form-control"
+                                               placeholder="Occupation" />
+                                        <span asp-validation-for="FatherOccupation" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mother -->
+                        <div class="card border-info">
+                            <div class="card-header bg-info bg-opacity-10 text-info fw-semibold">
+                                <i class="fas fa-female me-2"></i>Mother Details <small class="text-muted fw-normal">(optional)</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="MotherName" class="form-label fw-semibold"></label>
+                                        <input asp-for="MotherName" class="form-control"
+                                               placeholder="Mother full name" />
+                                        <span asp-validation-for="MotherName" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="MotherMobile" class="form-label fw-semibold"></label>
+                                        <input asp-for="MotherMobile" class="form-control"
+                                               placeholder="10-digit mobile" maxlength="10" />
+                                        <span asp-validation-for="MotherMobile" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="MotherOccupation" class="form-label fw-semibold"></label>
+                                        <input asp-for="MotherOccupation" class="form-control"
+                                               placeholder="Occupation" />
+                                        <span asp-validation-for="MotherOccupation" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         TAB 4 — Session & Class
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="tab-pane fade" id="tab-session" role="tabpanel">
+                        <div class="row g-3">
+
+                            <div class="col-md-4">
+                                <label asp-for="SessionId" class="form-label fw-semibold required-label"></label>
+                                <select asp-for="SessionId" asp-items="Model.Sessions" class="form-select">
+                                    <option value="">-- Select Session --</option>
+                                </select>
+                                <span asp-validation-for="SessionId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="ClassId" class="form-label fw-semibold required-label"></label>
+                                <select asp-for="ClassId" asp-items="Model.Classes" class="form-select">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <span asp-validation-for="ClassId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="SectionId" class="form-label fw-semibold required-label"></label>
+                                <select asp-for="SectionId" asp-items="Model.Sections" class="form-select">
+                                    <option value="">-- Select Section --</option>
+                                </select>
+                                <span asp-validation-for="SectionId" class="text-danger small"></span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div><!-- /tab-content -->
+            </div><!-- /card-body -->
+
+            <!-- Card Footer — Action Buttons -->
+            <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                <a asp-controller="Student" asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </a>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary" id="btnPrev" style="display:none!important">
+                        <i class="fas fa-chevron-left me-1"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnNext">
+                        Next <i class="fas fa-chevron-right ms-1"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success" id="btnSubmit" style="display:none!important">
+                        <i class="fas fa-save me-1"></i>
+                        @(isEdit ? "Update Admission" : "Register Admission")
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /card -->
+    </form>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        /* ── Tab styling ─────────────────────────────────────────────── */
+        .nav-tabs-admission .nav-link {
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+        .nav-tabs-admission .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+            background: transparent;
+        }
+        .nav-tabs-admission .nav-link.tab-error {
+            color: #dc3545 !important;
+        }
+
+        /* ── Photo upload ────────────────────────────────────────────── */
+        .photo-upload-wrapper { max-width: 160px; }
+        .photo-preview {
+            width: 160px; height: 180px;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { text-align: center; color: #adb5bd; }
+        .photo-placeholder i { font-size: 3rem; display: block; margin-bottom: 6px; }
+        .photo-placeholder span { font-size: 0.8rem; }
+
+        /* ── Required label asterisk ─────────────────────────────────── */
+        .required-label::after { content: " *"; color: #dc3545; }
+    </style>
+
+    <script>
+        // ── Photo preview ─────────────────────────────────────────────────
+        document.getElementById('PhotoFile').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                toastr.warning('Photo must be under 2 MB.');
+                this.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.getElementById('previewImg');
+                const placeholder = document.getElementById('photoPlaceholder');
+                img.src = e.target.result;
+                img.classList.remove('d-none');
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Click on preview area triggers file input
+        document.getElementById('photoPreview').addEventListener('click', function () {
+            document.getElementById('PhotoFile').click();
+        });
+
+        // ── Tab navigation with Next / Previous / Submit buttons ──────────
+        const tabIds   = ['tab-basic', 'tab-address', 'tab-parent', 'tab-session'];
+        const tabBtns  = ['tab-basic-btn', 'tab-address-btn', 'tab-parent-btn', 'tab-session-btn'];
+        let currentTab = 0;
+
+        function showTab(index) {
+            const tab = new bootstrap.Tab(document.getElementById(tabBtns[index]));
+            tab.show();
+            currentTab = index;
+            document.getElementById('btnPrev').style.display  = index === 0 ? 'none' : 'inline-flex';
+            document.getElementById('btnNext').style.display  = index === tabIds.length - 1 ? 'none' : 'inline-flex';
+            document.getElementById('btnSubmit').style.display = index === tabIds.length - 1 ? 'inline-flex' : 'none';
+        }
+
+        document.getElementById('btnNext').addEventListener('click', function () {
+            if (currentTab < tabIds.length - 1) showTab(currentTab + 1);
+        });
+        document.getElementById('btnPrev').addEventListener('click', function () {
+            if (currentTab > 0) showTab(currentTab - 1);
+        });
+
+        // Allow clicking tabs directly
+        tabBtns.forEach(function (btnId, idx) {
+            document.getElementById(btnId).addEventListener('shown.bs.tab', function () {
+                currentTab = idx;
+                document.getElementById('btnPrev').style.display  = idx === 0 ? 'none' : 'inline-flex';
+                document.getElementById('btnNext').style.display  = idx === tabIds.length - 1 ? 'none' : 'inline-flex';
+                document.getElementById('btnSubmit').style.display = idx === tabIds.length - 1 ? 'inline-flex' : 'none';
+            });
+        });
+
+        // ── Highlight tabs that contain validation errors ─────────────────
+        (function highlightErrorTabs() {
+            const tabPaneMap = {
+                'tab-basic':   ['StudentName','AdmissionDate','DateOfBirth','Gender','AadhaarNo','EmergencyContactNumber'],
+                'tab-address': ['Pincode'],
+                'tab-parent':  ['FatherName','FatherMobile','FatherEmail','MotherMobile'],
+                'tab-session': ['SessionId','ClassId','SectionId']
+            };
+            document.querySelectorAll('.field-validation-error').forEach(function (el) {
+                const fieldName = el.getAttribute('data-valmsg-for');
+                for (const [pane, fields] of Object.entries(tabPaneMap)) {
+                    if (fields.includes(fieldName)) {
+                        const btnId = pane + '-btn';
+                        document.getElementById(btnId)?.classList.add('tab-error');
+                    }
+                }
+            });
+        })();
+
+        // ── Numeric-only inputs ───────────────────────────────────────────
+        document.querySelectorAll('input[maxlength="10"], input[maxlength="12"], input[maxlength="6"]')
+            .forEach(function (el) {
+                el.addEventListener('input', function () {
+                    this.value = this.value.replace(/\D/g, '');
+                });
+            });
+
+        // ── Toastr for server-side success (TempData) ─────────────────────
+        @if (TempData["Success"] != null)
+        {
+            <text>toastr.success('@Html.Raw(TempData["Success"])');</text>
+        }
+    </script>
+}

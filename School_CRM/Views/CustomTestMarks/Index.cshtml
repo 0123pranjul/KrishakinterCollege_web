@@ -1,0 +1,140 @@
+@{
+    ViewData["Title"] = "Custom Test Marks";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-clipboard-check me-2 text-primary"></i>Custom Test Marks Entry</h5>
+        </div>
+        <div class="card-body border-bottom">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Custom Test</label>
+                    <select id="selTest" class="form-select form-select-sm">
+                        <option value="">-- Select Test --</option>
+                        @foreach (var t in ViewBag.Tests) { <option value="@t.TestId">@t.TestName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Class</label>
+                    <select id="selClass" class="form-select form-select-sm">
+                        <option value="">-- Class --</option>
+                        @foreach (var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassName</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Section</label>
+                    <select id="selSection" class="form-select form-select-sm">
+                        <option value="">-- Section --</option>
+                        @foreach (var s in ViewBag.Sections) { <option value="@s.SectionId">@s.SectionName</option> }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary btn-sm w-100" onclick="loadStudents()">
+                        <i class="fas fa-search me-1"></i> Load Students
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="marksContainer">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-clipboard-list fa-3x mb-3 opacity-25"></i>
+                    <p>Select Test, Class and Section to enter marks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let currentMaxMarks = 100;
+
+        function loadStudents() {
+            const testId = $('#selTest').val(), classId = $('#selClass').val(), sectionId = $('#selSection').val();
+            if (!testId || !classId || !sectionId) { toastr.warning('Please fill all filters'); return; }
+
+            $.get('@Url.Action("GetStudentsForMarks","CustomTestMarks")', { testId, classId, sectionId }, res => {
+                currentMaxMarks = res.maxMarks || 100;
+
+                let html = `<div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0 text-muted">Total Students: <strong>${res.data.length}</strong> | <span class="badge bg-secondary">Max Marks: ${currentMaxMarks}</span></h6>
+                    <button class="btn btn-success btn-sm px-4" onclick="saveMarks()"><i class="fas fa-save me-1"></i> Save Marks</button>
+                </div>
+                <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th width="6%">#</th><th>Student Name</th><th width="20%" class="text-center">Marks Obtained</th><th width="15%" class="text-center">Absent</th></tr>
+                    </thead><tbody>`;
+
+                res.data.forEach((s, i) => {
+                    let markVal = s.marksObtained !== null && s.marksObtained !== undefined ? s.marksObtained : '';
+                    let colorClass = markVal !== '' ? 'is-valid bg-success-subtle' : '';
+                    
+                    html += `<tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td class="fw-semibold">${s.studentName}</td>
+                        <td class="text-center">
+                            <input type="hidden" class="mark-id" value="${s.markId}" />
+                            <input type="hidden" class="student-id" value="${s.studentId}" />
+                            <input type="number" class="form-control form-control-sm text-center fw-bold marks-input ${colorClass}" step="0.01" min="0" max="${currentMaxMarks}" value="${markVal}" ${s.isAbsent ? 'disabled' : ''} onkeyup="checkMark(this)" onchange="checkMark(this)" />
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check d-flex justify-content-center">
+                                <input type="checkbox" class="form-check-input absent-check" ${s.isAbsent ? 'checked' : ''} onchange="toggleAbsent(this)" />
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+                $('#marksContainer').html(html);
+            });
+        }
+
+        function checkMark(input) {
+            let val = $(input).val();
+            $(input).removeClass('is-valid is-invalid bg-success-subtle bg-danger-subtle');
+            if (val !== '') {
+                let m = parseFloat(val);
+                if (m > currentMaxMarks) { $(input).val(currentMaxMarks); toastr.warning("Marks cannot exceed Max Marks: " + currentMaxMarks); }
+                $(input).addClass('is-valid bg-success-subtle');
+            }
+        }
+
+        function toggleAbsent(cb) {
+            const row = $(cb).closest('tr');
+            const input = row.find('.marks-input');
+            if ($(cb).is(':checked')) { input.val('').prop('disabled', true).removeClass('is-valid bg-success-subtle'); }
+            else { input.prop('disabled', false); }
+        }
+
+        function saveMarks() {
+            const testId = parseInt($('#selTest').val());
+            const entries = [];
+            $('tbody tr').each(function () {
+                entries.push({
+                    markId: parseInt($(this).find('.mark-id').val()),
+                    testId,
+                    studentId: parseInt($(this).find('.student-id').val()),
+                    marksObtained: parseFloat($(this).find('.marks-input').val()) || null,
+                    isAbsent: $(this).find('.absent-check').is(':checked')
+                });
+            });
+
+            $.ajax({
+                url: '@Url.Action("SaveMarks","CustomTestMarks")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(entries),
+                success: res => {
+                    if (res.success) toastr.success(res.message);
+                    else toastr.error(res.message);
+                }
+            });
+        }
+    </script>
+}

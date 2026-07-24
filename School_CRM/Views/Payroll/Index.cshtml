@@ -1,0 +1,311 @@
+﻿@{
+    ViewData["Title"] = "Payroll - Salary Generation";
+}
+
+@* URL endpoints passed via data attributes to avoid Razor/JS template literal conflicts *@
+<div id="payrollUrls"
+     data-getall="@Url.Action("GetAll","Payroll")"
+     data-preview="@Url.Action("Preview","Payroll")"
+     data-generate="@Url.Action("Generate","Payroll")"
+     data-updatestatus="@Url.Action("UpdateStatus","Payroll")"
+     data-getslip="@Url.Action("GetSlip","Payroll")"
+     data-getallslips="@Url.Action("GetAllSlips","Payroll")"
+     data-getpending="@Url.Action("GetPendingAdvances","Payroll")"
+     data-getadvances="@Url.Action("GetAdvances","Payroll")"
+     data-addadvance="@Url.Action("AddAdvance","Payroll")"
+     data-deleteadvance="@Url.Action("DeleteAdvance","Payroll")"
+     data-getemployees="@Url.Action("GetEmployees","Payroll")"
+     style="display:none">
+</div>
+
+<div class="container-fluid">
+
+    <!-- TOP: Month Select + Buttons -->
+    <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row align-items-center g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold mb-1">Select Month</label>
+                    <input type="month" id="selectedMonth"
+                           class="form-control"
+                           value="@DateTime.Today.ToString("yyyy-MM")">
+                </div>
+                <div class="col-md-6 d-flex gap-2 align-items-center">
+                    <button class="btn btn-outline-primary btn-sm px-3 py-2"
+                            onclick="previewSalary()">
+                        <i class="fas fa-eye me-1"></i>Preview
+                    </button>
+                    <button class="btn btn-success btn-sm px-3 py-2"
+                            onclick="generateSalary(false)"
+                            id="btnGenerate">
+                        <i class="fas fa-bolt me-1"></i>Generate Salary
+                    </button>
+                    <button class="btn btn-dark btn-sm px-3 py-2"
+                            onclick="downloadAllSlips()"
+                            id="btnDownloadAll"
+                            title="Sab employees ke salary slips ek saath download karein">
+                        <i class="fas fa-download me-1"></i>Download All Slips
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <div class="row g-2" id="summaryCards" style="display:none!important">
+                        <div class="col-4">
+                            <div class="card bg-primary text-white py-1 px-2">
+                                <div class="small">Total Employees</div>
+                                <div class="fw-bold fs-5" id="sumEmp">-</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-success text-white py-1 px-2">
+                                <div class="small">Gross Salary</div>
+                                <div class="fw-bold fs-5" id="sumGross">-</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-warning text-white py-1 px-2">
+                                <div class="small">Net Salary</div>
+                                <div class="fw-bold fs-5" id="sumNet">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advance Alert Banner -->
+    <div id="advanceBanner" class="alert alert-warning alert-dismissible d-none mb-3" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong id="advanceBannerText"></strong>
+        &nbsp;&mdash;&nbsp;Salary generate karte time automatically deduct ho jayega.
+        <button type="button" class="btn-close"
+                onclick="document.getElementById('advanceBanner').classList.add('d-none')">
+        </button>
+    </div>
+
+    <!-- Status Filter + Action Buttons -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="filterStatus" class="form-select form-select-sm"
+                            style="width:150px" onchange="filterTable()">
+                        <option value="">All Status</option>
+                        <option value="Generated">Generated</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Hold">Hold</option>
+                    </select>
+                    <span class="text-muted small" id="recordCount"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-warning btn-sm" onclick="openAdvanceModal()"
+                            title="Employee ko advance dein ya deduction record karein">
+                        <i class="fas fa-hand-holding-usd me-1"></i>Advance / Deduction
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="markAllPaid()">
+                        <i class="fas fa-check-double me-1"></i>Mark All Paid
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="generateSalary(true)">
+                        <i class="fas fa-redo me-1"></i>Regenerate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="salaryTable" class="table table-bordered table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Employee</th>
+                            <th class="text-center">Payable<br>Days</th>
+                            <th class="text-center">Present</th>
+                            <th class="text-center">Holiday</th>
+                            <th class="text-center">Leave</th>
+                            <th class="text-center">LWP</th>
+                            <th class="text-center">OT Hrs</th>
+                            <th class="text-end">Basic</th>
+                            <th class="text-end">OT Amt</th>
+                            <th class="text-end">Gross</th>
+                            <th class="text-end">LWP<br>Deduct</th>
+                            <th class="text-end" style="color:#ffc107">Advance<br>Deduct</th>
+                            <th class="text-end">Net</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salaryBody">
+                        <tr>
+                            <td colspan="15" class="text-center text-muted py-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Select month and click Preview or Generate Salary
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="table-secondary fw-bold">
+                        <tr id="totalRow" style="display:none">
+                            <td>TOTAL</td>
+                            <td></td><td></td><td></td><td></td><td></td><td></td>
+                            <td class="text-end" id="totBasic"></td>
+                            <td class="text-end" id="totOT"></td>
+                            <td class="text-end" id="totGross"></td>
+                            <td class="text-end" id="totLwpDeduct"></td>
+                            <td class="text-end" id="totAdvDeduct"></td>
+                            <td class="text-end" id="totNet"></td>
+                            <td></td><td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Slip Modal -->
+<div class="modal fade" id="slipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Salary Slip</h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="slipContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printSlip()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advance / Deduction Modal -->
+<div class="modal fade" id="advanceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-hand-holding-usd me-2"></i>
+                    Employee Advance &amp; Deduction Manager
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add Advance Form -->
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning bg-opacity-25 fw-bold">
+                        <i class="fas fa-plus-circle me-1"></i> New Advance / Deduction Entry
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Employee <span class="text-danger">*</span></label>
+                                <select id="advEmpId" class="form-select">
+                                    <option value="">-- Select Employee --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Amount (&#8377;) <span class="text-danger">*</span></label>
+                                <input type="number" id="advAmount" class="form-control"
+                                       placeholder="0.00" min="1" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date</label>
+                                <input type="date" id="advDate" class="form-control"
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">
+                                    Deduct From Month
+                                    <small class="text-muted d-block">(blank = next salary)</small>
+                                </label>
+                                <input type="month" id="advDeductMonth" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Reason / Note</label>
+                                <input type="text" id="advReason" class="form-control"
+                                       placeholder="e.g. Medical emergency, Diwali advance">
+                            </div>
+                            <div class="col-12 text-end">
+                                <button class="btn btn-warning px-4" onclick="saveAdvance()">
+                                    <i class="fas fa-save me-1"></i>Save Advance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advances List -->
+                <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+                    <select id="advFilterEmp" class="form-select form-select-sm"
+                            style="width:200px" onchange="loadAdvances()">
+                        <option value="">All Employees</option>
+                    </select>
+                    <select id="advFilterStatus" class="form-select form-select-sm"
+                            style="width:140px" onchange="loadAdvances()">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Deducted">Deducted</option>
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="loadAdvances()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                                <th>Reason</th>
+                                <th>Deduct From</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advanceTableBody">
+                            <tr><td colspan="7" class="text-center text-muted">Loading...</td></tr>
+                        </tbody>
+                        <tfoot class="table-secondary fw-bold">
+                            <tr>
+                                <td colspan="2">TOTAL PENDING</td>
+                                <td class="text-end text-danger" id="advTotalPending">-</td>
+                                <td colspan="4"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <style>
+        #salaryTable th, #salaryTable td { font-size:0.82rem; padding:6px 8px; vertical-align:middle; }
+        .status-generated { background:#fff3cd; color:#856404; }
+        .status-paid      { background:#d1e7dd; color:#0a3622; }
+        .status-hold      { background:#f8d7da; color:#842029; }
+        .adv-pending      { background:#fff3cd; color:#856404; }
+        .adv-deducted     { background:#d1e7dd; color:#0a3622; }
+        @@media print {
+            body * { visibility:hidden; }
+            #printArea, #printArea * { visibility:visible; }
+            #printArea { position:absolute; left:0; top:0; width:100%; }
+        }
+    </style>
+
+    <script src="~/js/payroll.js"></script>
+}

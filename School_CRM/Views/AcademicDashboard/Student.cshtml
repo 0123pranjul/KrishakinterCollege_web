@@ -1,0 +1,425 @@
+@{
+    ViewData["Title"] = "Student Dashboard";
+    var sessions  = ViewBag.Sessions  as List<School_CRM.Models.TblAcademicSession> ?? new();
+    int studentId = ViewBag.StudentId ?? 0;
+}
+
+<style>
+    .stat-card { border-radius: 14px; border: none; transition: transform .18s, box-shadow .18s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .chart-card { border-radius: 14px; border: none; }
+    .section-title { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #9aa5b4; margin-bottom: 10px; }
+    .tbl-sm td, .tbl-sm th { padding: 7px 10px; font-size: .82rem; }
+    /* Attendance Calendar */
+    .att-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .att-day { border-radius: 6px; padding: 4px 2px; text-align: center; font-size: .7rem; font-weight: 600; }
+    .att-day.present { background: #d1fae5; color: #065f46; }
+    .att-day.absent  { background: #fee2e2; color: #991b1b; }
+    .att-day.late    { background: #fef3c7; color: #92400e; }
+    .att-day.empty   { background: #f3f4f6; color: #9ca3af; font-weight: 400; }
+    .att-day.header  { background: transparent; color: #6b7280; font-size: .65rem; }
+    /* Timetable */
+    .tt-cell { border-radius: 8px; padding: 6px 10px; font-size: .78rem; font-weight: 600; }
+    .tt-subject { background: #eef0fd; color: #4361ee; }
+    .tt-break   { background: #fef3c7; color: #92400e; }
+    .tt-empty   { background: #f3f4f6; color: #9ca3af; font-weight: 400; }
+    .today-col  { background: #eef0fd !important; }
+    .day-header { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+    /* Report card */
+    .grade-badge { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; }
+    .subject-bar { height: 8px; border-radius: 4px; }
+    .announce-item { border-left: 3px solid #4361ee; padding: 8px 12px; margin-bottom: 8px; background: #f8f9ff; border-radius: 0 8px 8px 0; }
+    .filter-bar { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(0,0,0,.06); margin-bottom: 20px; }
+    .days-left-badge { font-size: .7rem; border-radius: 6px; padding: 2px 7px; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- ── Welcome ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="fas fa-user-graduate me-2 text-primary"></i>Student Dashboard
+            </h4>
+            <small class="text-muted" id="todayLabel">Loading...</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6">
+                <i class="fas fa-user me-1"></i>@ViewBag.UserName
+            </span>
+            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill" id="classLabel">—</span>
+        </div>
+    </div>
+
+    <!-- ── Filter ── -->
+    <div class="filter-bar d-flex gap-3 align-items-end flex-wrap">
+        <div>
+            <label class="form-label small fw-semibold mb-1">Session</label>
+            <select id="selSession" class="form-select form-select-sm" style="min-width:150px" onchange="loadDashboard()">
+                @foreach (var s in sessions) { <option value="@s.SessionId">@s.SessionName</option> }
+            </select>
+        </div>
+        <button class="btn btn-primary btn-sm px-4" onclick="loadDashboard()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- ── Stat Cards ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-success-subtle"><i class="fas fa-user-check text-success"></i></div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0 lh-1" id="cPresent">—</div>
+                        <div class="text-muted small">Present Days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-danger-subtle"><i class="fas fa-user-times text-danger"></i></div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0 lh-1" id="cAbsent">—</div>
+                        <div class="text-muted small">Absent Days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-primary-subtle"><i class="fas fa-percent text-primary"></i></div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0 lh-1" id="cAttPct">—</div>
+                        <div class="text-muted small">Attendance %</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="stat-icon bg-warning-subtle"><i class="fas fa-clipboard-list text-warning"></i></div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0 lh-1" id="cPending">—</div>
+                        <div class="text-muted small">Pending Tasks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Attendance Calendar + Pie ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="section-title mb-0">Attendance Calendar</div>
+                        <small class="text-muted">Last 30 days</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge" style="background:#d1fae5;color:#065f46">Present</span>
+                        <span class="badge" style="background:#fee2e2;color:#991b1b">Absent</span>
+                        <span class="badge" style="background:#fef3c7;color:#92400e">Late</span>
+                    </div>
+                </div>
+                <div class="card-body pt-2">
+                    <div class="att-calendar" id="attCalendar">
+                        <div class="att-day header">Sun</div><div class="att-day header">Mon</div>
+                        <div class="att-day header">Tue</div><div class="att-day header">Wed</div>
+                        <div class="att-day header">Thu</div><div class="att-day header">Fri</div>
+                        <div class="att-day header">Sat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Attendance Summary</div>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <canvas id="attPieChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Today's Timetable + Weekly Timetable ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Today's Classes</div>
+                    <small class="text-muted" id="todayDayLabel"></small>
+                </div>
+                <div class="card-body pt-2" id="todayTT">
+                    <div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Weekly Timetable</div>
+                </div>
+                <div class="card-body p-0 pt-2">
+                    <div class="table-responsive">
+                        <table class="table table-bordered tbl-sm mb-0" style="min-width:700px">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="day-header" style="width:100px">Period</th>
+                                    <th class="day-header text-center">Mon</th>
+                                    <th class="day-header text-center">Tue</th>
+                                    <th class="day-header text-center">Wed</th>
+                                    <th class="day-header text-center">Thu</th>
+                                    <th class="day-header text-center">Fri</th>
+                                    <th class="day-header text-center">Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyTTBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Report Card + Pending Assignments ── -->
+    <div class="row g-3 mb-4">
+        <!-- Report Card -->
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">My Report Card</div>
+                </div>
+                <div class="card-body" id="reportCardSection">
+                    <div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Assignments -->
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Pending Assignments</div>
+                    <a href="/Assignment" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table tbl-sm table-hover mb-0">
+                        <thead class="table-light"><tr><th>Title</th><th>Subject</th><th>Teacher</th><th>Due</th></tr></thead>
+                        <tbody id="assignmentBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Announcements + Study Materials ── -->
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Announcements</div>
+                </div>
+                <div class="card-body" id="announcementList" style="max-height:260px;overflow-y:auto">
+                    <div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Study Materials</div>
+                    <a href="/StudyMaterial" class="btn btn-xs btn-outline-success py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table tbl-sm table-hover mb-0">
+                        <thead class="table-light"><tr><th>Title</th><th>Subject</th><th>Teacher</th><th>File</th></tr></thead>
+                        <tbody id="materialsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let attPie;
+    const studentId = @studentId;
+
+    $(document).ready(() => loadDashboard());
+
+    function loadDashboard() {
+        const sessionId = $('#selSession').val() || 0;
+        $.get('@Url.Action("GetStudentStats","AcademicDashboard")', { studentId, sessionId }, data => {
+            if (data.error) { console.error(data.error); return; }
+
+            $('#todayLabel').text(data.todayDate);
+            $('#todayDayLabel').text(data.todayDayName);
+
+            if (data.mySession) {
+                $('#classLabel').text(`${data.mySession.className} - ${data.mySession.sectionName}`);
+            }
+
+            $('#cPresent').text(data.presentDays);
+            $('#cAbsent').text(data.absentDays);
+            $('#cAttPct').text(data.attPct + '%');
+            $('#cPending').text(data.pendingAssignments?.length ?? 0);
+
+            renderAttCalendar(data.recentAtt);
+            renderAttPie(data.presentDays, data.absentDays, data.lateDays);
+            renderTodayTT(data.todayTT);
+            renderWeeklyTT(data.weeklyTT);
+            renderReportCard(data.reportCard);
+            renderAssignments(data.pendingAssignments);
+            renderAnnouncements(data.announcements);
+            renderMaterials(data.materials);
+        });
+    }
+
+    function renderAttCalendar(attData) {
+        const today = new Date();
+        const from  = new Date(today); from.setDate(today.getDate() - 29);
+        const map   = {};
+        attData.forEach(a => map[a.date] = a.status);
+
+        // pad to start on Sunday
+        const startDow = from.getDay();
+        let html = `<div class="att-day header">Sun</div><div class="att-day header">Mon</div>
+                    <div class="att-day header">Tue</div><div class="att-day header">Wed</div>
+                    <div class="att-day header">Thu</div><div class="att-day header">Fri</div>
+                    <div class="att-day header">Sat</div>`;
+        for (let i = 0; i < startDow; i++) html += `<div class="att-day empty"></div>`;
+
+        for (let i = 0; i < 30; i++) {
+            const d = new Date(from); d.setDate(from.getDate() + i);
+            const key = d.toISOString().split('T')[0];
+            const status = map[key];
+            const cls = status === 'Present' ? 'present' : status === 'Absent' ? 'absent' : status === 'Late' ? 'late' : 'empty';
+            html += `<div class="att-day ${cls}" title="${key}: ${status || 'No data'}">${d.getDate()}</div>`;
+        }
+        $('#attCalendar').html(html);
+    }
+
+    function renderAttPie(present, absent, late) {
+        const ctx = document.getElementById('attPieChart').getContext('2d');
+        if (attPie) attPie.destroy();
+        attPie = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent', 'Late'],
+                datasets: [{ data: [present, absent, late], backgroundColor: ['#2ec4b6','#e63946','#f4a261'], borderWidth: 2 }]
+            },
+            options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+        });
+    }
+
+    function renderTodayTT(list) {
+        if (!list || !list.length) {
+            $('#todayTT').html('<div class="text-center text-muted py-4"><i class="fas fa-calendar-times fa-2x mb-2 d-block opacity-25"></i>No classes today</div>');
+            return;
+        }
+        $('#todayTT').html(list.map(p =>
+            `<div class="d-flex align-items-center gap-2 mb-2">
+                <div class="text-muted small" style="width:80px;flex-shrink:0">${p.startTime}–${p.endTime}</div>
+                <div class="tt-cell ${p.isBrake ? 'tt-break' : 'tt-subject'} flex-grow-1">
+                    ${p.isBrake ? '☕ Break' : `${p.subjectName} <span class="fw-normal text-muted">· ${p.teacherName}</span>`}
+                </div>
+            </div>`
+        ).join(''));
+    }
+
+    function renderWeeklyTT(list) {
+        if (!list || !list.length) { $('#weeklyTTBody').html('<tr><td colspan="7" class="text-center text-muted py-3">No timetable data</td></tr>'); return; }
+        const periods = [...new Map(list.map(t => [t.periodName, { name: t.periodName, seq: t.seqNo, start: t.startTime, end: t.endTime }])).values()].sort((a,b) => a.seq - b.seq);
+        const todayDow = new Date().getDay() || 7;
+        const rows = periods.map(p => {
+            let row = `<tr><td class="fw-semibold small">${p.name}<br><span class="text-muted fw-normal" style="font-size:.7rem">${p.start}–${p.end}</span></td>`;
+            for (let d = 1; d <= 6; d++) {
+                const entry = list.find(t => t.dayOfWeek === d && t.periodName === p.name);
+                const isToday = d === todayDow;
+                if (!entry) row += `<td class="${isToday?'today-col':''}"><span class="tt-cell tt-empty">—</span></td>`;
+                else if (entry.isBrake) row += `<td class="${isToday?'today-col':''}"><span class="tt-cell tt-break">Break</span></td>`;
+                else row += `<td class="${isToday?'today-col':''}"><span class="tt-cell tt-subject">${entry.subjectName}</span><div class="text-muted mt-1" style="font-size:.7rem">${entry.teacherName}</div></td>`;
+            }
+            return row + '</tr>';
+        });
+        $('#weeklyTTBody').html(rows.join(''));
+    }
+
+    function renderReportCard(rc) {
+        if (!rc) {
+            $('#reportCardSection').html('<div class="text-center text-muted py-4"><i class="fas fa-graduation-cap fa-2x mb-2 d-block opacity-25"></i>No published report card yet</div>');
+            return;
+        }
+        const gradeColor = rc.percentage >= 75 ? '#2ec4b6' : rc.percentage >= 50 ? '#f4a261' : '#e63946';
+        let html = `<div class="d-flex align-items-center gap-3 mb-3">
+            <div class="grade-badge" style="background:${gradeColor}20;color:${gradeColor}">${rc.gradeName}</div>
+            <div>
+                <div class="fw-bold fs-5">${rc.percentage.toFixed(1)}%</div>
+                <div class="text-muted small">${rc.obtainedMarks.toFixed(0)} / ${rc.totalMarks.toFixed(0)} marks</div>
+                ${rc.rank ? `<div class="badge bg-warning-subtle text-warning mt-1">Rank #${rc.rank}</div>` : ''}
+            </div>
+        </div>`;
+        rc.subjects.forEach(s => {
+            const pct = s.percentage;
+            const barColor = pct >= 75 ? '#2ec4b6' : pct >= 50 ? '#f4a261' : '#e63946';
+            html += `<div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="fw-semibold">${s.subjectName}</span>
+                    <span>${s.obtainedMarks.toFixed(0)}/${s.maxMarks.toFixed(0)} <span class="badge" style="background:${barColor}20;color:${barColor}">${s.gradeName}</span></span>
+                </div>
+                <div class="progress" style="height:6px;border-radius:4px">
+                    <div class="progress-bar" style="width:${pct}%;background:${barColor};border-radius:4px"></div>
+                </div>
+            </div>`;
+        });
+        $('#reportCardSection').html(html);
+    }
+
+    function renderAssignments(list) {
+        if (!list || !list.length) { $('#assignmentBody').html('<tr><td colspan="4" class="text-center text-muted py-3">No pending assignments</td></tr>'); return; }
+        $('#assignmentBody').html(list.map(a => {
+            const urgency = a.daysLeft <= 1 ? 'bg-danger-subtle text-danger' : a.daysLeft <= 3 ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
+            return `<tr>
+                <td class="fw-semibold">${a.title}</td>
+                <td>${a.subjectName}</td>
+                <td class="text-muted">${a.teacherName}</td>
+                <td><span class="days-left-badge ${urgency}">${a.dueDate}</span></td>
+            </tr>`;
+        }).join(''));
+    }
+
+    function renderAnnouncements(list) {
+        if (!list || !list.length) { $('#announcementList').html('<div class="text-muted text-center py-3">No announcements</div>'); return; }
+        $('#announcementList').html(list.map(a =>
+            `<div class="announce-item">
+                <div class="fw-semibold small">${a.title}</div>
+                <div class="text-muted" style="font-size:.78rem">${a.message.substring(0,80)}${a.message.length>80?'...':''}</div>
+                <div class="text-muted mt-1" style="font-size:.72rem"><i class="fas fa-calendar-alt me-1"></i>${a.date}</div>
+            </div>`
+        ).join(''));
+    }
+
+    function renderMaterials(list) {
+        if (!list || !list.length) { $('#materialsBody').html('<tr><td colspan="4" class="text-center text-muted py-3">No materials</td></tr>'); return; }
+        $('#materialsBody').html(list.map(m =>
+            `<tr>
+                <td class="fw-semibold">${m.title}</td>
+                <td>${m.subjectName}</td>
+                <td class="text-muted">${m.teacherName}</td>
+                <td>${m.hasFile ? `<a href="${m.filePath}" target="_blank" class="badge bg-success-subtle text-success"><i class="fas fa-download me-1"></i>Download</a>` : '<span class="text-muted">—</span>'}</td>
+            </tr>`
+        ).join(''));
+    }
+</script>
+}

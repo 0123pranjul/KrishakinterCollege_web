@@ -1,0 +1,262 @@
+@model School_CRM.Models.ViewModels.IdCardTemplateDto
+@{
+    ViewData["Title"] = Model.TemplateId > 0 ? "Edit ID Card Template" : "Create ID Card Template";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-0 fw-bold text-primary">
+                <i class="bi @(Model.TemplateId > 0 ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                @ViewData["Title"]
+            </h3>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Back to Templates
+        </a>
+    </div>
+
+    <form asp-action="CreateOrEdit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="TemplateId" />
+        <input type="hidden" asp-for="BackgroundFrontPath" />
+        <input type="hidden" asp-for="BackgroundBackPath" />
+        <input type="hidden" asp-for="SchoolLogoPath" />
+        <input type="hidden" asp-for="PrincipalSignaturePath" />
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-dark fw-semibold"><i class="bi bi-info-circle me-2 text-primary"></i> Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="TemplateName" class="form-label fw-medium"></label>
+                                <input asp-for="TemplateName" class="form-control" placeholder="e.g. Standard Student ID" required />
+                                <span asp-validation-for="TemplateName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Orientation" class="form-label fw-medium"></label>
+                                <select asp-for="Orientation" class="form-select">
+                                    <option value="Vertical">Vertical (Portrait)</option>
+                                    <option value="Horizontal">Horizontal (Landscape)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ThemeColor" class="form-label fw-medium"></label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="colorPicker" value="@(Model.ThemeColor ?? "#0d6efd")" title="Choose your color">
+                                    <input asp-for="ThemeColor" class="form-control" placeholder="#HexColor" id="hexInput" />
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-check form-switch mt-4 pt-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsActive">
+                                    <label class="form-check-label fw-medium" asp-for="IsActive">Set as Active</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-dark fw-semibold"><i class="bi bi-building me-2 text-primary"></i> School Details (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">If left blank, global school settings will be used (if applicable). Use these to override info for branch-specific cards.</p>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="SchoolName" class="form-label fw-medium"></label>
+                                <input asp-for="SchoolName" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="SchoolContact" class="form-label fw-medium"></label>
+                                <input asp-for="SchoolContact" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="SchoolAddress" class="form-label fw-medium"></label>
+                                <input asp-for="SchoolAddress" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-dark fw-semibold"><i class="bi bi-gear me-2 text-primary"></i> Advanced Field Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">Select which fields should be visible on this ID card template.</p>
+                        
+                        <input type="hidden" asp-for="FieldsConfigJson" id="FieldsConfigJson" />
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="ShowDOB" data-key="ShowDOB">
+                                    <label class="form-check-label" for="ShowDOB">Date of Birth</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="ShowBloodGroup" data-key="ShowBloodGroup">
+                                    <label class="form-check-label" for="ShowBloodGroup">Blood Group</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="ShowFatherName" data-key="ShowFatherName">
+                                    <label class="form-check-label" for="ShowFatherName">Father's Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="ShowAddress" data-key="ShowAddress">
+                                    <label class="form-check-label" for="ShowAddress">Address</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="ShowPhone" data-key="ShowPhone">
+                                    <label class="form-check-label" for="ShowPhone">Phone Number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input field-toggle" type="checkbox" id="EnableQrCode" data-key="EnableQrCode">
+                                    <label class="form-check-label text-primary fw-bold" for="EnableQrCode">Generate QR Code</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-dark fw-semibold"><i class="bi bi-images me-2 text-primary"></i> Assets</h5>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Front Background -->
+                        <div class="mb-4">
+                            <label asp-for="BackgroundFrontFile" class="form-label fw-medium"></label>
+                            <input asp-for="BackgroundFrontFile" class="form-control form-control-sm mb-2" type="file" accept="image/*" />
+                            @if(!string.IsNullOrEmpty(Model.BackgroundFrontPath))
+                            {
+                                <div class="position-relative border rounded p-1 text-center bg-light">
+                                    <img src="@Model.BackgroundFrontPath" class="img-fluid" style="max-height: 100px;" />
+                                    <span class="badge bg-success position-absolute top-0 end-0 m-1">Current</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Back Background -->
+                        <div class="mb-4">
+                            <label asp-for="BackgroundBackFile" class="form-label fw-medium"></label>
+                            <input asp-for="BackgroundBackFile" class="form-control form-control-sm mb-2" type="file" accept="image/*" />
+                            @if(!string.IsNullOrEmpty(Model.BackgroundBackPath))
+                            {
+                                <div class="position-relative border rounded p-1 text-center bg-light">
+                                    <img src="@Model.BackgroundBackPath" class="img-fluid" style="max-height: 100px;" />
+                                    <span class="badge bg-success position-absolute top-0 end-0 m-1">Current</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- School Logo -->
+                        <div class="mb-4">
+                            <label asp-for="SchoolLogoFile" class="form-label fw-medium"></label>
+                            <input asp-for="SchoolLogoFile" class="form-control form-control-sm mb-2" type="file" accept="image/*" />
+                            @if(!string.IsNullOrEmpty(Model.SchoolLogoPath))
+                            {
+                                <div class="position-relative border rounded p-1 text-center bg-light">
+                                    <img src="@Model.SchoolLogoPath" class="img-fluid" style="max-height: 80px;" />
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Principal Signature -->
+                        <div class="mb-4">
+                            <label asp-for="PrincipalSignatureFile" class="form-label fw-medium"></label>
+                            <input asp-for="PrincipalSignatureFile" class="form-control form-control-sm mb-2" type="file" accept="image/*" />
+                            @if(!string.IsNullOrEmpty(Model.PrincipalSignaturePath))
+                            {
+                                <div class="position-relative border rounded p-1 text-center bg-light">
+                                    <img src="@Model.PrincipalSignaturePath" class="img-fluid" style="max-height: 60px;" />
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill shadow-sm py-2 fs-5">
+                        <i class="bi bi-save me-1"></i> Save Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Sync color picker with hex input
+        const colorPicker = document.getElementById('colorPicker');
+        const hexInput = document.getElementById('hexInput');
+        
+        colorPicker.addEventListener('input', function() {
+            hexInput.value = this.value;
+        });
+        hexInput.addEventListener('input', function() {
+            if(/^#[0-9A-F]{6}$/i.test(this.value)) {
+                colorPicker.value = this.value;
+            }
+        });
+
+        // Parse and sync JSON config
+        const jsonInput = document.getElementById('FieldsConfigJson');
+        let config = {};
+        try {
+            if(jsonInput.value) {
+                config = JSON.parse(jsonInput.value);
+            } else {
+                // Default config
+                config = {
+                    ShowDOB: true,
+                    ShowBloodGroup: true,
+                    ShowFatherName: true,
+                    ShowAddress: false,
+                    ShowPhone: false,
+                    EnableQrCode: true
+                };
+            }
+        } catch(e) {
+            console.error("Error parsing JSON config", e);
+        }
+
+        // Set checkboxes initially
+        document.querySelectorAll('.field-toggle').forEach(chk => {
+            const key = chk.getAttribute('data-key');
+            if(config[key]) {
+                chk.checked = true;
+            }
+            
+            // Listen for changes
+            chk.addEventListener('change', function() {
+                config[key] = this.checked;
+                jsonInput.value = JSON.stringify(config);
+            });
+        });
+        
+        // Initial set of input
+        jsonInput.value = JSON.stringify(config);
+    </script>
+}

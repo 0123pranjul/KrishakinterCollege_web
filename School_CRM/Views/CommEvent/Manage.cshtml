@@ -1,0 +1,114 @@
+@model List<School_CRM.Models.CommEvent>
+@{
+    ViewData["Title"] = "Manage Events";
+    string? eventType = ViewBag.EventType as string;
+    int year = ViewBag.Year is int y ? y : DateTime.Today.Year;
+
+    var typeColors = new Dictionary<string, string>
+    {
+        ["Holiday"]  = "bg-danger",
+        ["Exam"]     = "bg-warning text-dark",
+        ["PTM"]      = "bg-primary",
+        ["Function"] = "bg-purple",
+        ["Sports"]   = "bg-success",
+        ["Workshop"] = "bg-info text-dark",
+        ["Meeting"]  = "bg-dark",
+        ["Other"]    = "bg-secondary"
+    };
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-calendar-check text-primary me-2"></i>Manage Events</h2>
+            <small class="text-muted">@Model.Count event(s)</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Calendar" class="btn btn-outline-primary"><i class="fas fa-calendar-alt me-1"></i>Calendar View</a>
+            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Event</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Event Type</label>
+                    <select name="eventType" class="form-select">
+                        <option value="">All Types</option>
+                        @foreach (var t in new[] { "Holiday","Exam","PTM","Function","Sports","Workshop","Meeting","Other" })
+                        {
+                            if (eventType == t) { <option value="@t" selected>@t</option> }
+                            else { <option value="@t">@t</option> }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Year</label>
+                    <input type="number" name="year" class="form-control" value="@year" min="2020" max="2099" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Event</th><th>Type</th><th>Start Date</th><th>End Date</th><th>Venue</th><th>Target</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any()) { <tr><td colspan="8" class="text-center text-muted py-4">No events found.</td></tr> }
+                        @foreach (var e in Model)
+                        {
+                            var badgeClass = typeColors.GetValueOrDefault(e.EventType, "bg-secondary");
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded" style="width:12px;height:12px;background:@e.Color;flex-shrink:0;"></div>
+                                        <span class="fw-semibold">@e.EventTitle</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(e.Description))
+                                    {
+                                        <small class="text-muted d-block">@e.Description.Substring(0, Math.Min(50, e.Description.Length))@(e.Description.Length > 50 ? "..." : "")</small>
+                                    }
+                                </td>
+                                <td><span class="badge @badgeClass">@e.EventType</span></td>
+                                <td>@e.StartDate.ToString("dd/MM/yyyy")</td>
+                                <td>@e.EndDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-muted small">@(e.Venue ?? "-")</td>
+                                <td><span class="badge bg-light text-dark border small">@e.TargetType</span></td>
+                                <td>
+                                    <span class="badge @(e.IsPublished ? "bg-success" : "bg-secondary")">
+                                        @(e.IsPublished ? "Published" : "Hidden")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@e.EventId" class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@e.EventId" method="post"
+                                              onsubmit="return confirm('Remove this event from calendar?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger" title="Remove">
+                                                <i class="fas fa-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

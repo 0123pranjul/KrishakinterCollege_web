@@ -1,0 +1,105 @@
+@* Notification Bell — include in _Layout.cshtml header area *@
+@* Usage: @await Html.PartialAsync("_NotificationBell") *@
+
+<div class="dropdown" id="notiBellWrapper">
+    <button class="header-btn position-relative" id="notiBellBtn"
+            data-bs-toggle="dropdown" aria-expanded="false"
+            onclick="loadNotifications()" title="Notifications">
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+              id="notiBadge"></span>
+    </button>
+
+    <div class="dropdown-menu dropdown-menu-end shadow border-0 p-0"
+         style="width:340px;max-height:480px;overflow-y:auto;" id="notiDropdown">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light">
+            <span class="fw-bold small">Notifications</span>
+            <button onclick="markAllRead()" class="btn btn-xs btn-link text-muted p-0 small">
+                Mark all read
+            </button>
+        </div>
+        <div id="notiList">
+            <div class="text-center text-muted py-3 small">Loading...</div>
+        </div>
+        <div class="border-top text-center py-2">
+            <a href="/Communication/Notifications" class="small text-primary">View all notifications</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Poll every 30 seconds
+    (function pollUnreadCount() {
+        fetch('/Communication/Notification/UnreadCount')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('notiBadge');
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            })
+            .catch(() => {});
+        setTimeout(pollUnreadCount, 30000);
+    })();
+
+    async function loadNotifications() {
+        const list = document.getElementById('notiList');
+        list.innerHTML = '<div class="text-center text-muted py-3 small">Loading...</div>';
+        try {
+            const resp = await fetch('/Communication/Notification/Recent');
+            const data = await resp.json();
+            if (!data.length) {
+                list.innerHTML = '<div class="text-center text-muted py-3 small">No notifications</div>';
+                return;
+            }
+            const icons = {
+                FeeReminder: 'fa-rupee-sign text-warning',
+                FeeReceived: 'fa-rupee-sign text-success',
+                BookOverdue: 'fa-book text-danger',
+                BookIssued:  'fa-book text-info',
+                Emergency:   'fa-exclamation-triangle text-danger',
+                HomeworkAssigned: 'fa-tasks text-primary',
+                ResultPublished:  'fa-graduation-cap text-success',
+                LowStock:    'fa-boxes text-warning',
+                MessageReceived: 'fa-envelope text-primary',
+            };
+            list.innerHTML = data.map(n => {
+                const icon = icons[n.notificationType] || 'fa-bell text-secondary';
+                const timeAgo = getTimeAgo(new Date(n.timeAgo));
+                return `<a href="${n.redirectUrl || '#'}"
+                           onclick="markRead(${n.notificationId})"
+                           class="d-flex align-items-start px-3 py-2 border-bottom text-decoration-none text-dark ${!n.isRead ? 'bg-light' : ''}">
+                    <i class="fas ${icon} mt-1 me-2" style="width:16px;"></i>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="small fw-${!n.isRead ? 'bold' : 'normal'} text-truncate">${n.title}</div>
+                        <div class="text-muted" style="font-size:.75rem;">${timeAgo}</div>
+                    </div>
+                    ${n.priority === 'Emergency' ? '<span class="badge bg-danger ms-1" style="font-size:.6rem;">!</span>' : ''}
+                </a>`;
+            }).join('');
+        } catch (e) {
+            list.innerHTML = '<div class="text-center text-muted py-3 small">Failed to load</div>';
+        }
+    }
+
+    async function markRead(id) {
+        await fetch(`/Communication/Notification/MarkRead/${id}`, { method: 'POST' });
+    }
+
+    async function markAllRead() {
+        await fetch('/Communication/Notification/MarkAllRead', { method: 'POST' });
+        document.getElementById('notiBadge').classList.add('d-none');
+        document.getElementById('notiList').querySelectorAll('.bg-light').forEach(el => el.classList.remove('bg-light'));
+    }
+
+    function getTimeAgo(date) {
+        const diff = Math.floor((Date.now() - date) / 1000);
+        if (diff < 60)   return diff + 's ago';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+    }
+</script>

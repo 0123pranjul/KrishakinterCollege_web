@@ -1,0 +1,50 @@
+@model School_CRM.Models.TblSection
+
+<form id="sectionForm"
+      asp-action="CreateOrEdit"
+      asp-controller="Section"
+      asp-route-id="@Model.SectionId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="SectionId" />
+
+    <div class="row g-3">
+
+        <!-- Section Name -->
+        <div class="col-12">
+            <label asp-for="SectionName" class="form-label fw-semibold">
+                Section Name <span class="text-danger">*</span>
+            </label>
+            <input asp-for="SectionName"
+                   class="form-control"
+                   placeholder="e.g. A, B, C ..." />
+            <span asp-validation-for="SectionName" class="text-danger small"></span>
+        </div>
+
+        <!-- IsActive Dropdown -->
+        <div class="col-12">
+            <label asp-for="IsActive" class="form-label fw-semibold">
+                Status <span class="text-danger">*</span>
+            </label>
+            <select asp-for="IsActive" class="form-select">
+                <option value="">-- Select Status --</option>
+                <option value="true"  selected="@(Model.IsActive == true  ? "selected" : null)">Active</option>
+                <option value="false" selected="@(Model.IsActive == false ? "selected" : null)">Inactive</option>
+            </select>
+            <span asp-validation-for="IsActive" class="text-danger small"></span>
+        </div>
+
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="modal-footer px-0 pb-0 mt-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" id="btnSave" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Section
+        </button>
+    </div>
+
+</form>

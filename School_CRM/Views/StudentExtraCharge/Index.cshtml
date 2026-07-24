@@ -1,0 +1,379 @@
+﻿@{
+    ViewData["Title"] = "Student Extra Charges";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-receipt me-2 text-primary"></i>Student Extra Charges
+                    </h3>
+                    <button class="btn btn-sm btn-primary" onclick="loadChargeModal(0)">
+                        <i class="fas fa-plus"></i> Add Extra Charge
+                    </button>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="card-body border-bottom pb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Filter by Session</label>
+                            <select id="filterSession" class="form-select form-select-sm">
+                                <option value="">All Sessions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Filter by Student</label>
+                            <input type="text" id="filterStudent"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search student name..." />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Payment Status</label>
+                            <select id="filterPaid" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold mb-1">Fee Type</label>
+                            <select id="filterFeeType" class="form-select form-select-sm">
+                                <option value="">All Types</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="chargeTable" class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student</th>
+                                    <th>Session</th>
+                                    <th>Fee Type</th>
+                                    <th>Amount</th>
+                                    <th>Charge Date</th>
+                                    <th>Reason</th>
+                                    <th>Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary Footer -->
+                <div class="card-footer bg-light">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <small class="text-muted">Total Charges</small>
+                            <h5 class="mb-0 text-primary" id="summaryTotal">0</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Pending</small>
+                            <h5 class="mb-0 text-danger" id="summaryPending">0</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Paid</small>
+                            <h5 class="mb-0 text-success" id="summaryPaid">0</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Total Amount</small>
+                            <h5 class="mb-0 text-warning" id="summaryAmount">₹0.00</h5>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="chargeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus me-2"></i>Add Extra Charge
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="chargeModalBody">
+                @* Content loaded dynamically via AJAX *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Extra Charge Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+        loadDataTable();
+        });
+
+        // ── DataTable ─────────────────────────────────────────────────────────
+        function loadDataTable() {
+        table = $('#chargeTable').DataTable({
+        ajax: {
+        url: '@Url.Action("GetAll", "StudentExtraCharge")',
+        type: 'GET',
+        dataSrc: function (json) {
+        loadFilterDropdowns(json.data);
+        updateSummary(json.data);
+        return json.data;
+        }
+        },
+        columns: [
+        {
+        data: null, width: '4%', className: 'text-center',
+        render: function (data, type, row, meta) { return meta.row + meta.settings._iDisplayStart + 1; }
+        },
+        { data: 'studentName', width: '15%' },
+        { data: 'sessionName', width: '10%', className: 'text-center' },
+        { data: 'feeName',     width: '12%' },
+        {
+        data: 'amount', width: '9%', className: 'text-end fw-semibold',
+        render: function (data) {
+        return '<span class="text-danger">' + data + '</span>';
+        }
+        },
+        { data: 'chargeDate',  width: '10%', className: 'text-center' },
+        {
+        data: 'reason', width: '15%',
+        render: function (data) {
+        if (!data || data === '-') return '-';
+        return data.length > 30
+        ? `<span title="${data}">${data.substring(0, 30)}...</span>`
+        : data;
+        }
+        },
+        {
+        data: 'isPaid', width: '8%', className: 'text-center',
+        render: function (data, type, row) {
+        if (data === 'Paid') {
+        return '<span class="badge bg-success">Paid</span>';
+        }
+        return `<button class="btn btn-xs btn-outline-warning markpaid-btn px-2 py-0"
+        data-id="${row.id}" title="Mark as Paid" style="font-size:11px">
+        <i class="fas fa-check"></i> Pending
+        </button>`;
+        }
+        },
+        {
+        data: 'id', width: '17%', className: 'text-center',
+        render: function (data) {
+        return `<div class="btn-group btn-group-sm">
+        <button class="btn btn-info edit-btn" title="Edit" data-id="${data}">
+        <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-success view-btn" title="View" data-id="${data}">
+        <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn btn-danger delete-btn" title="Delete" data-id="${data}">
+        <i class="fas fa-trash"></i>
+        </button>
+        </div>`;
+        }
+        }
+        ],
+        language: { emptyTable: "No extra charges found" },
+        order: [],
+        columnDefs: [{ orderable: false, targets: 0 }],
+        drawCallback: function () {
+        updateSummary(this.api().rows({ filter: 'applied' }).data().toArray());
+        },
+        initComplete: function () {
+        $('#filterStudent').on('keyup', function () {
+        table.column(1).search($(this).val()).draw();
+        });
+        $('#filterSession').on('change', function () {
+        table.column(2).search($(this).val()).draw();
+        });
+        $('#filterFeeType').on('change', function () {
+        table.column(3).search($(this).val()).draw();
+        });
+        $('#filterPaid').on('change', function () {
+        table.column(7).search($(this).val()).draw();
+        });
+        }
+        });
+        }
+
+        // ── Filter Dropdowns ──────────────────────────────────────────────────
+        function loadFilterDropdowns(data) {
+        var sessions = [...new Map(data.map(d => [d.sessionName, d])).values()];
+        var feeTypes = [...new Map(data.map(d => [d.feeName,     d])).values()];
+        sessions.forEach(d => $('#filterSession').append(`<option value="${d.sessionName}">${d.sessionName}</option>`));
+        feeTypes.forEach(d => $('#filterFeeType').append(`<option value="${d.feeName}">${d.feeName}</option>`));
+        }
+
+        function resetFilters() {
+        $('#filterStudent').val('');
+        $('#filterSession, #filterFeeType, #filterPaid').val('');
+        table.columns().search('').draw();
+        }
+
+        // ── Summary Footer ────────────────────────────────────────────────────
+        function updateSummary(data) {
+        var pending = data.filter(d => d.isPaid === 'Pending');
+        var paid    = data.filter(d => d.isPaid === 'Paid');
+
+        // Calculate total amount from raw string e.g. "₹500.00"
+        var total = data.reduce((sum, d) => {
+        var amt = parseFloat((d.amount || '0').replace('₹', '')) || 0;
+        return sum + amt;
+        }, 0);
+
+        $('#summaryTotal')  .text(data.length);
+        $('#summaryPending').text(pending.length);
+        $('#summaryPaid')   .text(paid.length);
+        $('#summaryAmount') .text('₹' + total.toFixed(2));
+        }
+
+        // ── Load Modal ────────────────────────────────────────────────────────
+        function loadChargeModal(id) {
+        $.ajax({
+        url: '@Url.Action("CreateOrEdit", "StudentExtraCharge")/' + id,
+        type: 'GET',
+        success: function (data) {
+        $('#chargeModalBody').html(data);
+        $('#modalTitle').html(id == 0
+        ? '<i class="fas fa-plus me-2"></i>Add Extra Charge'
+        : '<i class="fas fa-edit me-2"></i>Edit Extra Charge');
+
+        var form = $('#extraChargeForm');
+        form.removeData('validator');
+        form.removeData('unobtrusiveValidation');
+        $.validator.unobtrusive.parse(form);
+
+        $('#chargeModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load form!'); }
+        });
+        }
+
+        // ── Mark Paid Quick Action ────────────────────────────────────────────
+        $(document).on('click', '.markpaid-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({
+        title: 'Mark as Paid?',
+        text: 'Is charge ko paid mark karna chahte ho?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Mark Paid!'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post('@Url.Action("MarkPaid", "StudentExtraCharge")', { id: id }, function (data) {
+        if (data.success) {
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+        });
+
+        // ── Edit / View / Delete ──────────────────────────────────────────────
+        $(document).on('click', '.edit-btn', function () {
+        loadChargeModal($(this).data('id'));
+        });
+
+        $(document).on('click', '.view-btn', function () {
+        $.ajax({
+        url: '@Url.Action("View", "StudentExtraCharge")/' + $(this).data('id'),
+        type: 'GET',
+        success: function (data) {
+        $('#viewModalContent').html(data);
+        $('#viewModal').modal('show');
+        },
+        error: function () { toastr.error('Failed to load details!'); }
+        });
+        });
+
+        $(document).on('click', '.delete-btn', function () {
+        var id = $(this).data('id');
+        Swal.fire({
+        title: 'Delete Extra Charge?',
+        text: 'Yeh extra charge permanently remove ho jaayega!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post('@Url.Action("Delete", "StudentExtraCharge")', { id: id }, function (data) {
+        if (data.success) {
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+        });
+
+        // ── Save ──────────────────────────────────────────────────────────────
+        $(document).on('click', '#btnSave', function () {
+        var form = $('#extraChargeForm');
+        if (form.valid()) {
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        $.post(form.attr('action'), form.serialize(), function (data) {
+        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Charge');
+        if (data.success) {
+        $('#chargeModal').modal('hide');
+        table.ajax.reload(null, false);
+        toastr.success(data.message);
+        } else {
+        toastr.error(data.message);
+        }
+        });
+        }
+        });
+    </script>
+}

@@ -1,0 +1,318 @@
+@model ScheduleViewModel?
+@using School_CRM.Models.ViewModels
+@{
+    ViewData["Title"] = "Teacher Weekly Schedule";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    bool isSuperAdmin      = ViewBag.IsSuperAdmin == true;
+    int  selectedTeacherId = (int)(ViewBag.SelectedTeacherId ?? 0);
+    int  selectedSessionId = (int)(ViewBag.SelectedSessionId ?? 0);
+
+    var sessions = (List<School_CRM.Models.TblAcademicSession>)ViewBag.Sessions;
+    var teachers = isSuperAdmin
+        ? (List<School_CRM.Models.TblTeacher>)ViewBag.Teachers
+        : null;
+
+    string[] dayColors = { "", "#4361ee", "#3a86ff", "#06d6a0", "#f77f00", "#e63946", "#7209b7" };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">
+            <i class="fas fa-calendar-week me-2 text-primary"></i>Teacher Weekly Schedule
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+                <li class="breadcrumb-item active">Teacher Schedule</li>
+            </ol>
+        </nav>
+    </div>
+    @if (Model != null)
+    {
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Print
+        </button>
+    }
+</div>
+
+@* ── Filter Bar ── *@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="get" asp-action="Index" id="filterForm" class="row g-3 align-items-end">
+
+            @if (isSuperAdmin && teachers != null)
+            {
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold mb-1">
+                        <i class="fas fa-chalkboard-teacher me-1 text-primary"></i>Select Teacher
+                    </label>
+                    <select name="teacherId" class="form-select" id="teacherSelect">
+                        <option value="">-- Select Teacher --</option>
+                        @foreach (var t in teachers)
+                        {
+                            <option value="@t.TeacherId"
+                                    selected="@(selectedTeacherId == t.TeacherId ? "selected" : null)">
+                                @t.TeacherName @(t.Designation != null ? "(" + t.Designation + ")" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">
+                    <i class="fas fa-calendar-alt me-1 text-primary"></i>Academic Session
+                </label>
+                <select name="sessionId" class="form-select" id="sessionSelect">
+                    <option value="">-- Select Session --</option>
+                    @foreach (var s in sessions)
+                    {
+                        <option value="@s.SessionId"
+                                selected="@(selectedSessionId == s.SessionId ? "selected" : null)">
+                            @s.SessionName
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i> View
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@* ── No selection state ── *@
+@if (Model == null)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-calendar-week fa-4x mb-3 opacity-25"></i>
+            <h5>Select @(isSuperAdmin ? "a teacher and " : "")a session to view the weekly schedule</h5>
+            <p class="mb-0 small">The schedule will show all periods across Monday to Saturday</p>
+        </div>
+    </div>
+}
+else
+{
+    @* ── Teacher Info + Stats ── *@
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                         style="width:56px;height:56px;font-size:22px;font-weight:700;">
+                        @Model.TeacherName.Substring(0, 1).ToUpper()
+                    </div>
+                </div>
+                <div class="col">
+                    <h5 class="mb-0 fw-bold">@Model.TeacherName</h5>
+                    @if (!string.IsNullOrEmpty(Model.TeacherDesignation))
+                    {
+                        <span class="text-muted small">@Model.TeacherDesignation</span>
+                    }
+                </div>
+                <div class="col-auto">
+                    <div class="text-center px-3 border-start">
+                        <div class="fs-3 fw-bold text-primary">@Model.TotalPeriodsWeek</div>
+                        <div class="text-muted small">Total Periods / Week</div>
+                    </div>
+                </div>
+                @foreach (var ds in Model.DayStats)
+                {
+                    <div class="col-auto d-none d-md-block">
+                        <div class="text-center px-2 border-start">
+                            <div class="fs-5 fw-bold" style="color:@dayColors[ds.DayNumber]">@ds.TotalSlots</div>
+                            <div class="text-muted" style="font-size:11px;">@ds.DayShort</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── Weekly Grid ── *@
+    <div class="card border-0 shadow-sm" id="scheduleCard">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">
+                <i class="fas fa-table me-2 text-primary"></i>Weekly Timetable
+            </h6>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                @{
+                    var sess = sessions.FirstOrDefault(s => s.SessionId == Model.SessionId);
+                }
+                Session: @(sess?.SessionName ?? "")
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0 schedule-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center align-middle bg-light" style="min-width:110px;width:130px;">
+                                <div class="fw-semibold">Period</div>
+                                <div class="text-muted" style="font-size:11px;">Time</div>
+                            </th>
+                            @for (int d = 1; d <= 6; d++)
+                            {
+                                var ds = Model.DayStats.FirstOrDefault(x => x.DayNumber == d);
+                                <th class="text-center align-middle day-header" style="min-width:130px;">
+                                    <div class="fw-bold" style="color:@dayColors[d]">@ds?.DayName</div>
+                                    <div class="badge mt-1" style="background:@dayColors[d];font-size:10px;">
+                                        @ds?.TotalSlots period@(ds?.TotalSlots != 1 ? "s" : "")
+                                    </div>
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.PeriodRows)
+                        {
+                            if (row.IsBrake)
+                            {
+                                <tr class="break-row">
+                                    <td class="text-center align-middle bg-warning-subtle py-2">
+                                        <div class="fw-semibold text-warning-emphasis small">
+                                            <i class="fas fa-coffee me-1"></i>@row.PeriodName
+                                        </div>
+                                        <div class="text-muted" style="font-size:10px;">
+                                            @row.StartTime – @row.EndTime
+                                        </div>
+                                    </td>
+                                    <td colspan="6" class="text-center align-middle bg-warning-subtle text-warning-emphasis fw-semibold">
+                                        <i class="fas fa-pause-circle me-1"></i> Break Time
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td class="text-center align-middle bg-light py-2" style="border-right:2px solid #dee2e6;">
+                                        <div class="fw-bold text-dark small">@row.PeriodName</div>
+                                        <div class="text-muted" style="font-size:10px;">@row.StartTime</div>
+                                        <div class="text-muted" style="font-size:10px;">@row.EndTime</div>
+                                    </td>
+                                    @foreach (var cell in row.Cells)
+                                    {
+                                        if (cell.HasEntry)
+                                        {
+                                            <td class="align-middle p-0">
+                                                <div class="schedule-cell filled h-100 p-2"
+                                                     style="border-left:3px solid @dayColors[cell.DayNumber];">
+                                                    <div class="subject-name fw-semibold text-dark small">
+                                                        <i class="fas fa-book-open me-1 text-primary" style="font-size:10px;"></i>@cell.SubjectName
+                                                    </div>
+                                                    <div class="class-info mt-1">
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                                                              style="font-size:10px;">
+                                                            Class @cell.ClassName – @cell.SectionName
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td class="align-middle text-center text-muted" style="background:#fafafa;">
+                                                <span style="font-size:18px;opacity:0.2;">—</span>
+                                            </td>
+                                        }
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* ── Day-wise Summary Cards ── *@
+    <div class="row g-3 mt-3">
+        @foreach (var ds in Model.DayStats)
+        {
+            var dayPeriods = Model.PeriodRows
+                .Where(r => !r.IsBrake)
+                .SelectMany(r => r.Cells.Where(c => c.DayNumber == ds.DayNumber && c.HasEntry))
+                .ToList();
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header py-2 text-white text-center"
+                         style="background:@dayColors[ds.DayNumber];">
+                        <strong>@ds.DayName</strong>
+                        <span class="badge bg-white ms-1" style="color:@dayColors[ds.DayNumber];font-size:11px;">
+                            @ds.TotalSlots
+                        </span>
+                    </div>
+                    <div class="card-body p-2">
+                        @if (!dayPeriods.Any())
+                        {
+                            <div class="text-center text-muted py-2 small">No classes</div>
+                        }
+                        else
+                        {
+                            @foreach (var cell in dayPeriods)
+                            {
+                                var periodRow = Model.PeriodRows.FirstOrDefault(r => r.Cells.Contains(cell));
+                                <div class="mb-2 p-2 rounded" style="background:#f8f9fa;border-left:3px solid @dayColors[ds.DayNumber];">
+                                    <div class="fw-semibold" style="font-size:11px;">@cell.SubjectName</div>
+                                    <div class="text-muted" style="font-size:10px;">
+                                        Class @cell.ClassName-@cell.SectionName
+                                        @if (periodRow != null)
+                                        {
+                                            <span> · @periodRow.PeriodName</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .schedule-table th {
+        background: #f8f9fa;
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+    .schedule-table td {
+        vertical-align: middle;
+        font-size: 12px;
+    }
+    .schedule-cell.filled {
+        background: #fff;
+        transition: background 0.15s;
+        min-height: 60px;
+    }
+    .schedule-cell.filled:hover {
+        background: #f0f4ff;
+    }
+    .day-header { padding: 10px 6px; }
+
+    @@media print {
+        .btn, form, nav, .breadcrumb, #filterForm { display: none !important; }
+        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+        .schedule-table { font-size: 10px; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Auto-submit when teacher or session changes
+        document.getElementById('teacherSelect')?.addEventListener('change', function () {
+            document.getElementById('filterForm').submit();
+        });
+        document.getElementById('sessionSelect')?.addEventListener('change', function () {
+            document.getElementById('filterForm').submit();
+        });
+    </script>
+}

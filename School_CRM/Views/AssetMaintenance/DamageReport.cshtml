@@ -1,0 +1,80 @@
+@model School_CRM.Models.DTOs.DamageLossReportDto
+@{ ViewData["Title"] = "Report Damage / Loss"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Report Damage / Loss</h2>
+            @if (!string.IsNullOrEmpty(Model.AssetTag)) { <small class="text-muted">Asset Tag: <code>@Model.AssetTag</code> — @Model.AssetName</small> }
+        </div>
+        <a asp-controller="AssetDashboard" asp-action="Admin" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> This will create a formal damage/loss report and may affect asset availability.
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="DamageReport" asp-route-unitId="@Model.UnitId" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="UnitId" type="hidden" />
+                        <input asp-for="ReportedBy" type="hidden" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="ReportType" class="form-label fw-semibold">Report Type <span class="text-danger">*</span></label>
+                                <select asp-for="ReportType" class="form-select">
+                                    <option value="">Select Type</option>
+                                    <option value="Damage">Damage</option>
+                                    <option value="Loss">Loss</option>
+                                    <option value="Theft">Theft</option>
+                                </select>
+                                <span asp-validation-for="ReportType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ReportDate" class="form-label fw-semibold">Report Date</label>
+                                <input asp-for="ReportDate" type="date" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Describe what happened..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EstimatedLoss" class="form-label fw-semibold">Estimated Loss (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input asp-for="EstimatedLoss" type="number" step="0.01" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="FineImposed" class="form-label fw-semibold">Fine Imposed (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input asp-for="FineImposed" type="number" step="0.01" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Remarks" class="form-label fw-semibold">Remarks</label>
+                                <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-danger px-4"
+                                    onclick="return confirm('Submit this damage/loss report?')">
+                                <i class="fas fa-file-alt me-2"></i>Submit Report
+                            </button>
+                            <a asp-controller="AssetDashboard" asp-action="Admin" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

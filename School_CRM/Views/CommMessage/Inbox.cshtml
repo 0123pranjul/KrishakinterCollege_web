@@ -1,0 +1,52 @@
+@model List<School_CRM.Models.CommMessageThread>
+@{
+    ViewData["Title"] = "Messages";
+    var unreadCounts = ViewBag.UnreadCounts as Dictionary<int, int> ?? new();
+    string myType = ViewBag.MyType ?? "";
+    int myId = ViewBag.MyId;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-envelope text-primary me-2"></i>Messages</h2>
+        <a asp-action="Compose" class="btn btn-primary"><i class="fas fa-pen me-1"></i>New Message</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-envelope-open fa-3x mb-3 opacity-25"></i>
+            <p>No messages yet. <a asp-action="Compose">Start a conversation</a></p>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @foreach (var thread in Model)
+            {
+                var unread = unreadCounts.GetValueOrDefault(thread.ThreadId, 0);
+                var otherType = thread.InitiatorType == myType ? thread.RecipientType : thread.InitiatorType;
+                var otherId   = thread.InitiatorType == myType ? thread.RecipientId   : thread.InitiatorId;
+
+                <a asp-action="Thread" asp-route-threadId="@thread.ThreadId"
+                   class="d-flex align-items-center p-3 border-bottom text-decoration-none text-dark @(unread > 0 ? "bg-light" : "")">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                         style="width:42px;height:42px;font-size:1.1rem;flex-shrink:0;">
+                        <i class="fas @(otherType == "Student" ? "fa-user-graduate" : otherType == "Teacher" ? "fa-chalkboard-teacher" : "fa-user-shield")"></i>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-@(unread > 0 ? "bold" : "semibold")">@otherType #@otherId</span>
+                            <small class="text-muted">@thread.LastMessageAt.ToString("dd/MM HH:mm")</small>
+                        </div>
+                        <div class="text-muted small text-truncate">@(thread.Subject ?? "No subject")</div>
+                    </div>
+                    @if (unread > 0)
+                    {
+                        <span class="badge bg-primary rounded-pill ms-2">@unread</span>
+                    }
+                </a>
+            }
+        </div>
+    </div>
+</div>

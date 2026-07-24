@@ -1,0 +1,123 @@
+@model List<object>
+@{
+    ViewData["Title"] = "Asset Reports";
+    string tab    = ViewBag.Tab ?? "allocation";
+    DateTime from = ViewBag.FromDate;
+    DateTime to   = ViewBag.ToDate;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-laptop text-danger me-2"></i>Asset Reports</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Reports</a>
+    </div>
+
+    <ul class="nav nav-tabs mb-4">
+        @foreach (var (t, label, icon) in new[] { ("allocation","Allocation","fa-user-tag"), ("repair","Under Repair","fa-wrench"), ("disposed","Disposed","fa-trash-alt") })
+        {
+            <li class="nav-item">
+                <a class="nav-link @(tab == t ? "active" : "")" asp-action="Assets" asp-route-tab="@t">
+                    <i class="fas @icon me-1"></i>@label
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (tab == "disposed")
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <input type="hidden" name="tab" value="disposed" />
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">From Date</label>
+                        <input type="date" name="fromDate" class="form-control" value="@from.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">To Date</label>
+                        <input type="date" name="toDate" class="form-control" value="@to.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                @if (tab == "allocation")
+                {
+                    var units = Model.Cast<School_CRM.Models.AsmAssetUnit>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Asset Tag</th><th>Asset Name</th><th>Category</th><th>Location</th><th>Assigned To</th><th>Condition</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!units.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No allocated assets found.</td></tr> }
+                            @foreach (var u in units)
+                            {
+                                <tr>
+                                    <td><code>@u.AssetTag</code></td>
+                                    <td class="fw-semibold">@u.Asset?.AssetName</td>
+                                    <td>@u.Asset?.Category?.CategoryName</td>
+                                    <td>@(u.CurrentLocation?.LocationName ?? "-")</td>
+                                    <td>@(u.AssignedToType != null ? $"{u.AssignedToType} #{u.AssignedToId}" : "-")</td>
+                                    <td><span class="badge @(u.UnitCondition == "Good" ? "bg-success" : u.UnitCondition == "Fair" ? "bg-warning text-dark" : "bg-danger")">@u.UnitCondition</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (tab == "repair")
+                {
+                    var logs = Model.Cast<School_CRM.Models.AsmMaintenanceLog>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Asset Tag</th><th>Asset Name</th><th>Type</th><th>Description</th><th>Start Date</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!logs.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No assets under repair.</td></tr> }
+                            @foreach (var m in logs)
+                            {
+                                <tr>
+                                    <td><code>@m.Unit?.AssetTag</code></td>
+                                    <td class="fw-semibold">@m.Unit?.Asset?.AssetName</td>
+                                    <td>@m.MaintenanceType</td>
+                                    <td class="text-muted small">@m.Description.Substring(0, Math.Min(60, m.Description.Length))...</td>
+                                    <td>@m.StartDate.ToString("dd/MM/yyyy")</td>
+                                    <td><span class="badge @(m.Status == "InProgress" ? "bg-warning text-dark" : "bg-secondary")">@m.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    var disposals = Model.Cast<School_CRM.Models.AsmDisposalLog>().ToList();
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Asset Tag</th><th>Asset Name</th><th>Disposal Type</th><th>Disposal Date</th><th>Disposed To</th><th class="text-end">Sale Value</th></tr>
+                        </thead>
+                        <tbody>
+                            @if (!disposals.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No disposal records found.</td></tr> }
+                            @foreach (var d in disposals)
+                            {
+                                <tr>
+                                    <td><code>@d.Unit?.AssetTag</code></td>
+                                    <td class="fw-semibold">@d.Unit?.Asset?.AssetName</td>
+                                    <td><span class="badge bg-secondary">@d.DisposalType</span></td>
+                                    <td>@d.DisposalDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@(d.DisposedTo ?? "-")</td>
+                                    <td class="text-end">@(d.SaleValue > 0 ? $"₹{d.SaleValue:F2}" : "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>

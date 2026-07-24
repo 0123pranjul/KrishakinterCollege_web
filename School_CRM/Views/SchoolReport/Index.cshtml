@@ -1,0 +1,47 @@
+@{ ViewData["Title"] = "Reports & Analytics"; }
+
+<div class="container-fluid px-4">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>Reports & Analytics</h2>
+        <small class="text-muted">Select a report category to get started</small>
+    </div>
+
+    <div class="row g-3">
+        @{
+            var cards = new[]
+            {
+                ("Student Attendance",  "Reports/StudentAttendance",  "fas fa-user-check",       "bg-primary",   "Monthly attendance with day-wise calendar"),
+                ("Class Attendance",    "Reports/ClassAttendance",    "fas fa-users",             "bg-info",      "Class-wise attendance with colour coding"),
+                ("Class Performance",   "Reports/ClassPerformance",   "fas fa-graduation-cap",    "bg-success",   "Subject-wise marks, toppers, pass %"),
+                ("Pending Fees",        "Reports/PendingFees",        "fas fa-rupee-sign",        "bg-warning",   "Students with outstanding fee balance"),
+                ("Fee Collection",      "Reports/FeeCollection",      "fas fa-hand-holding-usd",  "bg-success",   "Daily collection with payment mode breakdown"),
+                ("Library",             "Reports/Library",            "fas fa-book-open",         "bg-secondary", "Issued, overdue, fine collection, lost books"),
+                ("Inventory",           "Reports/Inventory",          "fas fa-boxes",             "bg-dark",      "Stock status, low stock, GRN, sales"),
+                ("Assets",              "Reports/Assets",             "fas fa-laptop",            "bg-danger",    "Allocation, under repair, disposed assets"),
+                ("Communication",       "Reports/Communication",      "fas fa-bell",              "bg-primary",   "Notification stats, announcement read rates"),
+            };
+        }
+        @foreach (var (title, url, icon, bg, desc) in cards)
+        {
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <a href="/@url" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 report-card">
+                        <div class="card-body text-center py-4">
+                            <div class="rounded-circle @bg text-white d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width:56px;height:56px;font-size:1.4rem;">
+                                <i class="@icon"></i>
+                            </div>
+                            <h6 class="fw-bold mb-1">@title</h6>
+                            <p class="text-muted small mb-0">@desc</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .report-card { transition: transform .15s, box-shadow .15s; cursor: pointer; }
+    .report-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important; }
+</style>

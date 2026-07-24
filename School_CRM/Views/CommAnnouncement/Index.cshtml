@@ -1,0 +1,101 @@
+@model List<School_CRM.Models.CommAnnouncement>
+@{
+    ViewData["Title"] = "Notice Board";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-bullhorn text-primary me-2"></i>Notice Board</h2>
+            <small class="text-muted">@Model.Count announcement(s)</small>
+        </div>
+        @if (isAdmin)
+        {
+            <a asp-action="Manage" class="btn btn-outline-primary me-2"><i class="fas fa-cog me-1"></i>Manage</a>
+            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i>New Announcement</a>
+        }
+    </div>
+
+    @* Emergency banner *@
+    @foreach (var ann in Model.Where(a => a.Priority == "Emergency"))
+    {
+        <div class="alert alert-danger d-flex align-items-center mb-3 border-0 shadow-sm">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <strong class="d-block">🚨 EMERGENCY: @ann.Title</strong>
+                <span class="small">@ann.Body.Substring(0, Math.Min(150, ann.Body.Length))...</span>
+                <a asp-action="View" asp-route-id="@ann.AnnouncementId" class="btn btn-sm btn-danger ms-3">Read More</a>
+            </div>
+        </div>
+    }
+
+    @* Pinned *@
+    @{var pinned = Model.Where(a => a.IsPinned && a.Priority != "Emergency").ToList();}
+    @if (pinned.Any())
+    {
+        <div class="mb-4">
+            <h6 class="text-muted fw-semibold mb-2"><i class="fas fa-thumbtack me-1"></i>PINNED</h6>
+            @foreach (var ann in pinned)
+            {
+                <div class="card border-0 shadow-sm mb-2 border-start border-warning border-3">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold mb-1">@ann.Title</h6>
+                                <p class="text-muted small mb-0">@ann.Body.Substring(0, Math.Min(120, ann.Body.Length))...</p>
+                            </div>
+                            <div class="text-end ms-3">
+                                <span class="badge @(ann.Priority == "High" ? "bg-danger" : "bg-secondary") mb-1">@ann.Priority</span>
+                                <div class="small text-muted">@ann.PublishAt.ToString("dd MMM yyyy")</div>
+                                <a asp-action="View" asp-route-id="@ann.AnnouncementId" class="btn btn-sm btn-outline-primary mt-1">Read</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Regular announcements *@
+    @foreach (var ann in Model.Where(a => !a.IsPinned && a.Priority != "Emergency"))
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h6 class="fw-bold mb-0">@ann.Title</h6>
+                            <span class="badge @(ann.Priority == "High" ? "bg-danger" : ann.Priority == "Normal" ? "bg-primary" : "bg-secondary")">
+                                @ann.Priority
+                            </span>
+                            @if (!string.IsNullOrEmpty(ann.AttachmentPath))
+                            {
+                                <span class="badge bg-light text-dark border"><i class="fas fa-paperclip me-1"></i>PDF</span>
+                            }
+                        </div>
+                        <p class="text-muted small mb-1">@ann.Body.Substring(0, Math.Min(200, ann.Body.Length))@(ann.Body.Length > 200 ? "..." : "")</p>
+                        <small class="text-muted"><i class="fas fa-clock me-1"></i>@ann.PublishAt.ToString("dd MMM yyyy, hh:mm tt")</small>
+                    </div>
+                    <div class="ms-3 d-flex flex-column gap-1">
+                        <a asp-action="View" asp-route-id="@ann.AnnouncementId" class="btn btn-sm btn-outline-primary">Read</a>
+                        @if (!string.IsNullOrEmpty(ann.AttachmentPath))
+                        {
+                            <a href="@ann.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-bullhorn fa-3x mb-3 opacity-25"></i>
+            <p>No announcements at this time.</p>
+        </div>
+    }
+</div>

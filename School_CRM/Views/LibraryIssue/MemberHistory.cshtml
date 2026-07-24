@@ -1,0 +1,116 @@
+@model List<School_CRM.Models.DTOs.IssueHistoryDto>
+@{
+    ViewData["Title"] = "Member Issue History";
+    var member = ViewBag.Member as School_CRM.Services.Interface.MemberLookupDto;
+    int page = ViewBag.Page;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-history text-primary me-2"></i>Member Issue History</h2>
+            @if (member != null)
+            {
+                <small class="text-muted">@member.Name (@member.UserType)</small>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-print me-1"></i>Print
+            </button>
+            <a asp-action="Overdue" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+        </div>
+    </div>
+
+    @if (member != null)
+    {
+        <div class="card border-0 shadow-sm mb-4 bg-light">
+            <div class="card-body py-3">
+                <div class="row">
+                    <div class="col-md-3"><strong>Name:</strong> @member.Name</div>
+                    <div class="col-md-3"><strong>Type:</strong> @member.UserType</div>
+                    <div class="col-md-3"><strong>Code:</strong> @member.Code</div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Return Date</th>
+                            <th>Fine</th>
+                            <th>Fine Status</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="7" class="text-center text-muted py-4">No history found</td></tr>
+                        }
+                        @{int sno = (page - 1) * 10 + 1;}
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno++</td>
+                                <td class="fw-semibold">@item.BookTitle</td>
+                                <td>@item.IssueDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(item.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                <td class="@(item.FineAmount > 0 ? "text-danger fw-semibold" : "")">
+                                    @(item.FineAmount > 0 ? $"₹{item.FineAmount:F2}" : "-")
+                                </td>
+                                <td>
+                                    @if (item.FineAmount > 0)
+                                    {
+                                        <span class="badge @(item.IsFinePaid ? "bg-success" : "bg-danger")">
+                                            @(item.IsFinePaid ? "Paid" : "Pending")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(item.TransactionStatus == "Returned" ? "bg-success" : item.TransactionStatus == "Lost" ? "bg-danger" : "bg-warning text-dark")">
+                                        @item.TransactionStatus
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (Model.Count == 10)
+        {
+            <div class="card-footer bg-white border-top py-3 d-flex justify-content-between">
+                @if (page > 1)
+                {
+                    <a asp-action="MemberHistory"
+                       asp-route-userType="@member?.UserType"
+                       asp-route-userId="@member?.UserId"
+                       asp-route-page="@(page - 1)"
+                       class="btn btn-outline-secondary btn-sm">« Previous</a>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <a asp-action="MemberHistory"
+                   asp-route-userType="@member?.UserType"
+                   asp-route-userId="@member?.UserId"
+                   asp-route-page="@(page + 1)"
+                   class="btn btn-outline-primary btn-sm">Next »</a>
+            </div>
+        }
+    </div>
+</div>

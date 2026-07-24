@@ -1,0 +1,80 @@
+@model List<School_CRM.Models.CommMessage>
+@{
+    ViewData["Title"] = "Message Thread";
+    var thread = ViewBag.Thread as School_CRM.Models.CommMessageThread;
+    string myType = ViewBag.MyType ?? "";
+    int myId = ViewBag.MyId;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-action="Inbox" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Inbox</a>
+        @if (thread != null)
+        {
+            <span class="text-muted small">Thread #@thread.ThreadId — @(thread.Subject ?? "No subject")</span>
+        }
+    </div>
+
+    <!-- Chat messages -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body" style="max-height:500px;overflow-y:auto;" id="chatBox">
+            @if (!Model.Any())
+            {
+                <div class="text-center text-muted py-4">No messages yet. Send the first one below.</div>
+            }
+            @foreach (var msg in Model)
+            {
+                bool isMine = msg.SenderType == myType && msg.SenderId == myId;
+                <div class="d-flex @(isMine ? "justify-content-end" : "justify-content-start") mb-3">
+                    <div class="@(isMine ? "bg-primary text-white" : "bg-light") rounded-3 px-3 py-2"
+                         style="max-width:70%;">
+                        <div class="small @(isMine ? "text-white-50" : "text-muted") mb-1">
+                            @msg.SenderType — @msg.SentAt.ToString("dd/MM HH:mm")
+                            @if (isMine && msg.IsRead) { <i class="fas fa-check-double ms-1" title="Read"></i> }
+                        </div>
+                        <div>@msg.MessageBody</div>
+                        @if (!string.IsNullOrEmpty(msg.AttachmentPath))
+                        {
+                            <div class="mt-1">
+                                <a href="@msg.AttachmentPath" target="_blank"
+                                   class="@(isMine ? "text-white" : "text-primary") small">
+                                    <i class="fas fa-paperclip me-1"></i>Attachment
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Reply box -->
+    @if (thread != null)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form asp-action="Reply" asp-route-threadId="@thread.ThreadId" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex gap-2">
+                        <textarea name="messageBody" class="form-control" rows="2"
+                                  placeholder="Type your reply..." required></textarea>
+                        <div class="d-flex flex-column gap-1">
+                            <input type="file" name="attachment" class="form-control form-control-sm" />
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    // Auto-scroll to bottom
+    const box = document.getElementById('chatBox');
+    if (box) box.scrollTop = box.scrollHeight;
+</script>
+}

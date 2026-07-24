@@ -1,0 +1,410 @@
+@{
+    ViewData["Title"] = "Verify OTP";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - Krishak Inter College</title>
+    
+    <link rel="icon" type="image/png" href="~/kic_logo.png">
+    <!-- remix icon font css  -->
+    <link rel="stylesheet" href="~/assetscrm/assets/css/remixicon.css">
+    <!-- BootStrap css -->
+    <link rel="stylesheet" href="~/assetscrm/assets/css/lib/bootstrap.min.css">
+    <!-- main css -->
+    <link rel="stylesheet" href="~/assetscrm/assets/css/style.css">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f4f7f6 0%, #e0ebe8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative Background Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 1;
+            opacity: 0.5;
+        }
+        .orb-primary {
+            width: 300px;
+            height: 300px;
+            background: #25A194;
+            top: -50px;
+            left: -50px;
+        }
+        .orb-secondary {
+            width: 400px;
+            height: 400px;
+            background: #7c3aed;
+            bottom: -100px;
+            right: -100px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), 0 5px 15px rgba(0, 0, 0, 0.02);
+            z-index: 2;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(37, 161, 148, 0.1);
+        }
+
+        .logo-img {
+            height: 60px;
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        /* OTP Input Style */
+        .otp-inputs {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .otp-digit {
+            width: 55px;
+            height: 65px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            border: 2px solid #cbd5e1;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            color: #1e293b;
+            transition: all 0.2s ease;
+        }
+
+        .otp-digit:focus {
+            outline: none;
+            border-color: #25A194;
+            box-shadow: 0 0 10px rgba(37, 161, 148, 0.25);
+            background: #ffffff;
+            transform: scale(1.05);
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, #25A194 0%, #1d8277 100%);
+            border: none;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 161, 148, 0.3);
+        }
+
+        .btn-verify:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d8277 0%, #15635b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 161, 148, 0.4);
+        }
+
+        .btn-verify:disabled {
+            background: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Timer and Resend Link */
+        .timer-container {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .timer-count {
+            color: #25A194;
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .timer-warning {
+            color: #ef4444 !important;
+            animation: pulse-timer 1s infinite alternate;
+        }
+
+        @@keyframes pulse-timer {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
+        }
+
+        .resend-btn {
+            background: none;
+            border: none;
+            color: #25A194;
+            font-weight: 600;
+            text-decoration: underline;
+            padding: 0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .resend-btn:hover:not(:disabled) {
+            color: #1d8277;
+        }
+
+        .resend-btn:disabled {
+            color: #94a3b8;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+
+        .masked-email {
+            background: rgba(37, 161, 148, 0.08);
+            color: #1d8277;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* Custom Alert styling */
+        .alert-custom {
+            border-radius: 12px;
+            font-size: 14px;
+            padding: 12px 16px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Decorative shapes -->
+    <div class="orb orb-primary"></div>
+    <div class="orb orb-secondary"></div>
+
+    <div class="glass-card">
+        <div class="text-center mb-32">
+            <img src="/kic_logo.png" alt="Logo" class="logo-img mb-24">
+            <h3 class="h5 fw-bold text-neutral-900 mb-8">Two-Step Verification</h3>
+            <p class="text-sm text-secondary-light mb-0">
+                We've sent a 6-digit OTP to your registered email:
+            </p>
+            <div class="mt-8">
+                <span class="masked-email">@ViewBag.MaskedEmail</span>
+            </div>
+        </div>
+
+        <form id="otpForm" asp-action="VerifyOtp" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="token" value="@ViewBag.Token" />
+            <input type="hidden" id="otpValue" name="otp" />
+
+            <!-- validation summary -->
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger alert-custom mb-20 text-sm"></div>
+
+            <div class="otp-inputs">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-24 timer-container">
+                <div>
+                    ⏱️ Expiry: <span id="timerText" class="timer-count">--:--</span>
+                </div>
+                <div>
+                    <button type="button" id="resendBtn" class="resend-btn" disabled>Resend OTP</button>
+                </div>
+            </div>
+
+            <button type="submit" id="verifyBtn" class="btn btn-verify w-100 radius-12 d-flex justify-content-center align-items-center gap-8">
+                <span>VERIFY & SIGN IN</span>
+                <i class="ri-arrow-right-line"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- jQuery library js -->
+    <script src="~/assetscrm/assets/js/lib/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap js -->
+    <script src="~/assetscrm/assets/js/lib/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const digits = $('.otp-digit');
+            const verifyBtn = $('#verifyBtn');
+            const resendBtn = $('#resendBtn');
+            const timerText = $('#timerText');
+            const otpForm = $('#otpForm');
+            const otpValue = $('#otpValue');
+
+            let timerSeconds = parseInt("@ViewBag.RemainingSeconds") || 180;
+            let countdownInterval;
+
+            // Start Countdown Timer
+            function startTimer(seconds) {
+                clearInterval(countdownInterval);
+                timerSeconds = seconds;
+                
+                function updateTimer() {
+                    if (timerSeconds <= 0) {
+                        clearInterval(countdownInterval);
+                        timerText.text("Expired").addClass("timer-warning");
+                        resendBtn.prop('disabled', false);
+                        verifyBtn.prop('disabled', true);
+                        return;
+                    }
+
+                    const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                    const s = (timerSeconds % 60).toString().padStart(2, '0');
+                    timerText.text(`${m}:${s}`);
+
+                    if (timerSeconds <= 45) {
+                        timerText.addClass("timer-warning");
+                    } else {
+                        timerText.removeClass("timer-warning");
+                    }
+
+                    timerSeconds--;
+                }
+
+                updateTimer();
+                countdownInterval = setInterval(updateTimer, 1000);
+            }
+
+            startTimer(timerSeconds);
+
+            // Handle Input auto tab and digit checks
+            digits.each(function(index) {
+                const currentInput = $(this);
+
+                currentInput.on('input', function(e) {
+                    const val = currentInput.val();
+                    // Keep only numeric values
+                    currentInput.val(val.replace(/[^0-9]/g, ''));
+                    
+                    if (currentInput.val().length > 0 && index < digits.length - 1) {
+                        digits.eq(index + 1).focus();
+                    }
+                    checkFormReady();
+                });
+
+                currentInput.on('keydown', function(e) {
+                    if (e.key === 'Backspace' && currentInput.val().length === 0 && index > 0) {
+                        digits.eq(index - 1).focus();
+                    }
+                });
+
+                // Support paste option
+                currentInput.on('paste', function(e) {
+                    e.preventDefault();
+                    const text = (e.originalEvent || e).clipboardData.getData('text');
+                    const numbers = text.replace(/[^0-9]/g, '').substring(0, 6);
+
+                    if (numbers.length > 0) {
+                        for (let i = 0; i < numbers.length; i++) {
+                            digits.eq(i).val(numbers[i]);
+                        }
+                        const focusIndex = Math.min(numbers.length, digits.length - 1);
+                        digits.eq(focusIndex).focus();
+                        checkFormReady();
+                    }
+                });
+            });
+
+            function checkFormReady() {
+                let code = "";
+                let complete = true;
+                digits.each(function() {
+                    if ($(this).val().length === 0) {
+                        complete = false;
+                    }
+                    code += $(this).val();
+                });
+                
+                otpValue.val(code);
+
+                if (complete && timerSeconds > 0) {
+                    verifyBtn.prop('disabled', false);
+                } else {
+                    verifyBtn.prop('disabled', true);
+                }
+            }
+
+            // Submit Form Loading State
+            otpForm.on('submit', function() {
+                verifyBtn.prop('disabled', true);
+                verifyBtn.find('span').text('VERIFYING...');
+                verifyBtn.find('i').removeClass('ri-arrow-right-line').addClass('ri-loader-4-line animate-spin');
+            });
+
+            // Resend OTP via AJAX
+            resendBtn.on('click', function() {
+                resendBtn.prop('disabled', true).text('Sending...');
+                
+                $.ajax({
+                    url: '/Account/ResendOtp',
+                    type: 'POST',
+                    data: { token: "@ViewBag.Token" },
+                    success: function(response) {
+                        if (response.success) {
+                            // Reset state
+                            digits.val('');
+                            otpValue.val('');
+                            verifyBtn.prop('disabled', false);
+                            
+                            // Re-init button
+                            resendBtn.text('Resend OTP');
+                            
+                            // Clear error summaries if any
+                            $('.alert-danger').hide();
+
+                            // Alert feedback
+                            alert('A new OTP has been sent to your email.');
+
+                            // Restart Timer
+                            startTimer(response.expirySeconds);
+                        } else {
+                            alert(response.message || 'Failed to resend OTP. Please try again.');
+                            resendBtn.prop('disabled', false).text('Resend OTP');
+                        }
+                    },
+                    error: function() {
+                        alert('Error communicating with the server. Please try again.');
+                        resendBtn.prop('disabled', false).text('Resend OTP');
+                    }
+                });
+            });
+
+            // Initial trigger
+            checkFormReady();
+        });
+    </script>
+</body>
+</html>

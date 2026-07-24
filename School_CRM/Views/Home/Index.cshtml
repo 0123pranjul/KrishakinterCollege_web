@@ -1,0 +1,2169 @@
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="zxx">
+
+<!-- Mirrored from lovely-bavarois-b19658.netlify.app/ by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 28 Apr 2026 09:45:55 GMT -->
+<!-- Added by HTTrack -->
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Links of CSS files -->
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/aos.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/boxicons.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/flaticon.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/magnific-popup.min.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/style.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/header.css">
+    <link rel="stylesheet" href="~/collage/collage_project/assets/css/responsive.css">
+
+    <title>Krishak Inter College - Shaping Futures, Building Leaders</title>
+    <link rel="icon" type="image/png" href="~/kic_logo.png">
+    <style>
+            /* Sticky Social Bar */
+            .sticky-social-bar {
+                position: fixed;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1050;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                transition: right 0.3s ease;
+            }
+            .sticky-social-bar.collapsed {
+                right: -48px;
+            }
+            .social-bar-item {
+                position: relative;
+                width: 48px;
+                height: 48px;
+                overflow: hidden;
+                transition: width 0.3s ease;
+                white-space: nowrap;
+                border-radius: 6px 0 0 6px;
+                margin-bottom: 3px;
+                box-shadow: -2px 2px 8px rgba(0,0,0,0.15);
+            }
+            .social-bar-item:hover {
+                width: 150px;
+            }
+            .social-bar-item a {
+                display: flex;
+                align-items: center;
+                height: 100%;
+                width: 150px;
+                position: absolute;
+                right: 0;
+                color: #ffffff !important;
+                text-decoration: none;
+            }
+            .social-bar-item a i {
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+                flex-shrink: 0;
+            }
+            .social-bar-item a .label {
+                width: 102px;
+                padding-left: 15px;
+                font-size: 14px;
+                font-weight: 600;
+                text-align: left;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .social-bar-item.facebook {
+                background-color: #3b5998;
+            }
+            .social-bar-item.instagram {
+                background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            }
+            .social-bar-item.email {
+                background-color: #7f7f7f;
+            }
+            .social-bar-item.whatsapp {
+                background-color: #25d366;
+            }
+            .social-bar-item.sms {
+                background-color: #ffa000;
+            }
+            .social-bar-item.share {
+                background-color: #8bc34a;
+            }
+            .social-bar-toggle {
+                width: 48px;
+                height: 38px;
+                background-color: #cccccc;
+                color: #333333;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                border-radius: 6px 0 0 6px;
+                margin-top: 2px;
+                transition: transform 0.3s ease;
+                box-shadow: -2px 2px 8px rgba(0,0,0,0.15);
+            }
+            .social-bar-toggle i {
+                font-size: 20px;
+            }
+            .sticky-social-bar.collapsed .social-bar-toggle {
+                transform: translateX(-48px);
+            }
+
+            /* Responsive Mobile Social Bar: Fixed to Bottom */
+            @@media (max-width: 768px) {
+                .sticky-social-bar {
+                    right: 0 !important;
+                    left: 0 !important;
+                    bottom: 0 !important;
+                    top: auto !important;
+                    transform: none !important;
+                    flex-direction: row !important;
+                    width: 100% !important;
+                    height: 50px !important;
+                    align-items: stretch !important;
+                    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+                }
+                .sticky-social-bar.collapsed {
+                    right: 0 !important;
+                    bottom: 0 !important;
+                }
+                .social-bar-item {
+                    flex: 1 !important;
+                    width: auto !important;
+                    height: 100% !important;
+                    border-radius: 0 !important;
+                    margin-bottom: 0 !important;
+                    box-shadow: none !important;
+                }
+                .social-bar-item:hover {
+                    width: auto !important;
+                }
+                .social-bar-item a {
+                    width: 100% !important;
+                    position: relative !important;
+                    justify-content: center !important;
+                    right: auto !important;
+                }
+                .social-bar-item a i {
+                    width: 100% !important;
+                    height: 100% !important;
+                    font-size: 20px !important;
+                }
+                .social-bar-item a .label {
+                    display: none !important;
+                }
+                .social-bar-toggle {
+                    display: none !important;
+                }
+                /* Shift the scroll-to-top button up on mobile */
+                .go-top.active {
+                    bottom: 70px !important;
+                }
+
+                /* Responsive Latest Updates Ticker */
+                .ticker-title {
+                    font-size: 11px !important;
+                    padding: 4px 10px !important;
+                    gap: 4px !important;
+                }
+                .ticker-content span {
+                    font-size: 13px !important;
+                    padding-right: 35px !important;
+                }
+            }
+
+            @@media (max-width: 576px) {
+                /* Additional screen size specific fixes if any */
+            }
+
+            /* Admission Enquiry Modal Styling */
+            .enquiry-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgba(18, 15, 45, 0.6);
+                backdrop-filter: blur(4px);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+            }
+            .enquiry-modal-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .enquiry-modal-card {
+                background: #ffffff;
+                width: 90%;
+                max-width: 440px;
+                border-radius: 20px;
+                overflow: hidden;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            }
+            .enquiry-modal-overlay.active .enquiry-modal-card {
+                transform: scale(1);
+            }
+            .enquiry-modal-header {
+                background: linear-gradient(135deg, #2eca7f 0%, #1e9d5e 100%);
+                padding:15px 0;
+                text-align: center;
+                position: relative;
+                color: #ffffff;
+            }
+            .enquiry-modal-close {
+                position: absolute;
+                top: 3px;
+                right: 4px;
+                font-size: 28px;
+                font-weight: 300;
+                color: rgba(255, 255, 255, 0.8);
+                cursor: pointer;
+                transition: color 0.2s ease;
+                width: 30px;
+                height: 30px;
+                background-color: #000;
+                border-radius: 50px;
+                line-height: 31px;
+                text-align: center;
+                z-index: 12000;
+            }
+            .enquiry-modal-close:hover {
+                color: #ffffff;
+            }
+            .enquiry-modal-icon {
+                width: 54px;
+                height: 54px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 12px;
+                font-size: 28px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .enquiry-modal-header h3 {
+                color: #ffffff !important;
+                font-size: 20px;
+                font-weight: 700;
+                margin-bottom: 6px;
+                line-height: 1.2;
+            }
+            .enquiry-modal-header p {
+                color: rgba(255, 255, 255, 0.9) !important;
+                font-size: 12px;
+                margin-bottom: 0;
+            }
+            .enquiry-modal-body {
+                padding: 24px;
+            }
+            .enquiry-modal-intro {
+                color: #64748b;
+                font-size: 13px;
+                line-height: 1.5;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .enquiry-modal-field {
+                position: relative;
+                margin-bottom: 16px;
+            }
+            .enquiry-modal-field i {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #94a3b8;
+                font-size: 18px;
+                z-index: 5;
+            }
+            .enquiry-modal-field input, 
+            .enquiry-modal-field select {
+                width: 100%;
+                padding: 10px 16px 10px 42px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 10px;
+                font-size: 14px;
+                color: #334155;
+                background-color: #f8fafc;
+                transition: all 0.2s ease;
+                outline: none;
+            }
+            .enquiry-modal-field input:focus, 
+            .enquiry-modal-field select:focus {
+                border-color: #2eca7f;
+                background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(46, 202, 127, 0.15);
+            }
+            .enquiry-modal-submit-btn {
+                width: 100%;
+                padding: 13px;
+                background-color: #2eca7f;
+                border: none;
+                border-radius: 10px;
+                color: #ffffff;
+                font-weight: 600;
+                font-size: 15px;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                margin-top: 8px;
+                box-shadow: 0 4px 12px rgba(46, 202, 127, 0.25);
+            }
+            .enquiry-modal-submit-btn:hover {
+                background-color: #23a968;
+            }
+            .enquiry-modal-footer {
+                text-align: center;
+                color: #94a3b8;
+                font-size: 11px;
+                margin-top: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+            }
+
+            .kic-logo-text {
+                font-size: 22px;
+                font-weight: 800;
+                letter-spacing: 1px;
+                line-height: 1.2;
+            }
+
+                .kic-logo-text span {
+                    display: block;
+                    font-size: 11px;
+                    font-weight: 400;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    opacity: 0.85;
+                }
+
+            .logo-light .kic-logo-text {
+                color: #fff;
+            }
+
+            .logo-dark .kic-logo-text {
+                color: #1a1a2e;
+            }
+
+            .navbar-brand .logo-light, .navbar-brand .logo-dark {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-decoration: none;
+            }
+
+            .kic-logo-img {
+                width: 55px;
+                height: 55px;
+                object-fit: contain;
+                border-radius: 12px;
+                flex-shrink: 0;
+                background: var(--whiteColor);
+                padding: 4px;
+                box-shadow: 0 4px 15px rgba(46, 202, 127, 0.35);
+                border: 2px solid var(--mainColor);
+                transition: all 0.3s ease;
+            }
+            .kic-logo-img:hover {
+                transform: scale(1.08);
+                box-shadow: 0 8px 25px rgba(46, 202, 127, 0.5);
+                border-color: var(--blackColor);
+            }
+
+            /* Leadership Section Styling */
+            .leadership-area {
+                background-color: var(--secounderyColor) !important;
+                padding-top: 100px;
+                padding-bottom: 100px;
+            }
+            .leader-card {
+                background: var(--whiteColor);
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+                transition: all 0.4s ease;
+                text-align: center;
+                padding: 35px 25px;
+                margin-bottom: 30px;
+                border: 1px solid rgba(46, 202, 127, 0.15);
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                position: relative;
+            }
+            .leader-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 15px 40px rgba(46, 202, 127, 0.15);
+                border-color: var(--mainColor);
+            }
+            .leader-image-wrapper {
+                position: relative;
+                width: 170px;
+                height: 170px;
+                margin: 0 auto 25px auto;
+                border-radius: 50%;
+                padding: 6px;
+                background: linear-gradient(135deg, var(--mainColor), var(--blackColor));
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            .leader-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+                border: 4px solid var(--whiteColor);
+                transition: transform 0.5s ease;
+            }
+            .leader-card:hover .leader-image {
+                transform: scale(1.08);
+            }
+            .leader-role-badge {
+                display: inline-block;
+                background-color: rgba(46, 202, 127, 0.1);
+                color: var(--mainColor);
+                font-weight: 700;
+                font-size: 13px;
+                padding: 6px 16px;
+                border-radius: 30px;
+                margin-bottom: 15px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                border: 1px solid rgba(46, 202, 127, 0.2);
+            }
+            .leader-card:hover .leader-role-badge {
+                background-color: var(--mainColor);
+                color: var(--whiteColor);
+            }
+            .leader-name {
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--blackColor);
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .leader-title-sub {
+                font-size: 14px;
+                color: var(--paragraphColor);
+                font-weight: 500;
+                line-height: 1.5;
+            }
+            .leader-institution {
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px dashed rgba(0, 33, 71, 0.1);
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--blackColor);
+                opacity: 0.9;
+            }
+
+            /* Fix dual logo display bug by overriding d-flex's display: flex !important */
+            .navbar-area.style-2 .navbar-brand .logo-dark {
+                display: none !important;
+            }
+            .navbar-area.style-2.sticky .navbar-brand .logo-light {
+                display: none !important;
+            }
+            .navbar-area.style-2.sticky .navbar-brand .logo-dark {
+                display: flex !important;
+            }
+            /* Background Slider CSS */
+            .banner-slider, .banner-slider .owl-stage-outer, .banner-slider .owl-stage, .banner-slider .owl-item, .banner-slider .slide-item {
+                height: 100% !important;
+                min-height: 100% !important;
+            }
+            .banner-slider .slide-item {
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+            }
+
+            /* Modern Success Card Styling */
+            .success-card {
+                background: #ffffff;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+                transition: all 0.4s ease;
+                border: 1px solid rgba(46, 202, 127, 0.1);
+                margin-bottom: 30px;
+                position: relative;
+            }
+            .success-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 15px 35px rgba(46, 202, 127, 0.15);
+                border-color: var(--mainColor);
+            }
+            .success-card .image {
+                overflow: hidden;
+                position: relative;
+                height: 250px;
+            }
+            .success-card .image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.6s ease;
+            }
+            .success-card:hover .image img {
+                transform: scale(1.08);
+            }
+            .success-card .content {
+                padding: 24px;
+                background: #ffffff;
+            }
+            .success-card .content ul {
+                padding-left: 0;
+                list-style: none;
+                margin-bottom: 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+            .success-card .content ul li h3 {
+                font-size: 18px;
+                font-weight: 700;
+                color: var(--blackColor);
+                transition: color 0.3s ease;
+                margin-bottom: 0;
+            }
+            .success-card:hover .content ul li h3 {
+                color: var(--mainColor);
+            }
+            .success-card .content ul li.link a {
+                color: var(--mainColor);
+                font-size: 20px;
+                transition: transform 0.3s ease;
+                display: inline-block;
+            }
+            .success-card:hover .content ul li.link a {
+                transform: translateX(4px);
+            }
+            
+            /* Pulsing Play Button Overlay */
+            .success-card .play-btn-overlay {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 2;
+            }
+            .success-card .play-btn-overlay a {
+                width: 60px;
+                height: 60px;
+                background: var(--mainColor);
+                color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-size: 24px;
+                box-shadow: 0 0 0 0 rgba(46, 202, 127, 0.5);
+                animation: pulse-border 1.8s infinite;
+                transition: all 0.3s ease;
+            }
+            .success-card .play-btn-overlay a:hover {
+                background: var(--blackColor);
+            }
+            @("@")keyframes pulse-border {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(46, 202, 127, 0.6);
+                }
+                70% {
+                    box-shadow: 0 0 0 15px rgba(46, 202, 127, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(46, 202, 127, 0);
+                }
+            }
+
+            /* Notification Ticker Styling */
+            .notification-ticker-area {
+                background: linear-gradient(90deg, var(--blackColor), #1b173a);
+                color: #ffffff;
+                padding: 10px 0;
+                overflow: hidden;
+                border-bottom: 3px solid var(--mainColor);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                z-index: 10;
+                position: relative;
+            }
+            .ticker-wrapper {
+                display: flex;
+                align-items: center;
+                width: 100%;
+            }
+            .ticker-title {
+                background: var(--mainColor);
+                color: #ffffff;
+                padding: 6px 20px;
+                font-weight: 700;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                border-radius: 0 30px 30px 0;
+                box-shadow: 4px 0 10px rgba(46, 202, 127, 0.3);
+                z-index: 12;
+                white-space: nowrap;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .ticker-content-wrap {
+                overflow: hidden;
+                width: 100%;
+                z-index: 11;
+            }
+            .ticker-content {
+                display: inline-block;
+                white-space: nowrap;
+                padding-left: 100%;
+                animation: ticker-animation 55s linear infinite;
+            }
+            .ticker-content span {
+                display: inline-block;
+                padding-right: 50px;
+                font-size: 15px;
+                font-weight: 500;
+                color: #e2e8f0;
+            }
+            .ticker-content span:hover {
+                color: var(--mainColor);
+            }
+            .ticker-content-wrap:hover .ticker-content {
+                animation-play-state: paused;
+            }
+
+            @("@")keyframes ticker-animation {
+                0% {
+                    transform: translate3d(0, 0, 0);
+                }
+                100% {
+                    transform: translate3d(-100%, 0, 0);
+                }
+            }
+
+            /* Image Marquee Scroll styling */
+            .image-marquee-section {
+                padding-top: 80px;
+                padding-bottom: 80px;
+                background-color: var(--secounderyColor) !important;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .marquee-wrapper {
+                position: relative;
+                width: 100%;
+                overflow: hidden;
+                padding: 10px 0;
+            }
+
+            .marquee-track {
+                display: flex;
+                width: calc(320px * 12 + 30px * 12);
+                animation: scrollMarquee 30s linear infinite;
+            }
+
+            .marquee-track:hover {
+                animation-play-state: paused;
+            }
+
+            .marquee-item {
+                width: 320px;
+                height: 220px;
+                margin: 0 15px;
+                flex-shrink: 0;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+                border: 3px solid rgba(46, 202, 127, 0.15);
+                transition: all 0.3s ease;
+            }
+
+            .marquee-item:hover {
+                transform: scale(1.05);
+                border-color: var(--mainColor);
+                box-shadow: 0 12px 30px rgba(46, 202, 127, 0.25);
+            }
+
+            .marquee-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            @("@")keyframes scrollMarquee {
+                0% {
+                    transform: translateX(0);
+                }
+                100% {
+                    transform: translateX(calc(-350px * 6));
+                }
+            }
+          
+    </style>
+</head>
+<body>
+
+    <!-- preloader -->
+    <div class="preloader-container" id="preloader">
+        <div class="preloader-dot"></div>
+        <div class="preloader-dot"></div>
+        <div class="preloader-dot"></div>
+        <div class="preloader-dot"></div>
+        <div class="preloader-dot"></div>
+    </div>
+    <!-- preloader -->
+    <!-- Start Navbar Area Start -->
+    <div class="navbar-area style-2" id="navbar">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg">
+                <a class='navbar-brand' asp-controller="Home" asp-action="Index">
+                    <div class="logo-light d-flex align-items-center gap-2" style="text-decoration:none;">
+                        <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                        <div class="kic-logo-text" style="color:#fff;">Krishak<span>Inter College</span></div>
+                    </div>
+                    <div class="logo-dark d-flex align-items-center gap-2" style="text-decoration:none;">
+                        <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                        <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                    </div>
+                </a>
+               @*  <div class="other-option d-lg-none">
+                    <div class="option-item">
+                        <button type="button" class="search-btn" data-bs-toggle="offcanvas" data-bs-target="#staticBackdrop">
+                            <i class='bx bx-search'></i>
+                        </button>
+                    </div>
+                </div> *@
+                <a class="navbar-toggler" data-bs-toggle="offcanvas" href="#navbarOffcanvas" role="button" aria-controls="navbarOffcanvas">
+                    <i class='bx bx-menu'></i>
+                </a>
+                <div class="collapse navbar-collapse justify-content-between">
+                    <ul class="navbar-nav ms-auto">
+                       
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+
+                       
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Home" asp-action="Gallery">Gallery</a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Home" asp-action="about">About Us</a>
+                        </li>
+                      
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Home" asp-action="contacts">
+                                Contact
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class='nav-link' asp-controller="Account" asp-action="Login">Login</a>
+
+                        </li>
+                       
+                    </ul>
+                    <div class="others-option d-flex align-items-center">
+                        <div class="option-item">
+                            <div class="nav-btn">
+                                <a class='default-btn' asp-controller="Home" asp-action="contacts">Contact Us</a>
+                            </div>
+                        </div>
+                       @*  <div class="option-item">
+                            <div class="nav-search">
+                                <a href="#" data-bs-toggle="offcanvas" data-bs-target="#staticBackdrop" aria-controls="staticBackdrop" class="search-button"><i class='bx bx-search'></i></a>
+                            </div>
+                        </div> *@
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- End Navbar Area Start -->
+    <!-- Start Responsive Navbar Area -->
+    <div class="responsive-navbar offcanvas offcanvas-end" data-bs-backdrop="static" tabindex="-1" id="navbarOffcanvas">
+        <div class="offcanvas-header">
+            <a class='logo d-inline-block' asp-controller="Home" asp-action="Index">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                    <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                </div>
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="accordion" id="navbarAccordion">
+                
+                <div class="accordion-item">
+                    <a class='accordion-link' asp-controller="Home" asp-action="Index">
+                        Home 
+                    </a>
+                </div>
+                <div class="accordion-item">
+                    <a class='accordion-link' asp-controller="Home" asp-action="about">
+                        About Us
+                    </a>
+                </div>
+              
+                <div class="accordion-item">
+                    <a class='accordion-link' asp-controller="Home" asp-action="Gallery">
+                        Gallery
+                    </a>
+                </div>
+               
+                <div class="accordion-item">
+                    <a class='accordion-link without-icon' asp-controller="Home" asp-action="contacts">
+                        Contact Us
+                    </a>
+                </div>
+                <div class="accordion-item">
+                    <a class='accordion-link without-icon' asp-controller="Account" asp-action="Login">Login</a>
+
+                </div>
+                <div class="accordion-item">
+                    <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">Enquire for Admission</a>
+                </div>
+            </div>
+            <div class="offcanvas-contact-info">
+                <h4>Contact Info</h4>
+                <ul class="contact-info list-style">
+                    <li>
+                        <i class='bx bxs-phone-call'></i>
+                        <strong>Admissions Help:</strong><br />
+                        <a href="tel:+919452000000">+918765501933</a>
+                    </li>
+                    <li>
+                        <i class="bx bxs-envelope"></i>
+                        <a href="mailto:kic.otp@gmail.com">kic.otp@gmail.com</a>
+                    </li>
+                    <li>
+                        <i class="bx bxs-time"></i>
+                        <p>Mon - Sat: 8:00 - 05:00</p>
+                    </li>
+                </ul>
+               
+            </div>
+            <div class="offcanvas-other-options">
+                <div class="option-item">
+                    <a class='default-btn' asp-controller="Home" asp-action="contacts">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Responsive Navbar Area -->
+    <!-- Start Clgun Searchbar Area -->
+    <div class="clgun offcanvas offcanvas-start" data-bs-backdrop="static" tabindex="-1" id="staticBackdrop">
+        <div class="offcanvas-header">
+            <a class='logo' asp-controller="Home" asp-action="Index">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/kic_logo.png" alt="Logo" class="kic-logo-img" />
+                    <div class="kic-logo-text" style="color:#1a1a2e;">Krishak<span>Inter College</span></div>
+                </div>
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="search-box">
+                <div class="searchwrapper">
+                    <div class="searchbox">
+                        <div class="row align-items-center">
+                            <div class="col-md-9"><input type="text" class="form-control" placeholder="Search for a Class or Subject..."></div>
+                            <div class="col-lg-3">
+                                <a class="btn" href="#">Search</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="offcanvas-contact-info">
+                <h4>Contact Info</h4>
+                <ul class="contact-info list-style">
+                    <li>
+                        <i class="bx bxs-time"></i>
+                        <p>Mon - Sat: 8:00 - 05:00</p>
+                    </li>
+                    <li><i class="bx bxs-phone-call"></i> Admissions - <a href="tel:+919876543210">+91 98765 43210</a></li>
+                    <li>
+                        <i class="bx bxs-envelope"></i>
+                        <a href="mailto:kic.otp@gmail.com">kic.otp@gmail.com</a>
+                    </li>
+                    <li>
+                        <i class="bx bxs-map"></i>
+                        <p>Krishak Inter College, kic.in</p>
+                    </li>
+                </ul>
+                <ul class="social-profile list-style">
+                    <li><a href="https://www.fb.com/" target="_blank"><i class='bx bxl-facebook'></i></a></li>
+                    <li><a href="https://www.instagram.com/" target="_blank"><i class='bx bxl-instagram'></i></a></li>
+                    <li><a href="https://www.twitter.com/" target="_blank"><i class='bx bxl-twitter'></i></a></li>
+                    <li><a href="https://www.linkedin.com/" target="_blank"><i class='bx bxl-linkedin'></i></a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+    <!-- End Clgun Searchbar Area -->
+    <!-- Start Clgun Banner 2 Area -->
+    <div class="banner-area-2 position-relative overflow-hidden" style="padding-top: 250px; padding-bottom: 200px;">
+        <!-- Background Slider (Slides right-to-left) -->
+        <div class="banner-slider owl-carousel owl-theme position-absolute top-0 start-0 w-100 h-100" style="z-index: 1;">
+            <div class="slide-item w-100 h-100" style="background-image: url('/Gprp/image/core1_new.jpeg');"></div>
+            <div class="slide-item w-100 h-100" style="background-image: url('/Gprp/image/core2_new.jpeg');"></div>
+           @*  <div class="slide-item w-100 h-100" style="background-image: url('/Gprp/image/core3.jpeg');"></div>
+            <div class="slide-item w-100 h-100" style="background-image: url('/Gprp/image/core4.jpeg');"></div>
+            <div class="slide-item w-100 h-100" style="background-image: url('/Gprp/image/core5.jpeg');"></div> *@
+        </div>
+        
+        <!-- Dark overlay to ensure text readability -->
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(18, 15, 45, 0.55); z-index: 2;"></div>
+
+        <!-- Content Overlay -->
+        <div class="container position-relative" style="z-index: 3;">
+            <div class="banner-content-2">
+                <div class="content">
+                    <span data-aos="fade-zoom-in" data-aos-delay="300">Co-Educational Day & Boarding School | Play Group to Class 12</span>
+                    <h1 data-aos="fade-up" data-aos-delay="200">Krishak Inter College <br>Shaping Global Leaders</h1>
+                    <p data-aos="fade-up" data-aos-delay="300">Providing a nurturing day and boarding environment for students from Play Group (PG) to Class 12. We combine academic excellence with holistic development, moral values, and modern boarding facilities.</p>
+                    <div class="buttons-action" data-aos="fade-up" data-aos-delay="100">
+                        <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">Enquire for Admission</a>
+                        <a class='default-btn btn-style-2' asp-controller="Home" asp-action="contacts">Contact Us</a>
+                    </div>
+                    <div class="vertical-lr" data-aos="fade-zoom-in" data-aos-delay="100">
+                        <p>Krishak Inter College <span>kic.in</span></p>
+                    </div>
+
+                    <div class="scroll-down" data-aos="fade-down" data-aos-delay="100">
+                        <a href="#about"><i class='bx bx-chevron-down'></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Clgun Banner 2 Area -->
+
+    <!-- Start Notification Ticker Area -->
+    <div class="notification-ticker-area">
+        <div class="container-fluid p-0">
+            <div class="ticker-wrapper">
+                <div class="ticker-title">
+                    <i class='bx bxs-bell-ring'></i> Latest Updates:
+                </div>
+                <div class="ticker-content-wrap">
+                    <div class="ticker-content">
+                        <span>📢 Admissions Open for Academic Session 2026-27 | Play Group (PG) to Class XII | Enroll Now!</span>
+
+                        <span>🎓 Limited Seats Available | Smart Classrooms | Experienced Faculty | Secure Your Child's Future Today.</span>
+
+                        <span>🏫 UPBoard Curriculum | Well-Equipped Science & Computer Labs | Library | Sports & Co-Curricular Activities.</span>
+
+                        <span>🚌 Safe & Reliable Transport Facility Available Across Major Routes.</span>
+
+                        <span>👨‍🏫 Experienced & Dedicated Teachers | Individual Attention for Every Student.</span>
+
+                        <span>📞 Visit the School Campus or Contact the Admission Office for Registration & Enquiries.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Notification Ticker Area -->
+
+    <!-- Start About Us Area 2 -->
+    <div id="about" class="about-us-area-2 ptb-100">
+        <div class="container">
+            <div class="section-title" data-aos="fade-up" data-aos-delay="100">
+                <h2>About Krishak Inter College</h2>
+                <p>We are committed to nurturing young minds through quality education, discipline, and a values-driven learning environment that prepares students for a competitive world.</p>
+            </div>
+            <div class="about-content-courser owl-carousel owl-theme">
+                 <div class="content-items" data-dot="<button>01</button>">
+                    <div class="image ct-bg-1" data-aos="fade-zoom-in" data-aos-delay="100"
+                         style="background-image:url('/Gprp/image/1.jpg'); background-size:cover; background-position:center;">
+                    </div>
+                    <div class="content" data-aos="fade-up" data-aos-delay="200">
+                        <span>Our Campus</span>
+                        <h2>A Campus Built for Learning & Growth</h2>
+                        <p>Krishak Inter College offers a state-of-the-art campus with modern classrooms, well-equipped science labs, a digital library, and sports facilities — all designed to inspire students to reach their full potential.</p>
+                        <a class='default-btn' asp-controller="Home" asp-action="about">Know More</a>
+                    </div>
+                </div>
+                <div class="content-items" data-dot="<button>02</button>">
+                    <div class="image ct-bg-2" data-aos="fade-zoom-in" data-aos-delay="100"
+                         style="background-image:url('/Gprp/image/2.jpg'); background-size:cover; background-position:center;">
+                    </div>
+                    <div class="content" data-aos="fade-up" data-aos-delay="200">
+                        <span>Our Faculty</span>
+                        <h2>Experienced & Dedicated Educators</h2>
+                        <p>Our team of highly qualified teachers brings passion and expertise into every classroom. With student-centric teaching methods and personalised attention, we ensure every child thrives academically and personally.</p>
+                        <a class='default-btn' asp-controller="Home" asp-action="teachers">Meet Our Teachers</a>
+                    </div>
+                </div>
+                <div class="content-items" data-dot="<button>03</button>">
+                    <div class="image ct-bg-3" data-aos="fade-zoom-in" data-aos-delay="100"
+                         style="background-image:url('/Gprp/image/3.jpg'); background-size:cover; background-position:center;">
+                    </div>
+                    <div class="content" data-aos="fade-up" data-aos-delay="200">
+                        <span>Academic Excellence</span>
+                        <h2>Results That Speak for Themselves</h2>
+                        <p>Krishak Inter College has a proud history of outstanding academic results. Our students consistently achieve top scores in board examinations and go on to pursue careers in medicine, engineering, commerce, and the arts.</p>
+                        <a class='default-btn' asp-controller="Home" asp-action="about">Our Achievements</a>
+                    </div>
+                </div>
+                <div class="content-items" data-dot="<button>04</button>">
+                    <div class="image ct-bg-2" data-aos="fade-zoom-in" data-aos-delay="100"
+                         style="background-image:url('/Gprp/image/4.jpeg'); background-size:cover; background-position:center;">
+                    </div>
+                    <div class="content" data-aos="fade-up" data-aos-delay="200">
+                        <span>Holistic Development</span>
+                        <h2>Beyond Academics — Complete Student Development</h2>
+                        <p>We believe education extends beyond textbooks. Through sports, arts, cultural events, NCC, and community service programmes, Krishak Inter College develops well-rounded, confident, and responsible citizens.</p>
+                        <a class='default-btn' asp-controller="Home" asp-action="events">Student Activities</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- End About Us Area 2 -->
+    
+    <!-- Start Leadership Area -->
+    <div class="leadership-area">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>Our Leadership</p>
+                </div>
+                <h2>Meet The Pillars of Our Institution</h2>
+            </div>
+
+            <div class="row justify-content-center">
+                <!-- Leader 1: Founder / President -->
+                <div class="col-lg-4 col-md-6 col-sm-12" data-aos="fade-up" data-aos-delay="100">
+                    <div class="leader-card">
+                        <div>
+                            <div class="leader-image-wrapper">
+                                <img src="/Gprp/image/Founder_President.jpeg" alt="SHRI. MUNNU BABU" class="leader-image" />
+                            </div>
+                            <span class="leader-role-badge">Founder / President</span>
+                            <h3 class="leader-name">SHRI. MUNNU BABU</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">(ADVOCATE)</span>
+                        </div>
+                        <div class="leader-institution">
+                            PRINCIPAL JAN KALYAN INTER COLLEGE
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 2: Managing Director -->
+                <div class="col-lg-4 col-md-6 col-sm-12" data-aos="fade-up" data-aos-delay="200">
+                    <div class="leader-card">
+                        <div>
+                            <div class="leader-image-wrapper">
+                                <img src="/Gprp/image/praveen.jpeg" alt="SHRI. PRAVEEN SACHAN" class="leader-image" />
+                            </div>
+                            <span class="leader-role-badge">Managing Director</span>
+                            <h3 class="leader-name">SHRI. PRAVEEN SACHAN</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Inter College</span>
+                        </div>
+                        <div class="leader-institution">
+                            EXECUTIVE MANAGEMENT &amp; PLANNING
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader 3: Director -->
+                <div class="col-lg-4 col-md-6 col-sm-12" data-aos="fade-up" data-aos-delay="300">
+                    <div class="leader-card">
+                        <div>
+                            <div class="leader-image-wrapper">
+                                <img src="/Gprp/image/rk.jpeg" alt="SHRI R.K. SACHAN" class="leader-image" />
+                            </div>
+                            <span class="leader-role-badge">Director</span>
+                            <h3 class="leader-name">SHRI R.K. SACHAN</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Inter College</span>
+                        </div>
+                        <div class="leader-institution">
+                            PRINCIPAL M.D.B.L. INTER COLLEGE, UMARI
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Leadership Area -->
+
+    <!-- Start Features Area 2 -->
+    <div class="features-area-2">
+        <div class="features-content-2 ptb-100">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="sub-title">
+                            <p>Why Choose Krishak Inter College</p>
+                        </div>
+                        <div class="content">
+                            <h2>An inclusive community that empowers every student to succeed</h2>
+                            <div class="item">
+                                <div class="item-content">
+                                    <div class="icon">
+                                        <img src="~/collage/collage_project/assets/img/icon/features-icon-2.png" alt="image">
+                                    </div>
+                                    <h3>Quality Education</h3>
+                                    <p>CBSE/State board aligned curriculum delivered by experienced educators, with regular assessments, doubt sessions, and parent-teacher meetings to track every student's progress.</p>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="item-content">
+                                    <div class="icon">
+                                        <img src="~/collage/collage_project/assets/img/icon/features-icon-1.png" alt="image">
+                                    </div>
+                                    <h3>Smart Classes & Flexible Learning</h3>
+                                    <p>Interactive smart boards, digital learning tools, and a well-stocked library give students every resource they need to excel at their own pace in every subject.</p>
+                                </div>
+                            </div>
+                            <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">Enquire for Admission</a>
+
+                            <div class="arrow-icon">
+                                <img src="~/collage/collage_project/assets/img/icon/shape-1.png" alt="image">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="academic-content">
+                            <div class="row">
+                                <div class="col-lg-6 col-sm-6 col-md-6 pt-25">
+                                    <div class="academic-item" data-aos="fade-up" data-aos-delay="100">
+                                        <div class="image">
+                                            <img src="/Gprp/image/5.jpeg" alt="Smart Classrooms">
+                                            <div class="number">
+                                                <h3>01</h3>
+                                            </div>
+                                        </div>
+                                        <div class="content">
+                                            <h4>Smart Classrooms</h4>
+                                            <a class='btn' href='#'>Learn More <i class='bx bx-right-arrow-alt'></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="academic-item" data-aos="fade-up" data-aos-delay="200">
+                                        <div class="image">
+                                            <img src="/Gprp/image/6.jpeg" alt="Science Labs">
+                                            <div class="number">
+                                                <h3>02</h3>
+                                            </div>
+                                        </div>
+                                        <div class="content">
+                                            <h4>Bachelor’s & Master’s</h4>
+                                            <a class='btn' href='#'>Learn More <i class='bx bx-right-arrow-alt'></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6 pt-25">
+                                    <div class="academic-item" data-aos="fade-up" data-aos-delay="300">
+                                        <div class="image">
+                                            <img src="/Gprp/image/7.jpeg" alt="Sports">
+                                            <div class="number">
+                                                <h3>03</h3>
+                                            </div>
+                                        </div>
+                                        <div class="content">
+                                            <h4>Sports &amp; Athletics</h4>
+                                            <a class='btn' href='#'>Learn More <i class='bx bx-right-arrow-alt'></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="academic-item" data-aos="fade-up" data-aos-delay="400">
+                                        <div class="image">
+                                            <img src="/Gprp/image/8.jpeg" alt="Library">
+                                            <div class="number">
+                                                <h3>04</h3>
+                                            </div>
+                                        </div>
+                                        <div class="content">
+                                            <h4>Digital Library</h4>
+                                            <a class='btn' href='#'>Learn More <i class='bx bx-right-arrow-alt'></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Start Image Scroll Area -->
+    <div class="image-marquee-section">
+        <div class="container-fluid">
+            <div class="section-title text-center" style="margin-bottom: 40px;" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p><i class='bx bxs-image'></i> Campus Gallery</p>
+                </div>
+                <h2>Life At Krishak Inter College</h2>
+            </div>
+            <div class="marquee-wrapper">
+                <div class="marquee-track">
+                    <!-- c7 to c12 -->
+                    <div class="marquee-item"><img src="~/Gprp/image/c7.jpeg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c8.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c9.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c10.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c11.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c12.jpg" alt="Campus Life" /></div>
+                    <!-- Duplicate for seamless loop -->
+                    <div class="marquee-item"><img src="~/Gprp/image/c7.jpeg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c8.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c9.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c10.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c11.jpg" alt="Campus Life" /></div>
+                    <div class="marquee-item"><img src="~/Gprp/image/c12.jpg" alt="Campus Life" /></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Image Scroll Area -->
+
+    <!-- Start Video Area  -->
+   @*  <div class="video-area" style="background-image: url('/Gprp/image/core2.jpeg') !important; background-size: cover; background-position: center; position: relative;">
+        <div class="container">
+            <div class="video-play-btn" data-aos="fade-zoom-in" data-aos-delay="100">
+                <a class="popup-youtube" href="#">Play</a>
+            </div>
+        </div>
+    </div> *@
+    <!-- End Video Area  -->
+    <!-- Start News Area 2 -->
+    <div class="news-area ptb-100">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>School News</p>
+                </div>
+                <h2>Latest News, Events &amp; Achievements at Krishak Inter College</h2>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="news-content">
+                        <ul>
+                            <li class="news-item" data-aos="fade-up" data-aos-delay="100">
+                                <div class="image">
+                                    <img src="/Gprp/image/core1.jpeg" alt="School News">
+                                </div>
+                                <div class="content">
+                                    <div class="sub-title">
+                                        <i class='bx bxs-graduation'></i> <p>Academic Excellence</p>
+                                    </div>
+                                    <h2><a href='#'>Krishak Inter College Students Shine at District Science Olympiad 2026</a></h2>
+                                    <p>Krishak Inter College students continue to top district and state examinations, bringing pride to the institution and their families.</p>
+                                    <a class='btn' href='#'>Continue Reading...</a>
+                                </div>
+                            </li>
+                            <li class="news-item" data-aos="fade-up" data-aos-delay="200">
+                                <div class="image">
+                                    <img src="/Gprp/image/core2.jpeg" alt="School Events">
+                                </div>
+                                <div class="content">
+                                    <div class="sub-title">
+                                        <i class='bx bxs-graduation'></i> <p>Cultural Events</p>
+                                    </div>
+                                    <h2><a href='#'>Annual Cultural Fest Showcases Extraordinary Student Talent</a></h2>
+                                    <p>Krishak Inter College students continue to top district and state examinations, bringing pride to the institution and their families.</p>
+                                    <a class='btn' href='#'>Continue Reading...</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="news-content-right" data-aos="fade-up" data-aos-delay="100">
+                        <div class="content-box">
+                                <img src="/Gprp/image/core3.jpeg" alt="School Results">
+                            <div class="content">
+                                <h3><a href='#'>Krishak Inter College Achieves 100% Board Results for 5th Consecutive Year</a></h3>
+                                <p>Krishak Inter College is proud of its unbroken streak of 100% board results, with students consistently securing distinction and top ranks in the district.</p>
+                                <a class='btn' href='#'>Continue Reading...</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="news-content-item" data-aos="fade-up" data-aos-delay="100">
+                        <div class="content-box">
+                            <div class="image">
+                                <img src="/Gprp/image/core4.jpeg" alt="Infrastructure">
+                            </div>
+                            <div class="content">
+                                <div class="sub-title">
+                                    <i class='bx bxs-graduation'></i> <p>Infrastructure</p>
+                                </div>
+                                <h3><a href='#'>New Computer Lab Inaugurated with 40 High-Speed Workstations</a></h3>
+                            </div>
+                        </div>
+                        <div class="content-box">
+                            <div class="image">
+                                <img src="/Gprp/image/core5.jpeg" alt="Sports">
+                            </div>
+                            <div class="content">
+                                <div class="sub-title">
+                                    <i class='bx bxs-graduation'></i> <p>Sports</p>
+                                </div>
+                                <h3><a href='#'>Students Win Gold at State-Level Kabaddi Championship</a></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-btn text-center" data-aos="fade-zoom-in" data-aos-delay="100">
+                <p>Inspiring Minds, Building Futures. <a href='#'>More School News <i class='bx bx-right-arrow-alt'></i></a></p>
+            </div>
+        </div>
+    </div>
+    <!-- End News Area 2 -->
+    <!-- Start Faculty Area 2 -->
+   @*  <div class="faculty-area-2 ptb-100">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-3">
+                    <div class="heading" data-aos="fade-up" data-aos-delay="100">
+                        <h2>Fee Concession &amp; Scholarship Programmes</h2>
+                    </div>
+                </div>
+                <div class="col-lg-7" data-aos="fade-up" data-aos-delay="200">
+                    <div class="content">
+                        <p>Krishak Inter College offers merit-based scholarships and fee concessions for deserving students. We believe financial constraints should never be a barrier to quality education. Apply today to know if you qualify.</p>
+                    </div>
+                </div>
+                <div class="col-lg-2" data-aos="fade-up" data-aos-delay="300">
+                    <div class="button">
+                        <a class='default-btn' href='#'>Apply for Scholarship</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+    <!-- End Faculty Area 2 -->
+    <!-- Start Quick Search Area -->
+    <div class="quick-search style-2 ptb-100">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="course-search-image text-center">
+                        <img src="/Gprp/image/g7.jpeg" alt="Campus Life" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-height: 480px; object-fit: cover;">
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="quick-content" data-aos="fade-up" data-aos-delay="200">
+                        <div class="sub-title">
+                            <p>School News</p>
+                        </div>
+                        <h2>Start Your Career & Pursue Your Passion</h2>
+                        <p style="color: var(--blackColor);">Krishak Inter College offers a comprehensive curriculum from Primary to Higher Secondary level. Our expert faculty, excellent facilities, and nurturing environment make us the top choice for quality education.</p>
+
+                        <div class="list">
+                            <div class="row">
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="list-items">
+                                        <ul>
+                                            <li><i class='bx bx-right-arrow-circle'></i> Alumni & Donors</li>
+                                            <li><i class='bx bx-right-arrow-circle'></i> Academic Calendar 2026-27</li>
+                                            <li><i class='bx bx-right-arrow-circle'></i> School Annual Events</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="list-items">
+                                        <ul>
+                                            <li><i class='bx bx-right-arrow-circle'></i> Partnership & Out Reach</li>
+                                            <li><i class='bx bx-right-arrow-circle'></i> CBSE Curriculum Details</li>
+                                            <li><i class='bx bx-right-arrow-circle'></i> Admission Fee Structure</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="apply-banner">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <p>Enquire for Admission</p>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6 text-end">
+                                    <a class='default-btn' asp-controller='Enquiry' asp-action='PublicForm'>Enquire Now</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="user-exprience">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="user-info">
+                                        <div class="image">
+                                            <img src="/Gprp/image/praveen.jpeg" alt="Managing Director" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover;">
+                                        </div>
+                                        <div class="text">
+                                            <h4>Shri Praveen Sachan</h4>
+                                            <p>Managing Director</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-sm-6 col-md-6">
+                                    <div class="exprience">
+                                        <div class="icon">
+                                            <img src="/collage/collage_project/assets/img/icon/trophy-star.png" alt="image">
+                                        </div>
+                                        <div class="text">
+                                            <h4>16</h4>
+                                            <p>Years of <br> Experience</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Quick Search Area -->
+    <!-- Start Campus Area 2 -->
+    <div class="campus-area-2 ptb-100">
+        <div class="container-fluaid">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>Campus Facilities</p>
+                </div>
+                <h2>Our Campus at a Glance</h2>
+            </div>
+
+            <div class="campus-slider owl-carousel owl-theme">
+                <div class="campus-card" data-aos="fade-up" data-aos-delay="100">
+                    <img src="/Gprp/image/9.jpeg" alt="School Building">
+                    <div class="content">
+                        <h2>Main School Building</h2><a class='default-btn' href='#'>View Gallery</a>
+                    </div>
+                </div>
+                <div class="campus-card" data-aos="fade-up" data-aos-delay="200">
+                    <img src="/Gprp/image/10.jpeg" alt="Classrooms">
+                    <div class="content">
+                        <h2>Science &amp; Tech Block</h2><a class='default-btn' href='#'>View Gallery</a>
+                    </div>
+                </div>
+                <div class="campus-card" data-aos="fade-up" data-aos-delay="300">
+                    <img src="/Gprp/image/2.jpg" alt="Faculty">
+                    <div class="content">
+                        <h2>Main School Building</h2><a class='default-btn' href='#'>View Gallery</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Campus Area -->
+    <!-- Start Activities Area -->
+    <div class="activities-area ptb-100">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>Sports &amp; Activities</p>
+                </div>
+                <h2>Beyond the Bleachers: Diverse Sports & Activities</h2>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-4 col-sm-6 col-md-6">
+                    <div class="activities-card style-2" data-aos="fade-up" data-aos-delay="100">
+                        <div class="image">
+                            <img src="/Gprp/image/core1.jpeg" alt="Sports">
+                        </div>
+                        <div class="content">
+                            <h2><a href='#'>Champions in Making</a></h2>
+                            <p>Krishak Inter College students compete at district, state, and national levels across cricket, kabaddi, football, athletics, and chess — building discipline and teamwork.</p>
+                            <a class='btn' href='#'>Championships Won</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-md-6 pt-25">
+                    <div class="activities-card style-2" data-aos="fade-up" data-aos-delay="200">
+                        <div class="image">
+                            <img src="/Gprp/image/core2.jpeg" alt="Olympic">
+                        </div>
+                        <div class="content">
+                            <h2><a href='#'>NCC &amp; Scout</a></h2>
+                            <p>Krishak Inter College students compete at district, state, and national levels across cricket, kabaddi, football, athletics, and chess — building discipline and teamwork.</p>
+                            <a class='btn' href='#'>Medals &amp; Awards</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-md-6">
+                    <div class="activities-card style-2" data-aos="fade-up" data-aos-delay="300">
+                        <div class="image">
+                            <img src="/Gprp/image/core3.jpeg" alt="Activities">
+                        </div>
+                        <div class="content">
+                            <h2><a href='#'>Arts &amp; Culture</a></h2>
+                            <p>Krishak Inter College students compete at district, state, and national levels across cricket, kabaddi, football, athletics, and chess — building discipline and teamwork.</p>
+                            <a class='btn' href='#'>Student Stories</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-btn text-center" data-aos="fade-zoom-in" data-aos-delay="100">
+                <p>Nurturing Excellence Beyond Classrooms. <a href='#'>More About Sports <i class='bx bx-right-arrow-alt'></i></a></p>
+            </div>
+        </div>
+    </div>
+    <!-- End Activities Area -->
+    <!-- Start Events Area 2 -->
+   @*  <div class="events-area-2 pt-100">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>News and Events</p>
+                </div>
+                <h2>Recent News &amp; Upcoming Events</h2>
+            </div>
+
+            <!-- Top Event -->
+            <div class="event lg" data-aos="fade-up" data-aos-delay="100">
+                <div class="content">
+                    <div class="image">
+                        <img src="/Gprp/image/core4.jpeg" alt="Board Results">
+                    </div>
+                    <div class="text">
+                        <div class="tag">Exam Results</div>
+                        <h2><a href='#'>Krishak Inter College Students Achieve Outstanding Results in CBSE Board Exams 2026</a></h2>
+                        <span>October 06, 2026</span>
+                        <p>Krishak Inter College proudly announces that students secured top ranks in CBSE Board Examinations 2026, with 15 students scoring above 95% marks.</p>
+                        <div class="link"><a href='#'><i class='bx bx-link-external'></i></a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Post & Event -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="recent-post">
+                        <h4 data-aos="fade-zoom-in" data-aos-delay="100">Recent News</h4>
+                        <div class="event" data-aos="fade-up" data-aos-delay="100">
+                            <div class="content">
+                                <div class="image">
+                                    <img src="/Gprp/image/core5.jpeg" alt="Sports Day">
+                                </div>
+                                <div class="text">
+                                    <div class="tag">News</div>
+                                    <h2><a href='#'>Annual Sports Day Celebrated with Great Enthusiasm Across All Classes</a></h2>
+                                    <span>October 06, 2026</span>
+                                    <p>Students from Classes I to XII participated in the Annual Sports Day, showcasing their athletic talent and school spirit.</p>
+                                    <div class="link"><a href="#"><i class='bx bx-link-external'></i></a></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="event" data-aos="fade-up" data-aos-delay="200">
+                            <div class="content">
+                                <div class="image">
+                                    <img src="/Gprp/image/core1.jpeg" alt="Digital Library">
+                                </div>
+                                <div class="text">
+                                    <div class="tag">News</div>
+                                    <h2><a href='#'>School Inauguration of New Digital Library &amp; Computer Wing</a></h2>
+                                    <span>October 06, 2026</span>
+                                    <p>Students from Classes I to XII participated in the Annual Sports Day, showcasing their athletic talent and school spirit.</p>
+                                    <div class="link"><a href='#'><i class='bx bx-link-external'></i></a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="upcoming-event">
+                        <h4 data-aos="fade-zoom-in" data-aos-delay="100">Upcoming Events</h4>
+
+                        <div class="event-dates" data-aos="fade-up" data-aos-delay="100">
+                            <div class="date">
+                                <ul>
+                                    <li class="mnt">Oct</li>
+                                    <li class="det">07</li>
+                                </ul>
+                            </div>
+                            <div class="content">
+                                <h3><a href='#'>Fintech & Key Investment Conference</a></h3>
+                                <p>All parents and students are cordially invited to attend and celebrate excellence.</p>
+                                <div class="location"><i class='bx bx-map'></i> Krishak Inter College Auditorium</div>
+                                <div class="link"><a href='#'><i class='bx bx-link-external'></i></a></div>
+                            </div>
+                        </div>
+                        <div class="event-dates" data-aos="fade-up" data-aos-delay="200">
+                            <div class="date">
+                                <ul>
+                                    <li class="mnt">Oct</li>
+                                    <li class="det">09</li>
+                                </ul>
+                            </div>
+                            <div class="content">
+                                <h3><a href="#">Parent-Teacher Meeting - Session 2026-27</a></h3>
+                                <p>All parents and students are cordially invited to attend and celebrate excellence.</p>
+                                <div class="location"><i class='bx bx-map'></i> Krishak Inter College Auditorium</div>
+                                <div class="link"><a href="#"><i class='bx bx-link-external'></i></a></div>
+                            </div>
+                        </div>
+                        <div class="event-dates" data-aos="fade-up" data-aos-delay="300">
+                            <div class="date">
+                                <ul>
+                                    <li class="mnt">Oct</li>
+                                    <li class="det">19</li>
+                                </ul>
+                            </div>
+                            <div class="content">
+                                <h3><a href='#'>School Annual Sports Day &amp; Competition</a></h3>
+                                <p>All parents and students are cordially invited to attend and celebrate excellence.</p>
+                                <div class="location"><i class='bx bx-map'></i> Krishak Inter College Auditorium</div>
+                                <div class="link"><a href='#'><i class='bx bx-link-external'></i></a></div>
+                            </div>
+                        </div>
+                        <div class="event-dates" data-aos="fade-zoom-in" data-aos-delay="100">
+                            <a class='btn' href='#'>View All Events <i class='bx bx-right-arrow-alt'></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+    <!-- End Events Area 2 -->
+    <!-- Start Success Area 2 -->
+    <div class="success-area success-area-2 ptb-100">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>Student Success Stories</p>
+                </div>
+                <h2>Our Students - Our Pride</h2>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-4 col-sm-6 col-md-6">
+                    <div class="success-card" data-aos="fade-up" data-aos-delay="100">
+                        <div class="image">
+                            <img src="/Gprp/image/g1.jpeg" alt="Student Success">
+                            <div class="play-btn-overlay">
+                                <a class="popup-youtube" href="#"><i class='bx bx-play'></i></a>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-md-6">
+                    <div class="success-card" data-aos="fade-up" data-aos-delay="200">
+                        <div class="image">
+                            <img src="/Gprp/image/g2.jpeg" alt="Students">
+                            <div class="play-btn-overlay">
+                                <a class="popup-youtube" href="#"><i class='bx bx-play'></i></a>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-md-6">
+                    <div class="success-card" data-aos="fade-up" data-aos-delay="300">
+                        <div class="image">
+                            <img src="/Gprp/image/g3.jpeg" alt="Excellence">
+                            <div class="play-btn-overlay">
+                                <a class="popup-youtube" href="#"><i class='bx bx-play'></i></a>
+                            </div>
+                        </div>
+                     
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-btn text-center" data-aos="fade-zoom-in" data-aos-delay="100">
+                <p>Nurturing Excellence Beyond Classrooms. </p>
+            </div>
+        </div>
+    </div>
+    <!-- End Success Area 2 -->
+    <!-- Start Subscribe Area 2 -->
+    <div class="subscribe-area subscribe-area-2" style="background-image: url('/Gprp/image/core1.jpeg') !important; background-size: cover; background-position: center; position: relative;">
+        <div class="container">
+            <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="sub-title">
+                    <p>Stay Connected with Krishak Inter College</p>
+                </div>
+                <h2>Get the Latest Krishak Inter College News &amp; Admissions Updates in Your Inbox</h2>
+            </div>
+
+            <div class="subscribe-btn text-center" data-aos="fade-up" data-aos-delay="200">
+                <a class="default-btn" href="#">Subscribe Now</a>
+            </div>
+        </div>
+    </div>
+    <!-- End Subscribe Area 2 -->
+    <!-- Start Footer Area -->
+    <div class="footer-area">
+        <div class="footer-widget-info ptb-100">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Quick Links</h4>
+                            <ul>
+                                <li><a asp-controller="Home" asp-action="Index"><i class='bx bx-chevron-right'></i> Home</a></li>
+                                <li><a asp-controller="Home" asp-action="about"><i class='bx bx-chevron-right'></i> About Us</a></li>
+                                <li><a asp-controller="Home" asp-action="Gallery"><i class='bx bx-chevron-right'></i> Gallery</a></li>
+                                <li><a asp-controller="Home" asp-action="contacts"><i class='bx bx-chevron-right'></i> Contact Us</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Account</h4>
+                            <ul>
+                                <li><a asp-controller="Account" asp-action="Login"><i class='bx bx-chevron-right'></i> Login</a></li>
+                               @*  <li><a asp-controller="Account" asp-action="Register"><i class='bx bx-chevron-right'></i> Register</a></li> *@
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-md-6">
+                        <div class="footer-widget">
+                            <h4>Contact Info</h4>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 10px;"><i class="bx bxs-map me-2" style="color: var(--mainColor);"></i> Krishak Inter College, India</p>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 10px;"><i class="bx bxs-envelope me-2" style="color: var(--mainColor);"></i> <a href="mailto:info@kic.in" style="color: var(--paragraphColorSecond);">info@kic.in</a></p>
+                            <p style="color: var(--paragraphColorSecond); line-height: 1.8; margin-bottom: 0;"><i class="bx bxs-time me-2" style="color: var(--mainColor);"></i> Mon - Sat: 8:00 - 17:00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="copy-right-area style-2">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-4">
+                        <div class="cpr-left">
+                            <p>Copyright© <a href="https://kic.in">Krishak Inter College</a>. All rights reserved.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="cpr-right">
+                            <ul>
+                                <li><a href="#">Privacy Policy</a></li>
+                                <li><a href="#">Cookie Policy</a></li>
+                            </ul>
+                            <ul class="social-list">
+                                <li><a href="#"><i class='bx bxl-facebook'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-instagram-alt'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-twitter'></i></a></li>
+                                <li><a href="#"><i class='bx bxl-linkedin-square'></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="copy-logo">
+                    <img src="/kic_logo.png" alt="Krishak Inter College" style="height: 60px; width: auto; background: var(--whiteColor); padding: 5px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Footer Area -->
+
+    <div class="go-top active">
+        <i class="bx bx-up-arrow-alt"></i>
+    </div>
+
+    <!-- Sticky Social Bar -->
+    <div class="sticky-social-bar">
+        <div class="social-bar-item facebook">
+            <a href="https://www.facebook.com/share/1Bs6RppzNC/" target="_blank" rel="noopener noreferrer">
+                <span class="label">Facebook</span>
+                <i class="bx bxl-facebook"></i>
+            </a>
+        </div>
+        <div class="social-bar-item instagram">
+            <a href="https://www.instagram.com/gprpghatampur?igsh=bGJvdjkyM29idDh0" target="_blank" rel="noopener noreferrer">
+                <span class="label">Instagram</span>
+                <i class="bx bxl-instagram"></i>
+            </a>
+        </div>
+        <div class="social-bar-item email">
+            <a href="mailto:kic.otp@gmail.com">
+                <span class="label">Email</span>
+                <i class="bx bx-envelope"></i>
+            </a>
+        </div>
+        <div class="social-bar-item whatsapp">
+            <a href="https://wa.me/919935106067" target="_blank" rel="noopener noreferrer">
+                <span class="label">WhatsApp</span>
+                <i class="bx bxl-whatsapp"></i>
+            </a>
+        </div>
+        <div class="social-bar-item sms">
+            <a href="sms:+919935106067">
+                <span class="label">SMS</span>
+                <i class="bx bx-message-detail"></i>
+            </a>
+        </div>
+        <div class="social-bar-item share">
+            <a href="javascript:void(0);" onclick="sharePage()">
+                <span class="label">Share</span>
+                <i class="bx bx-share-alt"></i>
+            </a>
+        </div>
+        <div class="social-bar-toggle" onclick="toggleSocialBar()">
+            <i class="bx bx-chevrons-right"></i>
+        </div>
+    </div>
+
+    <!-- Admission Enquiry Modal -->
+    <div id="enquiryModal" class="enquiry-modal-overlay" style="display: none;">
+        <div class="enquiry-modal-card">
+            <div class="enquiry-modal-header">
+                <span class="enquiry-modal-close" onclick="closeEnquiryModal()">&times;</span>
+                <div class="enquiry-modal-header-content">
+                    <div class="enquiry-modal-icon">
+                        <i class="bx bxs-graduation"></i>
+                    </div>
+                    <h3>Admissions Open 2026-27</h3>
+                    <p>Secure your child's seat at Krishak Inter College</p>
+                </div>
+            </div>
+            <div class="enquiry-modal-body">
+                <div id="modalFormContainer">
+                    <div id="modalValidationError" style="display: none; background-color: #ffeef0; color: #d9383a; font-size: 13px; padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; border: 1px solid #fec8cb; text-align: center;"></div>
+                    <form id="publicEnquiryForm" onsubmit="handleEnquirySubmit(event)">
+                        <div class="enquiry-modal-field">
+                            <i class="bx bx-user"></i>
+                            <input type="text" id="modalStudentName" placeholder="Student's Full Name *" required />
+                        </div>
+                        <div class="enquiry-modal-field">
+                            <i class="bx bx-user-voice"></i>
+                            <input type="text" id="modalParentName" placeholder="Parent / Guardian Name *" required />
+                        </div>
+                        <div class="enquiry-modal-field">
+                            <i class="bx bx-phone"></i>
+                            <input type="tel" id="modalMobileNo" placeholder="10-Digit Mobile Number *" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="10" required />
+                        </div>
+                        <div class="enquiry-modal-field">
+                            <i class="bx bx-book-open"></i>
+                            <select id="modalInterestedClassId" required>
+                                <option value="">-- Select Class -- </option>
+                            </select>
+                        </div>
+                        <div class="enquiry-modal-field" style="display: none;">
+                            <i class="bx bx-calendar"></i>
+                            <select id="modalSessionId">
+                                <option value="">Select Academic Session</option>
+                            </select>
+                        </div>
+
+                        <!-- Captcha Block -->
+                        <div class="enquiry-modal-field d-flex align-items-center gap-2" style="margin-bottom: 16px;">
+                            <div class="captcha-img-wrapper" style="flex-shrink: 0;">
+                                <img src="/Enquiry/GetCaptchaImage" id="enquiryCaptchaImg" alt="Captcha" style="height: 38px; border-radius: 8px; border: 1.5px solid #e2e8f0;" />
+                            </div>
+                            <button type="button" onclick="refreshEnquiryCaptcha()" class="btn p-0 border-0 bg-transparent text-secondary-light cursor-pointer" style="font-size: 24px; color: #94a3b8; outline: none; line-height: 1;" title="Refresh Captcha">
+                                <i class="bx bx-refresh"></i>
+                            </button>
+                            <input type="text" id="modalCaptchaInput" placeholder="Code *" style="max-width: 110px; text-transform: uppercase; padding-left: 12px !important;" required autocomplete="off" />
+                        </div>
+                        
+                        <button type="submit" class="enquiry-modal-submit-btn">Submit Enquiry</button>
+                    </form>
+                </div>
+                <div id="modalSuccessContainer" style="display: none; text-align: center; padding: 30px 10px;">
+                    <div class="success-icon-wrap" style="font-size: 60px; color: #2eca7f; margin-bottom: 20px;">
+                        <i class="bx bx-check-circle"></i>
+                    </div>
+                    <h4 style="font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">Enquiry Submitted!</h4>
+                    <p style="color: #64748b; font-size: 14px; line-height: 1.5;">Thank you for your interest. Our admissions team will review your enquiry and contact you within 24 hours.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links of JS files -->
+    <script src="~/collage/collage_project/assets/js/jquery.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/aos.js"></script>
+    <script src="~/collage/collage_project/assets/js/bootstrap.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/magnific-popup.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/owl.carousel.min.js"></script>
+    <script src="~/collage/collage_project/assets/js/main.js"></script>
+
+    <!-- Custom script to initialize background slider -->
+    <script>
+        $(document).ready(function() {
+            $('.banner-slider').owlCarousel({
+                items: 1,
+                loop: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                autoplaySpeed: 1000,
+                navSpeed: 1000,
+                dotsSpeed: 1000,
+                dragEndSpeed: 1000,
+                dots: false,
+                nav: false,
+                mouseDrag: false,
+                touchDrag: false
+            });
+        });
+
+        function toggleSocialBar() {
+            const bar = document.querySelector('.sticky-social-bar');
+            bar.classList.toggle('collapsed');
+            const icon = bar.querySelector('.social-bar-toggle i');
+            if (bar.classList.contains('collapsed')) {
+                icon.className = 'bx bx-chevrons-left';
+            } else {
+                icon.className = 'bx bx-chevrons-right';
+            }
+        }
+
+        function sharePage() {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    url: window.location.href
+                }).catch(err => console.log(err));
+            } else {
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = window.location.href;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                alert('Link copied to clipboard!');
+            }
+        }
+
+        let isEnquiryDataLoaded = false;
+        let latestSessionId = null;
+
+        function refreshEnquiryCaptcha() {
+            const img = document.getElementById('enquiryCaptchaImg');
+            if (img) {
+                img.src = '/Enquiry/GetCaptchaImage?t=' + new Date().getTime();
+            }
+        }
+
+        function openEnquiryModal() {
+            const modal = document.getElementById('enquiryModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+
+            // Always get a fresh Captcha when opening
+            refreshEnquiryCaptcha();
+
+            if (!isEnquiryDataLoaded) {
+                // Load classes from the whitelisted GetClasses endpoint
+                fetch('/Enquiry/GetClasses')
+                    .then(res => res.json())
+                    .then(data => {
+                        const classList = Array.isArray(data) ? data : (data.value || []);
+                        const classSelect = document.getElementById('modalInterestedClassId');
+                        classList.forEach(c => {
+                            const opt = document.createElement('option');
+                            const id = c.classId !== undefined ? c.classId : c.ClassId;
+                            const name = c.className !== undefined ? c.className : c.ClassName;
+                            opt.value = id;
+                            opt.textContent = name;
+                            classSelect.appendChild(opt);
+                        });
+                        isEnquiryDataLoaded = true;
+                    })
+                    .catch(err => console.error("Error loading classes:", err));
+
+                // Load sessions from the whitelisted GetSessions endpoint
+                fetch('/Enquiry/GetSessions')
+                    .then(res => res.json())
+                    .then(data => {
+                        const sessionList = Array.isArray(data) ? data : (data.value || []);
+                        if (sessionList && sessionList.length > 0) {
+                            latestSessionId = sessionList[0].sessionId !== undefined ? sessionList[0].sessionId : sessionList[0].SessionId;
+                            const sessionSelect = document.getElementById('modalSessionId');
+                            sessionList.forEach(s => {
+                                const opt = document.createElement('option');
+                                const id = s.sessionId !== undefined ? s.sessionId : s.SessionId;
+                                const name = s.sessionName !== undefined ? s.sessionName : s.SessionName;
+                                opt.value = id;
+                                opt.textContent = name;
+                                sessionSelect.appendChild(opt);
+                            });
+                            sessionSelect.value = latestSessionId;
+                        }
+                    })
+                    .catch(err => console.error("Error loading sessions:", err));
+            }
+        }
+
+        function closeEnquiryModal() {
+            const modal = document.getElementById('enquiryModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                // Reset form and errors
+                document.getElementById('publicEnquiryForm').reset();
+                document.getElementById('modalValidationError').style.display = 'none';
+                document.getElementById('modalValidationError').textContent = '';
+                if (document.getElementById('modalCaptchaInput')) {
+                    document.getElementById('modalCaptchaInput').value = '';
+                }
+                document.getElementById('modalFormContainer').style.display = 'block';
+                document.getElementById('modalSuccessContainer').style.display = 'none';
+            }, 300);
+        }
+
+        function handleEnquirySubmit(event) {
+            event.preventDefault();
+
+            const studentName = document.getElementById('modalStudentName').value.trim();
+            const parentName = document.getElementById('modalParentName').value.trim();
+            const mobileNo = document.getElementById('modalMobileNo').value.trim();
+            const classId = document.getElementById('modalInterestedClassId').value;
+            const sessionId = document.getElementById('modalSessionId').value || latestSessionId;
+            const captchaInput = document.getElementById('modalCaptchaInput').value.trim();
+
+            const errorDiv = document.getElementById('modalValidationError');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            if (!studentName) {
+                errorDiv.textContent = 'Please enter the Student Full Name.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!parentName) {
+                errorDiv.textContent = 'Please enter the Parent / Guardian Name.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!mobileNo) {
+                errorDiv.textContent = 'Please enter the Mobile Number.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!/^\d{10}$/.test(mobileNo)) {
+                errorDiv.textContent = 'Please enter a valid 10-digit Mobile Number.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!classId) {
+                errorDiv.textContent = 'Please select an Interested Class.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!captchaInput) {
+                errorDiv.textContent = 'Please enter the Verification Code.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const submitBtn = event.target.querySelector('.enquiry-modal-submit-btn');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const payload = {
+                StudentName: studentName,
+                DateOfBirth: null,
+                Gender: null,
+                ParentName: parentName,
+                MobileNo: mobileNo,
+                AlternateMobile: null,
+                Email: null,
+                Address: null,
+                City: null,
+                InterestedClassId: parseInt(classId),
+                SessionId: sessionId ? parseInt(sessionId) : null,
+                CaptchaInput: captchaInput
+            };
+
+            fetch('/Enquiry/SubmitPublicForm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalFormContainer').style.display = 'none';
+                    document.getElementById('modalSuccessContainer').style.display = 'block';
+                    setTimeout(() => {
+                        closeEnquiryModal();
+                    }, 4000);
+                } else {
+                    errorDiv.textContent = data.message;
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    refreshEnquiryCaptcha();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                errorDiv.textContent = 'Error submitting enquiry. Please try again.';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+                refreshEnquiryCaptcha();
+            });
+        }
+
+        $(document).ready(function() {
+            // Auto open admission enquiry modal after 5 seconds on load
+            setTimeout(() => {
+                const modal = document.getElementById('enquiryModal');
+                if (modal && !modal.classList.contains('active')) {
+                    openEnquiryModal();
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

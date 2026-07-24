@@ -1,0 +1,257 @@
+@* ═══════════════════════════════════════════════════════════
+   _DashboardKPIs.cshtml  —  Premium Glassmorphism KPI Cards
+   All data comes from ViewBag set in AccountController.SecurePage
+   ═══════════════════════════════════════════════════════════ *@
+@{
+    int totalStudents = ViewBag.TotalStudents ?? 0;
+    int totalTeachers = ViewBag.TotalTeachers ?? 0;
+    int totalClasses  = ViewBag.TotalClasses  ?? 0;
+    int totalEmp      = ViewBag.TotalEmployees ?? 0;
+    int attPresent    = ViewBag.AttPresent ?? 0;
+    int attAbsent     = ViewBag.AttAbsent  ?? 0;
+    int attLate       = ViewBag.AttLate    ?? 0;
+    decimal attPct    = ViewBag.AttPct     ?? 0m;
+    decimal feeMonth  = ViewBag.FeeCollectedMonth ?? 0m;
+    decimal feePending = ViewBag.FeePending ?? 0m;
+    int feeDueStudents = ViewBag.FeeStudentsWithDue ?? 0;
+    int libBooks      = ViewBag.LibTotalBooks   ?? 0;
+    int libIssued     = ViewBag.LibIssuedBooks  ?? 0;
+    int libOverdue    = ViewBag.LibOverdueBooks ?? 0;
+    decimal libFine   = ViewBag.LibFineCollected ?? 0m;
+    int invProducts   = ViewBag.InvTotalProducts  ?? 0;
+    int invLowStock   = ViewBag.InvLowStock       ?? 0;
+    int invOutStock   = ViewBag.InvOutOfStock      ?? 0;
+    decimal invSales  = ViewBag.InvTodaySales     ?? 0m;
+    int invCredits    = ViewBag.InvPendingCredits  ?? 0;
+    int asmTotal      = ViewBag.AsmTotalAssets  ?? 0;
+    int asmAvail      = ViewBag.AsmAvailable    ?? 0;
+    int asmIssued     = ViewBag.AsmIssued       ?? 0;
+    int asmRepair     = ViewBag.AsmUnderRepair  ?? 0;
+    int asmOverdue    = ViewBag.AsmOverdue      ?? 0;
+
+    decimal feeTotal  = feeMonth + feePending;
+    decimal feePct    = feeTotal > 0 ? Math.Round(feeMonth * 100 / feeTotal, 1) : 0m;
+    decimal libPct    = libBooks > 0 ? Math.Round((decimal)libIssued * 100 / libBooks, 1) : 0m;
+    decimal invHealthPct = invProducts > 0
+        ? Math.Round((decimal)(invProducts - invLowStock - invOutStock) * 100 / invProducts, 1)
+        : 100m;
+    decimal asmPct    = asmTotal > 0 ? Math.Round((decimal)asmAvail * 100 / asmTotal, 1) : 0m;
+
+    // SVG ring params (circumference of r=20 circle = 2*PI*20 ≈ 125.66)
+    double ringCirc = 125.66;
+}
+
+<!-- ── ROW 1: ACADEMIC ─────────────────────────────────────────── -->
+<p class="section-label"><i class="fas fa-graduation-cap me-2"></i>Academic Overview</p>
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(30,64,175,0.08);">
+            <div class="kpi-icon-wrap blue-soft">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#1e40af"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - Math.Min(1, totalStudents / 1000.0)))"/>
+                </svg>
+                <div class="ring-text" style="color:#1e40af;">@(totalStudents > 0 ? (totalStudents > 999 ? "1K+" : totalStudents.ToString()) : "0")</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@totalStudents">0</div>
+                <div class="kpi-title">Total Students</div>
+                <div class="kpi-sub">Active Enrollments</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(13,148,136,0.08);">
+            <div class="kpi-icon-wrap teal-soft">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#0d9488"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * 0.25)"/>
+                </svg>
+                <div class="ring-text" style="color:#0d9488;">75%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@totalTeachers">0</div>
+                <div class="kpi-title">Teachers</div>
+                <div class="kpi-sub">@totalClasses Active Classes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(217,119,6,0.08);">
+            <div class="kpi-icon-wrap amber-soft">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none"
+                            stroke="@(attPct >= 85 ? "#16a34a" : attPct >= 70 ? "#d97706" : "#dc2626")"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - (double)attPct / 100.0))"/>
+                </svg>
+                <div class="ring-text" style="color:@(attPct >= 85 ? "#16a34a" : attPct >= 70 ? "#d97706" : "#dc2626");">@((int)attPct)%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@((int)attPct)">0</div>
+                <div class="kpi-title">Attendance Today <span class="kpi-unit">%</span></div>
+                <div class="kpi-sub">
+                    <span class="badge-mini green">P @attPresent</span>
+                    <span class="badge-mini red">A @attAbsent</span>
+                    <span class="badge-mini amber">L @attLate</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(79,70,229,0.08);">
+            <div class="kpi-icon-wrap indigo-soft">
+                <i class="fas fa-id-badge"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#4f46e5"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * 0.2)"/>
+                </svg>
+                <div class="ring-text" style="color:#4f46e5;">80%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@totalEmp">0</div>
+                <div class="kpi-title">Staff Members</div>
+                <div class="kpi-sub">Active Employees</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── ROW 2: OPERATIONS ──────────────────────────────────────── -->
+<p class="section-label"><i class="fas fa-cogs me-2"></i>Financial & Operations</p>
+<div class="row g-3 mb-4">
+
+    <!-- FEES -->
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(22,163,74,0.08);">
+            <div class="kpi-icon-wrap green-soft">
+                <i class="fas fa-rupee-sign"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#16a34a"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - (double)feePct / 100.0))"/>
+                </svg>
+                <div class="ring-text" style="color:#16a34a;">@((int)feePct)%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val">₹@feeMonth.ToString("N0")</div>
+                <div class="kpi-title">Fee Collected (Month)</div>
+                <div class="kpi-sub text-danger">Pending ₹@feePending.ToString("N0") &nbsp;·&nbsp; @feeDueStudents students</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(30,64,175,0.08);">
+            <div class="kpi-icon-wrap blue-soft">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#1e40af"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - (double)libPct / 100.0))"/>
+                </svg>
+                <div class="ring-text" style="color:#1e40af;">@((int)libPct)%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@libBooks">0</div>
+                <div class="kpi-title">Library Books</div>
+                <div class="kpi-sub">
+                    <span class="badge-mini blue">Issued @libIssued</span>
+                    <span class="badge-mini red">Overdue @libOverdue</span>
+                    <span class="badge-mini green">Fine ₹@libFine.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(13,148,136,0.08);">
+            <div class="kpi-icon-wrap teal-soft">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#0d9488"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - (double)invHealthPct / 100.0))"/>
+                </svg>
+                <div class="ring-text" style="color:#0d9488;">@((int)invHealthPct)%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@invProducts">0</div>
+                <div class="kpi-title">Store Products</div>
+                <div class="kpi-sub">
+                    <span class="badge-mini amber">Low @invLowStock</span>
+                    <span class="badge-mini red">Out @invOutStock</span>
+                    <span class="badge-mini green">Sales ₹@invSales.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSETS -->
+    <div class="col-xl-3 col-md-6 fade-up">
+        <div class="kpi-card" style="box-shadow: 0 6px 25px rgba(79,70,229,0.08);">
+            <div class="kpi-icon-wrap indigo-soft">
+                <i class="fas fa-laptop"></i>
+            </div>
+            <div class="radial-ring">
+                <svg viewBox="0 0 44 44" width="52" height="52">
+                    <circle class="ring-bg" cx="22" cy="22" r="20" fill="none" stroke-width="3"/>
+                    <circle class="ring-fill" cx="22" cy="22" r="20" fill="none" stroke="#4f46e5"
+                            stroke-width="3" stroke-linecap="round"
+                            stroke-dasharray="@ringCirc"
+                            stroke-dashoffset="@(ringCirc * (1 - (double)asmPct / 100.0))"/>
+                </svg>
+                <div class="ring-text" style="color:#4f46e5;">@((int)asmPct)%</div>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-val counter" data-target="@asmTotal">0</div>
+                <div class="kpi-title">Total Assets</div>
+                <div class="kpi-sub">
+                    <span class="badge-mini green">Avail @asmAvail</span>
+                    <span class="badge-mini amber">Issued @asmIssued</span>
+                    <span class="badge-mini red">Overdue @asmOverdue</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

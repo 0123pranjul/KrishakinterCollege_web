@@ -1,0 +1,119 @@
+@{
+    ViewData["Title"] = "Rollover History";
+}
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0 fw-bold"><i class="fas fa-history me-2 text-primary"></i>Rollover History</h4>
+            <div class="text-muted small">Saare wizard executions ka log — rollback bhi yahan se kar sakte hain</div>
+        </div>
+        <a href="@Url.Action("Index","SessionRollover")" class="btn btn-primary btn-sm">
+            <i class="fas fa-magic me-1"></i> New Promotion
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="historyTable" class="table table-bordered table-hover mb-0" style="font-size:0.85rem">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Source Session</th>
+                            <th>Target Session</th>
+                            <th class="text-center">CS</th>
+                            <th class="text-center">TT</th>
+                            <th class="text-center">Promoted</th>
+                            <th class="text-center">Failed</th>
+                            <th class="text-center">Retained</th>
+                            <th class="text-center">Passout</th>
+                            <th class="text-center">Left</th>
+                            <th>Executed At</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="13" class="text-center py-4 text-muted">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const ROLLBACK_URL = '@Url.Action("Rollback","SessionRollover")';
+    const HISTORY_URL  = '@Url.Action("GetHistory","SessionRollover")';
+
+    $(document).ready(function () { loadHistory(); });
+
+    function loadHistory() {
+        $.get(HISTORY_URL, function (res) {
+            var data = res.data || [];
+            if (!data.length) {
+                $('#historyBody').html('<tr><td colspan="13" class="text-center py-4 text-muted">Koi rollover history nahi mili.</td></tr>');
+                return;
+            }
+            var html = '';
+            data.forEach(function (r, i) {
+                var statusBadge = r.status === 'RolledBack'
+                    ? '<span class="badge bg-warning text-dark">RolledBack</span>'
+                    : '<span class="badge bg-success">Completed</span>';
+                var rollbackBtn = r.status === 'Completed'
+                    ? '<button class="btn btn-sm btn-outline-danger" onclick="doRollback(' + r.id + ')"><i class="fas fa-undo me-1"></i>Rollback</button>'
+                    : '<span class="text-muted small">—</span>';
+                html += '<tr>'
+                      + '<td>' + (i + 1) + '</td>'
+                      + '<td>' + r.sourceSession + '</td>'
+                      + '<td>' + r.targetSession + '</td>'
+                      + '<td class="text-center">' + r.classSectionCreatedCount + '</td>'
+                      + '<td class="text-center">' + r.timetableCreatedCount + '</td>'
+                      + '<td class="text-center text-success fw-bold">' + r.promotedCount + '</td>'
+                      + '<td class="text-center text-danger fw-bold">' + r.failedCount + '</td>'
+                      + '<td class="text-center text-warning fw-bold">' + r.retainedOtherCount + '</td>'
+                      + '<td class="text-center text-primary fw-bold">' + r.passoutCount + '</td>'
+                      + '<td class="text-center fw-bold">' + r.leftSchoolCount + '</td>'
+                      + '<td>' + r.executedAt + '</td>'
+                      + '<td class="text-center">' + statusBadge + '</td>'
+                      + '<td class="text-center">' + rollbackBtn + '</td>'
+                      + '</tr>';
+            });
+            $('#historyBody').html(html);
+        });
+    }
+
+    function doRollback(logId) {
+        Swal.fire({
+            title: 'Rollback Confirm?',
+            html: 'Target session ke <strong>saare wizard-created records</strong> soft-delete ho jayenge.<br><small class="text-muted">Yeh action reversible hai (data permanently delete nahi hoga)</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Haan, Rollback Karo!',
+            cancelButtonText: 'Cancel'
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            $.ajax({
+                url: ROLLBACK_URL, type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(logId),
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        loadHistory();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function () { toastr.error('Network error!'); }
+            });
+        });
+    }
+</script>
+}

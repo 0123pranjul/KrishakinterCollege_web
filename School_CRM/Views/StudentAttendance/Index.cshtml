@@ -1,0 +1,560 @@
+﻿@{
+    ViewData["Title"] = "Student Attendance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var today = DateTime.Today;
+}
+
+<style>
+    .att-grid-table { font-size: 11px; }
+    .att-grid-table th, .att-grid-table td { padding: 5px 4px; white-space: nowrap; }
+    .att-grid-table .student-name-cell { min-width: 150px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cell-P  { background: #d1fae5; color: #065f46; font-weight: 700; text-align: center; border-radius: 3px; }
+    .cell-A  { background: #fee2e2; color: #991b1b; font-weight: 700; text-align: center; border-radius: 3px; }
+    .cell-L  { background: #fef3c7; color: #92400e; font-weight: 700; text-align: center; border-radius: 3px; }
+    .cell-NA { background: #f3f4f6; color: #9ca3af; text-align: center; border-radius: 3px; }
+    .pct-bar { height: 5px; border-radius: 3px; background: #e5e7eb; overflow: hidden; }
+    .pct-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+    .student-link { cursor: pointer; color: #1d4ed8; text-decoration: none; font-weight: 600; }
+    .student-link:hover { text-decoration: underline; }
+    .tab-pill { border-radius: 8px !important; font-weight: 600; font-size: 13px; }
+    .tab-pill.active { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
+    .stat-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .sunday-col { background: #fef9c3 !important; }
+    .today-col  { background: #dbeafe !important; }
+    .modal-xl-custom { max-width: 860px; }
+    .cal-day { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin: 2px; }
+    .cal-P  { background: #d1fae5; color: #065f46; }
+    .cal-A  { background: #fee2e2; color: #991b1b; }
+    .cal-L  { background: #fef3c7; color: #92400e; }
+    .cal-NA { background: #f3f4f6; color: #9ca3af; }
+    .cal-SUN { background: #fce7f3; color: #9d174d; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-user-check me-2 text-success"></i>Student Attendance</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+            <li class="breadcrumb-item active">Student Attendance</li>
+        </ol></nav>
+    </div>
+</div>
+
+@*  Shared Filter Bar  *@
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Session</label>
+                <select id="selSession" class="form-select form-select-sm">
+                    <option value="">-- Session --</option>
+                    @foreach (var s in ViewBag.Sessions) { <option value="@s.SessionId">@s.SessionName</option> }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Class</label>
+                <select id="selClass" class="form-select form-select-sm">
+                    <option value="">-- Class --</option>
+                    @foreach (var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassName</option> }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Section</label>
+                <select id="selSection" class="form-select form-select-sm">
+                    <option value="">-- Section --</option>
+                    @foreach (var sec in ViewBag.Sections) { <option value="@sec.SectionId">@sec.SectionName</option> }
+                </select>
+            </div>
+            @* Daily tab extra *@
+            <div class="col-6 col-md-2" id="dailyDateWrap">
+                <label class="form-label small fw-semibold mb-1">Date</label>
+                <input type="date" id="selDate" class="form-control form-control-sm" value="@today.ToString("yyyy-MM-dd")" />
+            </div>
+            @* Monthly tab extra *@
+            <div class="col-6 col-md-2 d-none" id="monthlyMonthWrap">
+                <label class="form-label small fw-semibold mb-1">Month</label>
+                <input type="month" id="selMonth" class="form-control form-control-sm" value="@today.ToString("yyyy-MM")" />
+            </div>
+            <div class="col-6 col-md-2">
+                <button class="btn btn-primary btn-sm w-100" id="btnLoad" onclick="loadData()">
+                    <i class="fas fa-search me-1"></i> Load
+                </button>
+            </div>
+            <div class="col-6 col-md-2" id="saveWrap" style="display:none">
+                <button class="btn btn-success btn-sm w-100" onclick="saveAttendance()">
+                    <i class="fas fa-save me-1"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*  Tabs  *@
+<ul class="nav nav-pills gap-2 mb-3" id="attTabs">
+    <li class="nav-item">
+        <button class="nav-link tab-pill active" id="tab-daily" onclick="switchTab('daily')">
+            <i class="fas fa-calendar-day me-1"></i> Daily Attendance
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link tab-pill" id="tab-monthly" onclick="switchTab('monthly')">
+            <i class="fas fa-calendar-alt me-1"></i> Monthly Grid
+        </button>
+    </li>
+</ul>
+
+@* 
+   TAB 1  DAILY ATTENDANCE
+ *@
+<div id="pane-daily">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div id="dailyContainer">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-user-check fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-0">Select Session, Class, Section and Date then click Load</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* 
+   TAB 2  MONTHLY GRID
+ *@
+<div id="pane-monthly" class="d-none">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div id="monthlyContainer">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-calendar-alt fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-0">Select Session, Class, Section and Month then click Load</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* 
+   STUDENT DETAIL MODAL
+ *@
+<div class="modal fade" id="studentDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl-custom modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <div>
+                    <h5 class="modal-title mb-0" id="modalStudentName">Student Attendance Detail</h5>
+                    <small class="opacity-75" id="modalStudentMeta"></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="modalBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+//  State 
+let currentTab = 'daily';
+let studentsData = [];
+let monthlyData  = null;
+let currentSessionId = 0, currentClassId = 0, currentSectionId = 0;
+let currentYear = 0, currentMonth = 0;
+
+//  Tab Switch 
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('pane-daily').classList.toggle('d-none', tab !== 'daily');
+    document.getElementById('pane-monthly').classList.toggle('d-none', tab !== 'monthly');
+    document.getElementById('tab-daily').classList.toggle('active', tab === 'daily');
+    document.getElementById('tab-monthly').classList.toggle('active', tab === 'monthly');
+    document.getElementById('dailyDateWrap').classList.toggle('d-none', tab !== 'daily');
+    document.getElementById('monthlyMonthWrap').classList.toggle('d-none', tab !== 'monthly');
+    document.getElementById('saveWrap').style.display = 'none';
+}
+
+//  Load dispatcher 
+function loadData() {
+    if (currentTab === 'daily') loadDailyAttendance();
+    else loadMonthlyGrid();
+}
+
+// 
+//  TAB 1  DAILY ATTENDANCE
+// 
+function loadDailyAttendance() {
+    const sessionId = $('#selSession').val(), classId = $('#selClass').val(),
+          sectionId = $('#selSection').val(), date = $('#selDate').val();
+    if (!sessionId || !classId || !sectionId || !date) { toastr.warning('Please fill all filters'); return; }
+
+    currentSessionId = parseInt(sessionId);
+    currentClassId   = parseInt(classId);
+    currentSectionId = parseInt(sectionId);
+
+    const container = document.getElementById('dailyContainer');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+    document.getElementById('saveWrap').style.display = 'none';
+
+    $.get('@Url.Action("GetStudentsForAttendance","StudentAttendance")',
+        { sessionId, classId, sectionId, date }, res => {
+        studentsData = res.data || [];
+        if (!studentsData.length) {
+            container.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-users fa-3x mb-3 opacity-25"></i><p>No students found for this selection.</p></div>';
+            return;
+        }
+
+        const dateObj = new Date(date);
+        const dateStr = dateObj.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const alreadySaved = res.alreadySaved;
+
+        let present = studentsData.filter(s => s.status === 'Present').length;
+        let absent  = studentsData.filter(s => s.status === 'Absent').length;
+        let late    = studentsData.filter(s => s.status === 'Late').length;
+
+        let html = `
+        <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <span class="fw-semibold text-dark"><i class="fas fa-calendar-day me-1 text-primary"></i>${dateStr}</span>
+                ${alreadySaved ? '<span class="badge bg-success-subtle text-success border border-success-subtle ms-2"><i class="fas fa-check me-1"></i>Already Saved</span>' : '<span class="badge bg-warning-subtle text-warning border border-warning-subtle ms-2">Not Saved Yet</span>'}
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="stat-chip" style="background:#d1fae5;color:#065f46" id="cnt-present"><i class="fas fa-check-circle"></i> Present: ${present}</span>
+                <span class="stat-chip" style="background:#fee2e2;color:#991b1b" id="cnt-absent"><i class="fas fa-times-circle"></i> Absent: ${absent}</span>
+                <span class="stat-chip" style="background:#fef3c7;color:#92400e" id="cnt-late"><i class="fas fa-clock"></i> Late: ${late}</span>
+                <button class="btn btn-sm btn-outline-success" onclick="markAll('Present')"><i class="fas fa-check me-1"></i>All Present</button>
+                <button class="btn btn-sm btn-outline-danger"  onclick="markAll('Absent')"><i class="fas fa-times me-1"></i>All Absent</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3" width="50">#</th>
+                    <th>Student Name</th>
+                    <th width="80" class="text-center">Roll No</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        studentsData.forEach((s, i) => {
+            html += `<tr>
+                <td class="ps-3 text-muted">${i+1}</td>
+                <td>
+                    <span class="student-link" onclick="openStudentDetail(${s.studentId},'${s.studentName.replace(/'/g,"\\'")}')">
+                        <i class="fas fa-user-circle me-1 text-muted"></i>${s.studentName}
+                    </span>
+                </td>
+                <td class="text-center text-muted small">-</td>
+                <td class="text-center">
+                    <input type="hidden" class="att-id" value="${s.attendanceId}" />
+                    <input type="hidden" class="student-id" value="${s.studentId}" />
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check att-status" name="att_${s.studentId}" id="p_${s.studentId}" value="Present" ${s.status==='Present'?'checked':''} onchange="updateCounts()"/>
+                        <label class="btn btn-outline-success" for="p_${s.studentId}"><i class="fas fa-check me-1"></i>Present</label>
+                        <input type="radio" class="btn-check att-status" name="att_${s.studentId}" id="a_${s.studentId}" value="Absent"  ${s.status==='Absent' ?'checked':''} onchange="updateCounts()"/>
+                        <label class="btn btn-outline-danger"  for="a_${s.studentId}"><i class="fas fa-times me-1"></i>Absent</label>
+                        <input type="radio" class="btn-check att-status" name="att_${s.studentId}" id="l_${s.studentId}" value="Late"    ${s.status==='Late'  ?'checked':''} onchange="updateCounts()"/>
+                        <label class="btn btn-outline-warning" for="l_${s.studentId}"><i class="fas fa-clock me-1"></i>Late</label>
+                    </div>
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+        document.getElementById('saveWrap').style.display = '';
+    }).fail(() => { toastr.error('Failed to load students'); });
+}
+
+function updateCounts() {
+    let p = 0, a = 0, l = 0;
+    studentsData.forEach(s => {
+        const v = $(`input[name="att_${s.studentId}"]:checked`).val();
+        if (v === 'Present') p++;
+        else if (v === 'Absent') a++;
+        else if (v === 'Late') l++;
+    });
+    document.getElementById('cnt-present').innerHTML = `<i class="fas fa-check-circle"></i> Present: ${p}`;
+    document.getElementById('cnt-absent').innerHTML  = `<i class="fas fa-times-circle"></i> Absent: ${a}`;
+    document.getElementById('cnt-late').innerHTML    = `<i class="fas fa-clock"></i> Late: ${l}`;
+}
+
+function markAll(status) {
+    studentsData.forEach(s => $(`input[name="att_${s.studentId}"][value="${status}"]`).prop('checked', true));
+    updateCounts();
+}
+
+function saveAttendance() {
+    const sessionId = $('#selSession').val(), classId = $('#selClass').val(),
+          sectionId = $('#selSection').val(), date = $('#selDate').val();
+    const entries = [];
+    $('tbody tr').each(function() {
+        const studentId    = parseInt($(this).find('.student-id').val());
+        const attendanceId = parseInt($(this).find('.att-id').val());
+        const status       = $(this).find('.att-status:checked').val() || 'Present';
+        if (studentId) entries.push({ studentId, attendanceId, status });
+    });
+    if (!entries.length) { toastr.warning('No data to save'); return; }
+
+    Swal.fire({
+        title: 'Save Attendance?',
+        text: `${entries.length} students for ${date}`,
+        icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#16a34a', confirmButtonText: 'Yes, Save!'
+    }).then(r => {
+        if (!r.isConfirmed) return;
+        $.ajax({
+            url: '@Url.Action("SaveAttendance","StudentAttendance")',
+            type: 'POST', contentType: 'application/json',
+            data: JSON.stringify({ sessionId: parseInt(sessionId), classId: parseInt(classId), sectionId: parseInt(sectionId), date, entries }),
+            success: res => {
+                if (res.success) { toastr.success(res.message); loadDailyAttendance(); }
+                else toastr.error(res.message);
+            },
+            error: () => toastr.error('Save failed!')
+        });
+    });
+}
+
+// 
+//  TAB 2  MONTHLY GRID
+// 
+function loadMonthlyGrid() {
+    const sessionId = $('#selSession').val(), classId = $('#selClass').val(),
+          sectionId = $('#selSection').val(), monthVal = $('#selMonth').val();
+    if (!sessionId || !classId || !sectionId || !monthVal) { toastr.warning('Please fill all filters'); return; }
+
+    const [year, month] = monthVal.split('-').map(Number);
+    currentSessionId = parseInt(sessionId);
+    currentClassId   = parseInt(classId);
+    currentSectionId = parseInt(sectionId);
+    currentYear  = year;
+    currentMonth = month;
+
+    const container = document.getElementById('monthlyContainer');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+    $.get('@Url.Action("GetMonthlyGrid","StudentAttendance")',
+        { sessionId, classId, sectionId, year, month }, res => {
+        if (!res.success) { toastr.error('Failed to load'); return; }
+        monthlyData = res;
+        renderMonthlyGrid(res);
+    }).fail(() => toastr.error('Failed to load monthly data'));
+}
+
+function renderMonthlyGrid(res) {
+    const container = document.getElementById('monthlyContainer');
+    const dates = res.markedDates || [];
+    const rows  = res.rows || [];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!rows.length) {
+        container.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-users fa-3x mb-3 opacity-25"></i><p>No students found.</p></div>';
+        return;
+    }
+    if (!dates.length) {
+        container.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-calendar fa-3x mb-3 opacity-25"></i><p>No attendance marked for this month yet.</p></div>';
+        return;
+    }
+
+    // Summary stats
+    const totalStudents = rows.length;
+    const avgPct = rows.length ? (rows.reduce((a,r) => a + r.percentage, 0) / rows.length).toFixed(1) : 0;
+    const below75 = rows.filter(r => r.percentage < 75).length;
+
+    let html = `
+    <div class="p-3 border-bottom d-flex flex-wrap gap-3 align-items-center justify-content-between">
+        <div class="d-flex gap-3 flex-wrap">
+            <span class="stat-chip" style="background:#dbeafe;color:#1e40af"><i class="fas fa-users"></i> ${totalStudents} Students</span>
+            <span class="stat-chip" style="background:#d1fae5;color:#065f46"><i class="fas fa-chart-line"></i> Avg: ${avgPct}%</span>
+            <span class="stat-chip" style="background:#fee2e2;color:#991b1b"><i class="fas fa-exclamation-triangle"></i> Below 75%: ${below75}</span>
+            <span class="stat-chip" style="background:#f3f4f6;color:#374151"><i class="fas fa-calendar-check"></i> Working Days: ${res.totalWorkingDays}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge" style="background:#d1fae5;color:#065f46;padding:5px 10px">P = Present</span>
+            <span class="badge" style="background:#fee2e2;color:#991b1b;padding:5px 10px">A = Absent</span>
+            <span class="badge" style="background:#fef3c7;color:#92400e;padding:5px 10px">L = Late</span>
+            <span class="badge" style="background:#f3f4f6;color:#9ca3af;padding:5px 10px"> = N/A</span>
+        </div>
+    </div>
+    <div class="table-responsive" style="max-height:600px;overflow:auto;">
+    <table class="table table-bordered att-grid-table mb-0">
+        <thead style="position:sticky;top:0;z-index:10;background:#fff;">
+            <tr>
+                <th class="ps-3" style="position:sticky;left:0;background:#f8fafc;z-index:11;min-width:40px">#</th>
+                <th style="position:sticky;left:40px;background:#f8fafc;z-index:11;min-width:160px">Student</th>`;
+
+    dates.forEach(d => {
+        const isToday = d.date === today;
+        const isSun   = new Date(d.date).getDay() === 0;
+        const cls     = isToday ? 'today-col' : isSun ? 'sunday-col' : '';
+        html += `<th class="text-center ${cls}" title="${d.date}">${d.day}<br><span style="font-size:9px;color:#6b7280">${d.dayName}</span></th>`;
+    });
+
+    html += `<th class="text-center" style="background:#f8fafc;min-width:55px">P</th>
+             <th class="text-center" style="background:#f8fafc;min-width:55px">A</th>
+             <th class="text-center" style="background:#f8fafc;min-width:55px">L</th>
+             <th class="text-center" style="background:#f8fafc;min-width:80px">%</th>
+        </tr></thead><tbody>`;
+
+    rows.forEach((row, i) => {
+        const pctColor = row.percentage >= 90 ? '#16a34a' : row.percentage >= 75 ? '#d97706' : '#dc2626';
+        html += `<tr>
+            <td class="ps-3 text-muted" style="position:sticky;left:0;background:#fff;z-index:5">${i+1}</td>
+            <td style="position:sticky;left:40px;background:#fff;z-index:5">
+                <span class="student-link" onclick="openStudentDetail(${row.studentId},'${row.studentName.replace(/'/g,"\\'")}')">
+                    ${row.studentName}
+                </span>
+                <div class="text-muted" style="font-size:10px">Roll: ${row.rollNo}</div>
+            </td>`;
+
+        dates.forEach(d => {
+            const ds = row.dailyStatus.find(x => x.date === d.date);
+            const st = ds ? ds.status : 'N/A';
+            const isToday = d.date === today;
+            const isSun   = new Date(d.date).getDay() === 0;
+            const bgCls   = isToday ? 'today-col' : isSun ? 'sunday-col' : '';
+            const cellCls = st === 'Present' ? 'cell-P' : st === 'Absent' ? 'cell-A' : st === 'Late' ? 'cell-L' : 'cell-NA';
+            const label   = st === 'Present' ? 'P' : st === 'Absent' ? 'A' : st === 'Late' ? 'L' : '';
+            html += `<td class="${bgCls}"><div class="${cellCls}" style="font-size:11px;padding:2px 0">${label}</div></td>`;
+        });
+
+        html += `<td class="text-center fw-bold" style="color:#16a34a">${row.present}</td>
+                 <td class="text-center fw-bold" style="color:#dc2626">${row.absent}</td>
+                 <td class="text-center fw-bold" style="color:#d97706">${row.late}</td>
+                 <td class="text-center">
+                    <div class="fw-bold" style="color:${pctColor};font-size:12px">${row.percentage}%</div>
+                    <div class="pct-bar mt-1"><div class="pct-fill" style="width:${row.percentage}%;background:${pctColor}"></div></div>
+                 </td>
+             </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+}
+
+// 
+//  STUDENT DETAIL MODAL
+// 
+function openStudentDetail(studentId, studentName) {
+    const sessionId = $('#selSession').val();
+    const monthVal  = currentTab === 'monthly' ? $('#selMonth').val() : $('#selDate').val().substring(0,7);
+    if (!sessionId || !monthVal) { toastr.warning('Please load data first'); return; }
+
+    const [year, month] = monthVal.split('-').map(Number);
+    document.getElementById('modalStudentName').textContent = studentName;
+    document.getElementById('modalStudentMeta').textContent = '';
+    document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+    const modal = new bootstrap.Modal(document.getElementById('studentDetailModal'));
+    modal.show();
+
+    $.get('@Url.Action("GetStudentAttendanceDetail","StudentAttendance")',
+        { studentId, sessionId, year, month }, res => {
+        if (!res.success) { document.getElementById('modalBody').innerHTML = '<p class="text-danger text-center">Failed to load</p>'; return; }
+
+        const s = res.summary;
+        const st = res.student;
+        document.getElementById('modalStudentMeta').textContent =
+            `Roll: ${st.rollNo || '-'} | Adm: ${st.admissionNo || '-'}`;
+
+        const pctColor = s.percentage >= 90 ? '#16a34a' : s.percentage >= 75 ? '#d97706' : '#dc2626';
+        const monthName = new Date(year, month-1, 1).toLocaleString('default', { month:'long', year:'numeric' });
+
+        // Build calendar
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDay    = new Date(year, month-1, 1).getDay(); // 0=Sun
+        const recMap = {};
+        res.records.forEach(r => { recMap[r.day] = r; });
+
+        let calHtml = `<div class="mb-1 fw-semibold text-center text-muted small">${monthName}</div>
+        <div class="d-flex flex-wrap justify-content-start mb-3">
+            ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div style="width:36px;text-align:center;font-size:10px;color:#9ca3af;margin:2px;font-weight:700">${d}</div>`).join('')}`;
+
+        for (let i = 0; i < firstDay; i++) calHtml += `<div style="width:36px;margin:2px"></div>`;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const rec = recMap[d];
+            const dow = new Date(year, month-1, d).getDay();
+            let cls = 'cal-NA', label = d;
+            if (dow === 0) cls = 'cal-SUN';
+            else if (rec) cls = rec.status === 'Present' ? 'cal-P' : rec.status === 'Absent' ? 'cal-A' : 'cal-L';
+            calHtml += `<div class="cal-day ${cls}" title="${rec ? rec.status : (dow===0?'Sunday':'No Data')}">${d}</div>`;
+        }
+        calHtml += `</div>`;
+
+        let body = `
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 text-center py-3" style="background:#d1fae5">
+                    <div class="fs-3 fw-bold" style="color:#065f46">${s.present}</div>
+                    <div class="small" style="color:#065f46">Present</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 text-center py-3" style="background:#fee2e2">
+                    <div class="fs-3 fw-bold" style="color:#991b1b">${s.absent}</div>
+                    <div class="small" style="color:#991b1b">Absent</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 text-center py-3" style="background:#fef3c7">
+                    <div class="fs-3 fw-bold" style="color:#92400e">${s.late}</div>
+                    <div class="small" style="color:#92400e">Late</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 text-center py-3" style="background:#dbeafe">
+                    <div class="fs-3 fw-bold" style="color:${pctColor}">${s.percentage}%</div>
+                    <div class="small" style="color:#1e40af">Attendance</div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm p-3">
+                    ${calHtml}
+                    <div class="d-flex gap-2 flex-wrap justify-content-center mt-1">
+                        <span style="font-size:10px;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px">Present</span>
+                        <span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px">Absent</span>
+                        <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px">Late</span>
+                        <span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:4px">Sunday</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card border-0 shadow-sm" style="max-height:320px;overflow-y:auto">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light" style="position:sticky;top:0">
+                            <tr><th>Date</th><th>Day</th><th class="text-center">Status</th></tr>
+                        </thead>
+                        <tbody>`;
+
+        res.records.forEach(r => {
+            const cls = r.status === 'Present' ? 'cell-P' : r.status === 'Absent' ? 'cell-A' : 'cell-L';
+            body += `<tr>
+                <td class="small">${r.date}</td>
+                <td class="small text-muted">${r.dayName.substring(0,3)}</td>
+                <td class="text-center"><span class="${cls}" style="padding:2px 8px;border-radius:4px;font-size:11px">${r.status}</span></td>
+            </tr>`;
+        });
+
+        if (!res.records.length) body += `<tr><td colspan="3" class="text-center text-muted py-3">No records found</td></tr>`;
+
+        body += `</tbody></table></div>
+            </div>
+        </div>`;
+
+        document.getElementById('modalBody').innerHTML = body;
+    }).fail(() => {
+        document.getElementById('modalBody').innerHTML = '<p class="text-danger text-center">Error loading data</p>';
+    });
+}
+</script>
+}

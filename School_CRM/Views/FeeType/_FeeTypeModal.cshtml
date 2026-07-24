@@ -1,0 +1,160 @@
+@model School_CRM.Models.TblFeeType
+
+@{
+    // Determine current selection for the combined FeeType dropdown
+    string currentFeeTypeVal = "Monthly";
+    if (Model.FeeCategory == "Optional")
+        currentFeeTypeVal = "Optional";
+    else if (Model.IsRecurring == false)
+        currentFeeTypeVal = "OneTime";
+}
+
+<form id="feeTypeForm"
+      asp-action="CreateOrEdit"
+      asp-controller="FeeType"
+      asp-route-id="@Model.FeeTypeId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="FeeTypeId" />
+    <!-- Hidden fields that get auto-set by JS -->
+    <input type="hidden" asp-for="IsRecurring" id="isRecurringHidden" />
+    <input type="hidden" asp-for="FeeCategory" id="feeCategoryHidden" />
+
+    <div class="row g-3">
+
+        <!-- Fee Name -->
+        <div class="col-12">
+            <label asp-for="FeeName" class="form-label fw-semibold">
+                Fee Name <span class="text-danger">*</span>
+            </label>
+            <input asp-for="FeeName" class="form-control"
+                   placeholder="e.g. Tuition Fee, Exam Fee, Transport Fee, Hostel Fee" required />
+            <span asp-validation-for="FeeName" class="text-danger small"></span>
+        </div>
+
+        <!-- Fee Type (combined 3-option selector) -->
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                Fee Type <span class="text-danger">*</span>
+            </label>
+            <div class="row g-2" id="feeTypeCards">
+
+                <!-- Monthly -->
+                <div class="col-4">
+                    <input type="radio" class="btn-check" name="feeTypeChoice"
+                           id="ftMonthly" value="Monthly"
+                           @(currentFeeTypeVal == "Monthly" ? "checked" : "") />
+                    <label class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                           for="ftMonthly">
+                        <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                        <span class="fw-semibold">Monthly</span>
+                        <small class="text-muted mt-1" style="font-size:11px">Har month charge hoga</small>
+                    </label>
+                </div>
+
+                <!-- One Time -->
+                <div class="col-4">
+                    <input type="radio" class="btn-check" name="feeTypeChoice"
+                           id="ftOneTime" value="OneTime"
+                           @(currentFeeTypeVal == "OneTime" ? "checked" : "") />
+                    <label class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                           for="ftOneTime">
+                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                        <span class="fw-semibold">One Time</span>
+                        <small class="text-muted mt-1" style="font-size:11px">Sirf ek baar charge hoga</small>
+                    </label>
+                </div>
+
+                <!-- Optional -->
+                <div class="col-4">
+                    <input type="radio" class="btn-check" name="feeTypeChoice"
+                           id="ftOptional" value="Optional"
+                           @(currentFeeTypeVal == "Optional" ? "checked" : "") />
+                    <label class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                           for="ftOptional">
+                        <i class="fas fa-user-check fa-2x mb-2"></i>
+                        <span class="fw-semibold">Optional</span>
+                        <small class="text-muted mt-1" style="font-size:11px">Specific students ke liye</small>
+                    </label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Info Box (dynamic) -->
+        <div class="col-12">
+            <div id="infoMonthly" class="alert alert-primary py-2 mb-0 small" style="display:none">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>Monthly (Recurring)</strong> — Tuition Fee, Transport Fee jaise fees jo har month sabhi students se lete hain.
+                FeeStructure mein class-wise assign hogi.
+            </div>
+            <div id="infoOneTime" class="alert alert-secondary py-2 mb-0 small" style="display:none">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>One Time</strong> — Admission Fee, Registration Fee, Exam Fee jaise fees jo sirf ek baar lete hain.
+                Ek baar collect hone ke baad dobara fee breakdown mein nahi dikhegi.
+            </div>
+            <div id="infoOptional" class="alert alert-success py-2 mb-0 small" style="display:none">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>Optional</strong> — Hostel Fee, Transport Fee, Lab Fee jaise fees jo sirf kuch students use karte hain.
+                Inhe <strong>StudentOptionalFee</strong> mein student-wise assign karna hoga.
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-6">
+            <label asp-for="IsActive" class="form-label fw-semibold">
+                Status <span class="text-danger">*</span>
+            </label>
+            <select asp-for="IsActive" class="form-select"
+                    asp-items="@(new SelectList(new[] {
+                        new { Value = "true",  Text = "Active"   },
+                        new { Value = "false", Text = "Inactive" }
+                    }, "Value", "Text", Model.IsActive?.ToString().ToLower()))" required>
+                <option value="">-- Select Status --</option>
+            </select>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer px-0 pb-0 mt-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" id="btnSave" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Fee Type
+        </button>
+    </div>
+</form>
+
+<script>
+    // On radio change → update hidden fields + info box
+    function applyFeeTypeChoice(val) {
+        $('#infoMonthly, #infoOneTime, #infoOptional').hide();
+        if (val === 'Monthly') {
+            $('#isRecurringHidden').val('true');
+            $('#feeCategoryHidden').val('Regular');
+            $('#infoMonthly').show();
+        } else if (val === 'OneTime') {
+            $('#isRecurringHidden').val('false');
+            $('#feeCategoryHidden').val('Regular');
+            $('#infoOneTime').show();
+        } else {
+            $('#isRecurringHidden').val('true');   // Optional fees are recurring by default
+            $('#feeCategoryHidden').val('Optional');
+            $('#infoOptional').show();
+        }
+    }
+
+    // Init on load
+    (function () {
+        var checked = $('input[name="feeTypeChoice"]:checked').val() || 'Monthly';
+        applyFeeTypeChoice(checked);
+    })();
+
+    // On change
+    $('input[name="feeTypeChoice"]').on('change', function () {
+        applyFeeTypeChoice($(this).val());
+    });
+</script>

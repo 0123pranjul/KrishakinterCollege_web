@@ -1,0 +1,48 @@
+@model School_CRM.Models.TblTrnDriver
+@{
+    bool isNew = Model.DriverId == 0;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title"><i class="fas fa-id-card me-2 text-primary"></i>@(isNew ? "Add Driver" : "Edit Driver")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form onsubmit="return saveDriver(this)">
+    <input type="hidden" name="DriverId" value="@Model.DriverId" />
+    <div class="modal-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Driver Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="DriverName" value="@Model.DriverName" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Contact Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="ContactNumber" value="@Model.ContactNumber" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">License Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="LicenseNumber" value="@Model.LicenseNumber" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">License Expiry</label>
+                <input type="date" class="form-control" name="LicenseExpiry" value="@(Model.LicenseExpiry.HasValue ? Model.LicenseExpiry.Value.ToString("yyyy-MM-dd") : "")" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Employee ID</label>
+                <input type="number" class="form-control" name="EmployeeId" value="@Model.EmployeeId" placeholder="Link to employee (optional)" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Photo URL</label>
+                <input type="text" class="form-control" name="PhotoUrl" value="@Model.PhotoUrl" />
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Address</label>
+                <textarea class="form-control" name="Address" rows="2">@Model.Address</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Driver</button>
+    </div>
+</form>

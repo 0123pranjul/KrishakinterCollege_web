@@ -1,0 +1,253 @@
+@model School_CRM.Models.TblStudentExtraCharge
+
+@{
+    var sessions = ViewBag.Sessions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var feeTypes = ViewBag.FeeTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    bool isEdit  = Model.Id > 0;
+
+    string selectedStudentText = "";
+    if (isEdit && Model.StudentId.HasValue)
+    {
+        var s = ViewBag.SelectedStudent as dynamic;
+        if (s != null) selectedStudentText = s.DisplayName ?? "";
+    }
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+<style>
+    .select2-container { width: 100% !important; }
+    .stu-name  { font-weight: 600; font-size: 14px; }
+    .stu-meta  { font-size: 11px; color: #6c757d; margin-top: 2px; }
+</style>
+
+<form id="extraChargeForm"
+      asp-action="CreateOrEdit"
+      asp-controller="StudentExtraCharge"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <div class="row g-3">
+
+        <!-- Student -->
+        <div class="col-12">
+            <label class="form-label fw-semibold">Student <span class="text-danger">*</span></label>
+
+            @if (isEdit)
+            {
+                <input type="hidden" name="StudentId" value="@Model.StudentId" />
+                <div class="form-control bg-light" style="height:auto;padding:8px 12px">
+                    <i class="fas fa-user-graduate me-2 text-primary"></i>
+                    <strong>@selectedStudentText</strong>
+                    <small class="text-muted ms-2">(edit mode mein student nahi badla jaata)</small>
+                </div>
+            }
+            else
+            {
+                <select name="StudentId" id="studentSelect2" class="form-select" required style="width:100%">
+                    <option value=""></option>
+                </select>
+                <div class="form-text"><i class="fas fa-search me-1"></i>Name, Roll Number ya Admission No se search karo</div>
+            }
+        </div>
+
+        <!-- Student Info Preview -->
+        <div class="col-12" id="studentInfoCard" style="display:none">
+            <div class="alert alert-info py-2 mb-0">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <small class="text-muted">Student Name</small>
+                        <p class="fw-semibold mb-0" id="previewName"></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Roll No</small>
+                        <p class="fw-semibold mb-0" id="previewRoll"></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Class - Section</small>
+                        <p class="fw-semibold mb-0" id="previewClass"></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Session</small>
+                        <p class="fw-semibold mb-0" id="previewSession"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session (auto-fill from student, editable) -->
+        <div class="col-md-6">
+            <label asp-for="SessionId" class="form-label fw-semibold">
+                Academic Session <span class="text-danger">*</span>
+            </label>
+            <select asp-for="SessionId" class="form-select" id="sessionSelect"
+                    asp-items="@(new SelectList(sessions, "SessionId", "SessionName", Model.SessionId))"
+                    required>
+                <option value="">-- Select Session --</option>
+            </select>
+            <div class="form-text" id="sessionAutoNote" style="display:none">
+                <i class="fas fa-magic me-1 text-success"></i>Student ke session se auto-filled
+            </div>
+        </div>
+
+        <!-- Fee Type -->
+        <div class="col-md-6">
+            <label asp-for="FeeTypeId" class="form-label fw-semibold">
+                Fee Type <span class="text-danger">*</span>
+            </label>
+            <select asp-for="FeeTypeId" class="form-select" id="feeTypeSelect"
+                    asp-items="@(new SelectList(feeTypes, "FeeTypeId", "FeeName", Model.FeeTypeId))"
+                    required>
+                <option value="">-- Select Fee Type --</option>
+            </select>
+        </div>
+
+        <!-- Amount -->
+        <div class="col-md-6">
+            <label asp-for="Amount" class="form-label fw-semibold">
+                Amount (₹) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input asp-for="Amount" type="number" step="0.01" min="0"
+                       class="form-control" placeholder="0.00" required />
+            </div>
+        </div>
+
+        <!-- Charge Date -->
+        <div class="col-md-6">
+            <label asp-for="ChargeDate" class="form-label fw-semibold">
+                Charge Date <span class="text-danger">*</span>
+            </label>
+            <input asp-for="ChargeDate" type="date" class="form-control"
+                   value="@(Model.ChargeDate.HasValue ? Model.ChargeDate.Value.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd"))"
+                   required />
+        </div>
+
+        <!-- Reason -->
+        <div class="col-12">
+            <label asp-for="Reason" class="form-label fw-semibold">
+                Reason <span class="text-danger">*</span>
+            </label>
+            <textarea asp-for="Reason" class="form-control" rows="2"
+                      placeholder="e.g. Library fine, Damage to school property, Function charge..."
+                      required></textarea>
+        </div>
+
+        <!-- IsPaid -->
+        <div class="col-md-6">
+            <label asp-for="IsPaid" class="form-label fw-semibold">
+                Payment Status <span class="text-danger">*</span>
+            </label>
+            <select asp-for="IsPaid" class="form-select"
+                    asp-items="@(new SelectList(new[] {
+                        new { Value = "false", Text = "Pending" },
+                        new { Value = "true",  Text = "Paid"    }
+                    }, "Value", "Text", Model.IsPaid?.ToString().ToLower()))" required>
+                <option value="">-- Select Status --</option>
+            </select>
+        </div>
+
+        <!-- IsActive -->
+        <div class="col-md-6">
+            <label asp-for="IsActive" class="form-label fw-semibold">
+                Status <span class="text-danger">*</span>
+            </label>
+            <select asp-for="IsActive" class="form-select"
+                    asp-items="@(new SelectList(new[] {
+                        new { Value = "true",  Text = "Active"   },
+                        new { Value = "false", Text = "Inactive" }
+                    }, "Value", "Text", Model.IsActive?.ToString().ToLower()))" required>
+                <option value="">-- Select Status --</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div class="modal-footer px-0 pb-0 mt-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" id="btnSave" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Charge
+        </button>
+    </div>
+</form>
+
+<script>
+    $(function () {
+        if ($('#studentSelect2').length) {
+            function initSelect2Extra() {
+                if (typeof $.fn.select2 === 'undefined') { setTimeout(initSelect2Extra, 100); return; }
+                $('#studentSelect2').select2({
+                theme             : 'bootstrap-5',
+                placeholder       : 'Name, Roll No ya Admission No type karo...',
+                minimumInputLength: 1,
+                allowClear        : true,
+                dropdownParent    : $('#studentSelect2').closest('.modal-body'),
+                ajax: {
+                    url      : '@Url.Action("SearchStudents", "StudentExtraCharge")',
+                    dataType : 'json',
+                    delay    : 300,
+                    data     : function (p) { return { term: p.term, page: p.page || 1 }; },
+                    processResults: function (data, p) {
+                        p.page = p.page || 1;
+                        return { results: data.results, pagination: data.pagination };
+                    },
+                    cache: true
+                },
+                templateResult   : formatStudent,
+                templateSelection: formatStudentSelected
+            });
+
+            // Student select → preview + auto-fill session
+            $('#studentSelect2').on('select2:select', function (e) {
+                var d = e.params.data;
+                $('#previewName')   .text(d.name        || '-');
+                $('#previewRoll')   .text(d.roll        || '-');
+                $('#previewClass')  .text((d.className  || '-') + (d.sectionName ? ' - ' + d.sectionName : ''));
+                $('#previewSession').text(d.sessionName || '-');
+                $('#studentInfoCard').slideDown(200);
+
+                // Auto-select session
+                if (d.sessionId) {
+                    $('#sessionSelect').val(d.sessionId).trigger('change');
+                    $('#sessionAutoNote').slideDown(200);
+                }
+            });
+
+            $('#studentSelect2').on('select2:unselect select2:clear', function () {
+                $('#studentInfoCard').slideUp(200);
+                $('#sessionAutoNote').slideUp(200);
+            });
+            }
+            initSelect2Extra();
+        }
+    });
+
+    function formatStudent(s) {
+        if (s.loading) return $('<span><i class="fas fa-spinner fa-spin me-1"></i>Searching...</span>');
+        if (!s.id) return s.text;
+        var clsSec = [s.className, s.sectionName].filter(Boolean).join(' - ');
+        var clsBadge  = clsSec    ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary" style="font-size:10px">${clsSec}</span>` : '';
+        var sesBadge  = s.sessionName ? `<span class="badge bg-secondary bg-opacity-10 text-secondary border ms-1" style="font-size:10px">${s.sessionName}</span>` : '';
+        return $(`<div class="py-1">
+            <div class="stu-name"><i class="fas fa-user-graduate me-1 text-primary"></i>${s.name || s.text}</div>
+            <div class="stu-meta d-flex flex-wrap gap-1 align-items-center">
+                <span><i class="fas fa-hashtag me-1"></i>Roll: ${s.roll || '-'}</span>
+                ${clsBadge}${sesBadge}
+            </div>
+        </div>`);
+    }
+
+    function formatStudentSelected(s) {
+        if (!s.id) return s.text;
+        var name  = s.name || (s.text || '').split('|')[0]?.trim() || s.text;
+        var extra = [s.roll ? 'Roll: ' + s.roll : '', s.className || ''].filter(Boolean).join(' | ');
+        return $(`<span><strong>${name}</strong>${extra ? '<small class="text-muted ms-2">' + extra + '</small>' : ''}</span>`);
+    }
+</script>

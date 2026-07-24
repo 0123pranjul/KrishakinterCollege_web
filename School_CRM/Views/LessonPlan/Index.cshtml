@@ -1,0 +1,130 @@
+@model IEnumerable<School_CRM.Models.TblLessonPlan>
+@{
+    ViewData["Title"] = "My Lesson Plans";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+
+<style>
+    .planner-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    .status-Pending { background-color: #fef3c7; color: #d97706; }
+    .status-Approved { background-color: #d1fae5; color: #059669; }
+    .status-Rejected { background-color: #fee2e2; color: #dc2626; }
+    .status-Draft { background-color: #f1f5f9; color: #475569; }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .action-btn.edit { background: #e0f2fe; color: #0284c7; }
+    .action-btn.edit:hover { background: #bae6fd; color: #0369a1; }
+    .action-btn.delete { background: #fee2e2; color: #dc2626; }
+    .action-btn.delete:hover { background: #fecaca; color: #b91c1c; }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="planner-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1 fw-bold"><i class="fas fa-chalkboard-teacher me-2"></i>My Lesson Plans</h4>
+            <p class="mb-0 text-white-75">Create and track your teaching strategies.</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Create", "LessonPlan")" class="btn btn-light rounded-pill fw-bold text-success">
+                <i class="fas fa-plus me-1"></i> Create Plan
+            </a>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <table class="table table-hover align-middle" id="plansTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Class / Subject</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Created On</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">@item.PlanTitle</td>
+                            <td>
+                                <div><i class="fas fa-users text-muted me-1"></i> @item.Class?.ClassName</div>
+                                <small class="text-muted"><i class="fas fa-book text-muted me-1"></i> @item.Subject?.SubjectName</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="far fa-calendar-alt me-1"></i> @item.StartDate.ToString("dd MMM") - @item.EndDate.ToString("dd MMM")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@item.Status">@item.Status</span>
+                            </td>
+                            <td>@item.CreatedDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-end">
+                                <a href="@Url.Action("Create", "LessonPlan", new { id = item.Id })" class="action-btn edit" title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <button class="action-btn delete btn-delete-plan border-0" data-id="@item.Id" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#plansTable').DataTable({
+                "ordering": false // Disable ordering since we pre-ordered in controller
+            });
+
+            $('.btn-delete-plan').click(function () {
+                if (confirm('Are you sure you want to delete this lesson plan?')) {
+                    let id = $(this).data('id');
+                    $.post('@Url.Action("Delete", "LessonPlan")', { id: id }, function (res) {
+                        if (res.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + res.message);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

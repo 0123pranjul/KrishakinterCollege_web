@@ -1,0 +1,441 @@
+@{
+    ViewData["Title"] = "Transport Assignments";
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+    var routes = ViewBag.Routes as List<School_CRM.Models.TblTrnRoute> ?? new();
+    var vehicles = ViewBag.Vehicles as List<School_CRM.Models.TblTrnVehicle> ?? new();
+    var drivers = ViewBag.Drivers as List<School_CRM.Models.TblTrnDriver> ?? new();
+    var conductors = ViewBag.Conductors as List<School_CRM.Models.TblTrnConductor> ?? new();
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-list text-primary me-2"></i>Transport Assignments</h4>
+            <small class="text-muted">Vehicle assignments, student assignments and bulk enrollment</small>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="assignTab">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#vehicleAssignTab"><i class="fas fa-bus me-1"></i>Vehicle Assignments</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#studentAssignTab"><i class="fas fa-users me-1"></i>Student Assignments</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#bulkAssignTab"><i class="fas fa-user-plus me-1"></i>Bulk Assign Students</button></li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ── Vehicle Assignments Tab ── -->
+        <div class="tab-pane fade show active" id="vehicleAssignTab">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <label class="small fw-semibold mb-0">Session:</label>
+                    <select id="vaSession" class="form-select form-select-sm" style="max-width:180px" onchange="loadVehicleAssignments()">
+                        <option value="0">All Sessions</option>
+                        @foreach (var s in sessions)
+                        {
+                            <option value="@s.SessionId">@s.SessionName</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openVAModal(0)"><i class="fas fa-plus me-1"></i>Add Assignment</button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblVehicleAssign" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Conductor</th>
+                                    <th>From</th><th>To</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vaBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Student Assignments Tab ── -->
+        <div class="tab-pane fade" id="studentAssignTab">
+            <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
+                <label class="small fw-semibold mb-0">Session:</label>
+                <select id="saSession" class="form-select form-select-sm" style="max-width:180px" onchange="loadStudentAssignments()">
+                    <option value="0">All Sessions</option>
+                    @foreach (var s in sessions)
+                    {
+                        <option value="@s.SessionId">@s.SessionName</option>
+                    }
+                </select>
+                <label class="small fw-semibold mb-0">Route:</label>
+                <select id="saRoute" class="form-select form-select-sm" style="max-width:180px" onchange="loadStudentAssignments()">
+                    <option value="0">All Routes</option>
+                    @foreach (var r in routes)
+                    {
+                        <option value="@r.RouteId">@r.RouteName</option>
+                    }
+                </select>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tblStudentAssign" class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Student</th><th>Admission No.</th><th>Route</th><th>Stop</th>
+                                    <th>Fare (₹)</th><th>Status</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Bulk Assign Tab ── -->
+        <div class="tab-pane fade" id="bulkAssignTab">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Session <span class="text-danger">*</span></label>
+                            <select id="baSession" class="form-select" onchange="loadAvailableStudents()">
+                                <option value="0">-- Select Session --</option>
+                                @foreach (var s in sessions)
+                                {
+                                    <option value="@s.SessionId">@s.SessionName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Route <span class="text-danger">*</span></label>
+                            <select id="baRoute" class="form-select" onchange="loadStopsForRoute(); loadAvailableStudents();">
+                                <option value="0">-- Select Route --</option>
+                                @foreach (var r in routes)
+                                {
+                                    <option value="@r.RouteId" data-capacity="@r.MaxStudentCapacity">@r.RouteName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Stop (Boarding Point) <span class="text-danger">*</span></label>
+                            <select id="baStop" class="form-select">
+                                <option value="0">-- Select Stop --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="capacityWarning" class="alert alert-warning d-none">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <span id="capacityWarnMsg"></span>
+                    </div>
+
+                    <div id="availableStudentsSection" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-semibold mb-0">Available Students</h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="toggleSelectAll()"><i class="fas fa-check-double me-1"></i>Select All</button>
+                                <button class="btn btn-success btn-sm" onclick="assignStudents()"><i class="fas fa-user-plus me-1"></i>Assign Selected</button>
+                            </div>
+                        </div>
+                        <div class="border rounded p-2" style="max-height:350px;overflow-y:auto">
+                            <div id="studentCheckboxes" class="row g-2"></div>
+                        </div>
+                        <div class="mt-2 text-muted small" id="selCount">0 selected</div>
+                    </div>
+                    <div id="noStudentsMsg" class="text-center text-muted py-5 d-none">
+                        <i class="fas fa-users fa-2x mb-2 d-block opacity-25"></i>
+                        Select session and route to see available students.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Vehicle Assignment Modal -->
+<div class="modal fade" id="vaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="vaModalContent">
+            <div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Stop Modal -->
+<div class="modal fade" id="changeStopModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exchange-alt me-2 text-primary"></i>Change Student Stop</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="csAssignmentId" />
+                <label class="form-label fw-semibold">New Stop</label>
+                <select id="csNewStop" class="form-select">
+                    <option value="0">-- Select Stop --</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="changeStop()">Change Stop</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css" />
+<script>
+    let vaTable, saTable;
+    let allSelected = false;
+
+    // ── VEHICLE ASSIGNMENTS ──────────────────────────────────────────────────
+    function loadVehicleAssignments() {
+        const sessionId = $('#vaSession').val() || 0;
+
+        $.get('/TransportAssignment/GetVehicleAssignments', { sessionId }, function (r) {
+            if ($.fn.DataTable.isDataTable('#tblVehicleAssign')) {
+                $('#tblVehicleAssign').DataTable().destroy();
+            }
+
+            if (!r.success) return;
+            let sno = 1;
+            const rows = r.data.map(a =>
+                '<tr>' +
+                '<td>' + (sno++) + '</td>' +
+                '<td class="fw-semibold">' + a.routeName + '</td>' +
+                '<td>' + a.vehicleNo + ' <span class="badge bg-light text-dark border">' + a.vehicleType + '</span></td>' +
+                '<td>' + a.driverName + '</td>' +
+                '<td>' + a.conductorName + '</td>' +
+                '<td>' + a.assignedFrom + '</td>' +
+                '<td>' + a.assignedTo + '</td>' +
+                '<td>' +
+                '<button class="btn btn-sm btn-outline-primary me-1" onclick="openVAModal(' + a.assignmentId + ')"><i class="fas fa-edit"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger" onclick="deleteVA(' + a.assignmentId + ')"><i class="fas fa-trash"></i></button>' +
+                '</td>' +
+                '</tr>'
+            );
+
+            $('#vaBody').html(rows.length
+                ? rows.join('')
+                : '<tr><td colspan="8" class="text-center text-muted py-4">No assignments found.</td></tr>');
+
+            vaTable = $('#tblVehicleAssign').DataTable({
+                pageLength: 25,
+                order: [],
+                destroy: true,
+                columnDefs: [{ orderable: false, targets: [0, 7] }]
+            });
+        });
+    }
+
+    function openVAModal(id) {
+        $('#vaModal').modal('show');
+        $('#vaModalContent').load('/TransportAssignment/CreateOrEditVehicleAssignment?id=' + id);
+    }
+
+    function saveVehicleAssignment(form) {
+        const id = $(form).find('[name=AssignmentId]').val() || 0;
+        $.ajax({
+            url: `/TransportAssignment/CreateOrEditVehicleAssignment?id=${id}`,
+            type: 'POST',
+            data: $(form).serialize(),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); $('#vaModal').modal('hide'); loadVehicleAssignments(); }
+                else toastr.error(r.message);
+            }
+        });
+        return false;
+    }
+
+    function deleteVA(id) {
+        Swal.fire({ title: 'Delete Assignment?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportAssignment/DeleteVehicleAssignment', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadVehicleAssignments(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    // ── STUDENT ASSIGNMENTS ───────────────────────────────────────────────────
+    function loadStudentAssignments() {
+        const sessionId = $('#saSession').val() || 0;
+        const routeId   = $('#saRoute').val()   || 0;
+
+        $.get('/TransportAssignment/GetStudentAssignments', { sessionId, routeId }, function (r) {
+            // 1. Destroy table if it exists
+            if ($.fn.DataTable.isDataTable('#tblStudentAssign')) {
+                $('#tblStudentAssign').DataTable().destroy();
+            }
+
+            if (!r.success) {
+                $('#saBody').html('<tr><td colspan="8" class="text-center text-danger py-4">Error loading data.</td></tr>');
+            } else {
+                let sno = 1;
+                const rows = r.data.map(sa =>
+                    '<tr>' +
+                    '<td>' + (sno++) + '</td>' +
+                    '<td class="fw-semibold">' + (sa.studentName || '-') + '</td>' +
+                    '<td class="text-muted">' + (sa.admissionNo || '-') + '</td>' +
+                    '<td>' + (sa.routeName || '-') + '</td>' +
+                    '<td>' + (sa.stopName || '-') + '</td>' +
+                    '<td>₹' + Number(sa.fareAmount || 0).toFixed(2) + '</td>' +
+                    '<td><span class="badge bg-' + (sa.assignmentStatus === 'Active' ? 'success' : 'secondary') + '">' + sa.assignmentStatus + '</span></td>' +
+                    '<td>' +
+                    '<button class="btn btn-sm btn-outline-warning me-1" onclick="openChangeStop(' + sa.id + ', ' + sa.id + ')" title="Change Stop"><i class="fas fa-exchange-alt"></i></button>' +
+                    '<button class="btn btn-sm btn-outline-danger" onclick="deactivateStudent(' + sa.id + ')"><i class="fas fa-user-minus"></i></button>' +
+                    '</td>' +
+                    '</tr>'
+                );
+
+                $('#saBody').html(rows.length
+                    ? rows.join('')
+                    : '<tr><td colspan="8" class="text-center text-muted py-4">No assignments found.</td></tr>');
+            }
+
+            // 2. Re-init DataTable — table must be visible at this point
+            saTable = $('#tblStudentAssign').DataTable({
+                pageLength: 25,
+                order: [],
+                destroy: true,   // allow re-initialization safely
+                columnDefs: [{ orderable: false, targets: [0, 7] }]
+            });
+        });
+    }
+
+    function deactivateStudent(id) {
+        Swal.fire({ title: 'Remove Student?', text: 'This will deactivate the transport assignment and fee.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Remove' })
+            .then(r => {
+                if (!r.isConfirmed) return;
+                $.post('/TransportAssignment/DeactivateStudentAssignment', { id }, function (res) {
+                    if (res.success) { toastr.success(res.message); loadStudentAssignments(); }
+                    else toastr.error(res.message);
+                });
+            });
+    }
+
+    function openChangeStop(assignmentId, routeId) {
+        $('#csAssignmentId').val(assignmentId);
+        const routeSel = $('#saRoute').val() || 0;
+        $.get('/TransportRoute/GetStops', { routeId: routeSel > 0 ? routeSel : routeId }, function (r) {
+            if (!r.success) return;
+            const opts = r.data.map(s => `<option value="${s.stopId}">${s.stopOrder}. ${s.stopName} – ₹${s.fareAmount}</option>`);
+            $('#csNewStop').html('<option value="0">-- Select Stop --</option>' + opts.join(''));
+            $('#changeStopModal').modal('show');
+        });
+    }
+
+    function changeStop() {
+        const assignmentId = $('#csAssignmentId').val();
+        const newStopId = $('#csNewStop').val();
+        if (!newStopId || newStopId == 0) { toastr.warning('Please select a stop.'); return; }
+        $.post('/TransportAssignment/ChangeStudentStop', { assignmentId, newStopId }, function (r) {
+            if (r.success) { toastr.success(r.message); $('#changeStopModal').modal('hide'); loadStudentAssignments(); }
+            else toastr.error(r.message);
+        });
+    }
+
+    // ── BULK ASSIGN ───────────────────────────────────────────────────────────
+    function loadStopsForRoute() {
+        const routeId = $('#baRoute').val();
+        if (!routeId || routeId == 0) { $('#baStop').html('<option value="0">-- Select Stop --</option>'); return; }
+        $.get('/TransportRoute/GetStops', { routeId }, function (r) {
+            if (!r.success) return;
+            const opts = r.data.map(s => `<option value="${s.stopId}">${s.stopOrder}. ${s.stopName} – ₹${s.fareAmount}</option>`);
+            $('#baStop').html('<option value="0">-- Select Stop --</option>' + opts.join(''));
+        });
+    }
+
+    function loadAvailableStudents() {
+        const sessionId = $('#baSession').val();
+        const routeId = $('#baRoute').val();
+        if (!sessionId || sessionId == 0 || !routeId || routeId == 0) {
+            $('#availableStudentsSection').addClass('d-none');
+            $('#noStudentsMsg').removeClass('d-none');
+            return;
+        }
+        $.get('/TransportAssignment/GetAvailableStudents', { sessionId, routeId }, function (r) {
+            if (!r.success) return;
+            $('#noStudentsMsg').addClass('d-none');
+            if (!r.data.length) {
+                $('#availableStudentsSection').addClass('d-none');
+                $('#noStudentsMsg').text('All students in this session are already assigned to this route.').removeClass('d-none');
+                return;
+            }
+            const cbs = r.data.map(s => `<div class="col-md-4 col-lg-3">
+                <div class="form-check border rounded px-2 py-1 student-check-item">
+                    <input class="form-check-input student-cb" type="checkbox" value="${s.studentId}" id="scb_${s.studentId}" onchange="updateSelCount()">
+                    <label class="form-check-label small" for="scb_${s.studentId}">
+                        <div class="fw-semibold">${s.studentName}</div>
+                        <div class="text-muted" style="font-size:.7rem">${s.admissionNo || '-'} | ${s.className}</div>
+                    </label>
+                </div>
+            </div>`);
+            $('#studentCheckboxes').html(cbs.join(''));
+            $('#availableStudentsSection').removeClass('d-none');
+            updateSelCount();
+        });
+    }
+
+    function toggleSelectAll() {
+        allSelected = !allSelected;
+        $('.student-cb').prop('checked', allSelected);
+        updateSelCount();
+    }
+
+    function updateSelCount() {
+        const n = $('.student-cb:checked').length;
+        $('#selCount').text(n + ' student(s) selected');
+        // Capacity warning
+        const capacity = parseInt($('#baRoute option:selected').data('capacity')) || 0;
+        if (capacity > 0 && n > capacity) {
+            $('#capacityWarnMsg').text(`Selection (${n}) exceeds route capacity (${capacity}).`);
+            $('#capacityWarning').removeClass('d-none');
+        } else {
+            $('#capacityWarning').addClass('d-none');
+        }
+    }
+
+    function assignStudents() {
+        const sessionId = parseInt($('#baSession').val());
+        const routeId = parseInt($('#baRoute').val());
+        const stopId = parseInt($('#baStop').val());
+        if (!sessionId || !routeId || !stopId) { toastr.warning('Please select session, route and stop.'); return; }
+        const studentIds = $('.student-cb:checked').map(function () { return parseInt(this.value); }).get();
+        if (!studentIds.length) { toastr.warning('Please select at least one student.'); return; }
+
+        $.ajax({
+            url: '/TransportAssignment/AssignStudents',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ routeId, stopId, sessionId, studentIds }),
+            success: function (r) {
+                if (r.success) { toastr.success(r.message); loadAvailableStudents(); loadStudentAssignments(); }
+                else toastr.error(r.message);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        // Sirf Vehicle Assignments tab load karo on page load (visible tab)
+        loadVehicleAssignments();
+
+        // Student Assignments tab — sirf jab tab click ho tab load karo
+        // Yeh DataTable hidden element mein initialize hone se bachata hai
+        $('button[data-bs-target="#studentAssignTab"]').on('shown.bs.tab', function () {
+            loadStudentAssignments();
+        });
+    });
+</script>
+}

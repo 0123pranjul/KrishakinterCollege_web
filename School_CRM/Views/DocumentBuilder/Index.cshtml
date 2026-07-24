@@ -1,0 +1,1082 @@
+@model School_CRM.Models.ViewModels.DocumentBuilderIndexVM
+@{
+    Layout = "~/Views/Shared/_BuilderLayout.cshtml";
+    ViewData["Title"] = "Document Builder";
+}
+
+<!-- ============================================================
+     HIDDEN DATA
+     ============================================================ -->
+<input type="hidden" id="currentDocumentId" value="@(Model.DocumentId?.ToString() ?? "")" />
+<input type="hidden" id="initialComponentsJson" value="@(Model.ComponentsJson ?? "[]")" />
+<input type="hidden" id="initialPrintSettingsJson" value="@(Model.PrintSettingsJson ?? "{}")" />
+@Html.AntiForgeryToken()
+
+<!-- ============================================================
+     1. TOP TOOLBAR
+     ============================================================ -->
+<div class="builder-toolbar" id="builderToolbar">
+    <!-- Left group -->
+    <div class="toolbar-left">
+        <a href="/DocumentBuilder/MyDocuments" class="btn-toolbar btn-toolbar-icon" title="Back to My Documents">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="toolbar-brand">
+            <i class="bi bi-file-earmark-richtext"></i>
+            <span>Document Builder</span>
+        </div>
+    </div>
+
+    <!-- Center group -->
+    <div class="toolbar-center">
+        <div class="toolbar-doc-name">
+            <input type="text"
+                   id="documentNameInput"
+                   class="doc-name-input"
+                   value="@(Model.DocumentName ?? "Untitled Document")"
+                   placeholder="Untitled Document"
+                   spellcheck="false" />
+            <i class="bi bi-pencil doc-name-edit-icon"></i>
+        </div>
+        <div class="toolbar-doc-type">
+            <select id="documentTypeSelect" class="doc-type-select">
+                <option value="ExamPaper" selected="@(Model.DocumentType == "ExamPaper")">Exam Paper</option>
+                <option value="Notice" selected="@(Model.DocumentType == "Notice")">Notice</option>
+                <option value="Circular" selected="@(Model.DocumentType == "Circular")">Circular</option>
+                <option value="Assignment" selected="@(Model.DocumentType == "Assignment")">Assignment</option>
+                <option value="Worksheet" selected="@(Model.DocumentType == "Worksheet")">Worksheet</option>
+                <option value="LetterHead" selected="@(Model.DocumentType == "LetterHead")">Letter Head</option>
+                <option value="Certificate" selected="@(Model.DocumentType == "Certificate")">Certificate</option>
+                <option value="Other" selected="@(Model.DocumentType == "Other")">Other</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Right group -->
+    <div class="toolbar-right">
+        <button type="button" class="btn-toolbar" data-bs-toggle="modal" data-bs-target="#templateModal" title="Templates">
+            <i class="bi bi-grid-3x3-gap"></i>
+            <span class="btn-toolbar-label">Templates</span>
+        </button>
+        <button type="button" class="btn-toolbar" data-bs-toggle="modal" data-bs-target="#printSettingsModal" title="Print Settings">
+            <i class="bi bi-gear"></i>
+            <span class="btn-toolbar-label">Settings</span>
+        </button>
+
+        <div class="toolbar-divider"></div>
+
+        <button type="button" class="btn-toolbar btn-toolbar-save" onclick="saveDocument()" title="Save Document">
+            <i class="bi bi-save"></i>
+            <span class="btn-toolbar-label">Save</span>
+        </button>
+        <button type="button" class="btn-toolbar btn-toolbar-export" onclick="exportPdf()" title="Export as PDF">
+            <i class="bi bi-file-earmark-pdf"></i>
+            <span class="btn-toolbar-label">Export PDF</span>
+        </button>
+        <button type="button" class="btn-toolbar btn-toolbar-print" onclick="window.print()" title="Print">
+            <i class="bi bi-printer"></i>
+            <span class="btn-toolbar-label">Print</span>
+        </button>
+    </div>
+</div>
+
+<!-- ============================================================
+     2. THREE-PANEL LAYOUT
+     ============================================================ -->
+<div class="builder-workspace" id="builderWorkspace">
+
+    <!-- ==========================================================
+         LEFT PANEL — Components Library
+         ========================================================== -->
+    <aside class="panel-left" id="panelLeft">
+        <div class="panel-header">
+            <h6 class="panel-title"><i class="bi bi-puzzle"></i> Components</h6>
+            <button type="button" class="panel-collapse-btn" onclick="togglePanel('left')" title="Collapse Panel">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="panel-body" id="componentLibrary">
+            <!-- Search -->
+            <div class="component-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="componentSearch" placeholder="Search components..." oninput="filterComponents(this.value)" />
+            </div>
+
+            <!-- Layout Group -->
+            <div class="component-group">
+                <div class="component-group-header" onclick="toggleComponentGroup(this)">
+                    <span><i class="bi bi-layout-split"></i> Layout</span>
+                    <i class="bi bi-chevron-down group-chevron"></i>
+                </div>
+                <div class="component-group-body">
+                    <div class="component-card" draggable="true" data-type="header">
+                        <div class="component-card-icon"><i class="bi bi-type-h1"></i></div>
+                        <span class="component-card-label">Header</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="footer">
+                        <div class="component-card-icon"><i class="bi bi-layout-text-window-reverse"></i></div>
+                        <span class="component-card-label">Footer</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="pageBreak">
+                        <div class="component-card-icon"><i class="bi bi-scissors"></i></div>
+                        <span class="component-card-label">Page Break</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Group -->
+            <div class="component-group">
+                <div class="component-group-header" onclick="toggleComponentGroup(this)">
+                    <span><i class="bi bi-body-text"></i> Content</span>
+                    <i class="bi bi-chevron-down group-chevron"></i>
+                </div>
+                <div class="component-group-body">
+                    <div class="component-card" draggable="true" data-type="schoolName">
+                        <div class="component-card-icon"><i class="bi bi-building"></i></div>
+                        <span class="component-card-label">School Name</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="logo">
+                        <div class="component-card-icon"><i class="bi bi-image"></i></div>
+                        <span class="component-card-label">Logo</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="title">
+                        <div class="component-card-icon"><i class="bi bi-type-bold"></i></div>
+                        <span class="component-card-label">Title</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="paragraph">
+                        <div class="component-card-icon"><i class="bi bi-text-paragraph"></i></div>
+                        <span class="component-card-label">Paragraph</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="instructions">
+                        <div class="component-card-icon"><i class="bi bi-info-circle"></i></div>
+                        <span class="component-card-label">Instructions</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="image">
+                        <div class="component-card-icon"><i class="bi bi-card-image"></i></div>
+                        <span class="component-card-label">Image</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions Group -->
+            <div class="component-group">
+                <div class="component-group-header" onclick="toggleComponentGroup(this)">
+                    <span><i class="bi bi-patch-question"></i> Questions</span>
+                    <i class="bi bi-chevron-down group-chevron"></i>
+                </div>
+                <div class="component-group-body">
+                    <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="openImportModal()">
+                        <i class="bi bi-cloud-download"></i> Import from Bank
+                    </button>
+                    <div class="component-card" draggable="true" data-type="question">
+                        <div class="component-card-icon"><i class="bi bi-question-circle"></i></div>
+                        <span class="component-card-label">Question</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="mcq">
+                        <div class="component-card-icon"><i class="bi bi-ui-radios"></i></div>
+                        <span class="component-card-label">MCQ</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="fillBlanks">
+                        <div class="component-card-icon"><i class="bi bi-input-cursor-text"></i></div>
+                        <span class="component-card-label">Fill in Blanks</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="trueFalse">
+                        <div class="component-card-icon"><i class="bi bi-toggle-on"></i></div>
+                        <span class="component-card-label">True / False</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="matchFollowing">
+                        <div class="component-card-icon"><i class="bi bi-arrow-left-right"></i></div>
+                        <span class="component-card-label">Match Following</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Group -->
+            <div class="component-group">
+                <div class="component-group-header" onclick="toggleComponentGroup(this)">
+                    <span><i class="bi bi-database"></i> Data</span>
+                    <i class="bi bi-chevron-down group-chevron"></i>
+                </div>
+                <div class="component-group-body">
+                    <div class="component-card" draggable="true" data-type="table">
+                        <div class="component-card-icon"><i class="bi bi-table"></i></div>
+                        <span class="component-card-label">Table</span>
+                    </div>
+                    <div class="component-card" draggable="true" data-type="signature">
+                        <div class="component-card-icon"><i class="bi bi-pen"></i></div>
+                        <span class="component-card-label">Signature</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==========================================================
+         CENTER PANEL — A4 Paper Canvas
+         ========================================================== -->
+    <main class="panel-center" id="panelCenter">
+        <div class="canvas-zoom-controls">
+            <button type="button" class="zoom-btn" onclick="zoomCanvas(-10)" title="Zoom Out">
+                <i class="bi bi-zoom-out"></i>
+            </button>
+            <span class="zoom-level" id="zoomLevel">100%</span>
+            <button type="button" class="zoom-btn" onclick="zoomCanvas(10)" title="Zoom In">
+                <i class="bi bi-zoom-in"></i>
+            </button>
+            <button type="button" class="zoom-btn" onclick="zoomCanvas(0)" title="Reset Zoom">
+                <i class="bi bi-fullscreen"></i>
+            </button>
+        </div>
+
+        <div class="doc-paper-wrapper" id="docPaperWrapper">
+            <div class="doc-paper" id="docPaper" data-page="1">
+                <!-- Components are dropped/rendered here -->
+                <div class="drop-placeholder" id="dropPlaceholder">
+                    <i class="bi bi-plus-circle"></i>
+                    <p>Drag components here or select a template</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================================
+         RIGHT PANEL — Properties Editor
+         ========================================================== -->
+    <aside class="panel-right" id="panelRight">
+        <div class="panel-header">
+            <h6 class="panel-title"><i class="bi bi-sliders"></i> Properties</h6>
+            <button type="button" class="panel-collapse-btn" onclick="togglePanel('right')" title="Collapse Panel">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="panel-body" id="propertiesPanel">
+            <!-- Placeholder shown when nothing selected -->
+            <div class="properties-placeholder" id="propsPlaceholder">
+                <i class="bi bi-hand-index"></i>
+                <p>Select a component to edit its properties</p>
+            </div>
+
+            <!-- Property Groups (hidden until a component is selected) -->
+            <div class="properties-content" id="propsContent" style="display:none;">
+
+                <!-- Component Info Bar -->
+                <div class="prop-component-info" id="propComponentInfo">
+                    <span class="prop-component-type" id="propComponentType">—</span>
+                    <button type="button" class="btn-delete-component" onclick="deleteSelectedComponent()" title="Delete Component">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+
+                <!-- ===== Typography Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-fonts"></i> Typography</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row">
+                            <label class="prop-label">Font Family</label>
+                            <select class="prop-input" data-property="fontFamily" onchange="updateComponentProperty('fontFamily', this.value)">
+                                <option value="Arial, sans-serif">Arial</option>
+                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                <option value="Georgia, serif">Georgia</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                                <option value="Verdana, sans-serif">Verdana</option>
+                                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                                <option value="Impact, sans-serif">Impact</option>
+                                <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+                            </select>
+                        </div>
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Font Size</label>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="fontSize" min="6" max="120" value="14"
+                                           oninput="updateComponentProperty('fontSize', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="prop-label">Font Weight</label>
+                                <select class="prop-input" data-property="fontWeight" onchange="updateComponentProperty('fontWeight', this.value)">
+                                    <option value="normal">Normal</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="lighter">Lighter</option>
+                                    <option value="bolder">Bolder</option>
+                                    <option value="100">100</option>
+                                    <option value="200">200</option>
+                                    <option value="300">300</option>
+                                    <option value="400">400</option>
+                                    <option value="500">500</option>
+                                    <option value="600">600</option>
+                                    <option value="700">700</option>
+                                    <option value="800">800</option>
+                                    <option value="900">900</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Font Style</label>
+                                <select class="prop-input" data-property="fontStyle" onchange="updateComponentProperty('fontStyle', this.value)">
+                                    <option value="normal">Normal</option>
+                                    <option value="italic">Italic</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="prop-label">Text Decoration</label>
+                                <select class="prop-input" data-property="textDecoration" onchange="updateComponentProperty('textDecoration', this.value)">
+                                    <option value="none">None</option>
+                                    <option value="underline">Underline</option>
+                                    <option value="line-through">Line-through</option>
+                                    <option value="overline">Overline</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <label class="prop-label">Text Align</label>
+                            <div class="prop-btn-group" id="textAlignGroup">
+                                <button type="button" class="prop-btn" data-value="left" onclick="updateComponentProperty('textAlign', 'left'); setActiveAlignBtn(this)" title="Left">
+                                    <i class="bi bi-text-left"></i>
+                                </button>
+                                <button type="button" class="prop-btn" data-value="center" onclick="updateComponentProperty('textAlign', 'center'); setActiveAlignBtn(this)" title="Center">
+                                    <i class="bi bi-text-center"></i>
+                                </button>
+                                <button type="button" class="prop-btn" data-value="right" onclick="updateComponentProperty('textAlign', 'right'); setActiveAlignBtn(this)" title="Right">
+                                    <i class="bi bi-text-right"></i>
+                                </button>
+                                <button type="button" class="prop-btn" data-value="justify" onclick="updateComponentProperty('textAlign', 'justify'); setActiveAlignBtn(this)" title="Justify">
+                                    <i class="bi bi-justify"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Line Height</label>
+                                <input type="number" class="prop-input" data-property="lineHeight" min="0.5" max="5" step="0.1" value="1.5"
+                                       oninput="updateComponentProperty('lineHeight', this.value)" />
+                            </div>
+                            <div>
+                                <label class="prop-label">Letter Spacing</label>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="letterSpacing" min="-5" max="20" step="0.5" value="0"
+                                           oninput="updateComponentProperty('letterSpacing', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Colors Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-palette"></i> Colors</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row prop-row-third">
+                            <div>
+                                <label class="prop-label">Text Color</label>
+                                <div class="prop-color-wrap">
+                                    <input type="color" class="prop-color" data-property="color" value="#000000"
+                                           oninput="updateComponentProperty('color', this.value)" />
+                                    <span class="prop-color-hex" id="colorHex">#000000</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="prop-label">Background</label>
+                                <div class="prop-color-wrap">
+                                    <input type="color" class="prop-color" data-property="backgroundColor" value="#ffffff"
+                                           oninput="updateComponentProperty('backgroundColor', this.value)" />
+                                    <span class="prop-color-hex" id="bgColorHex">#ffffff</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="prop-label">Highlight</label>
+                                <div class="prop-color-wrap">
+                                    <input type="color" class="prop-color" data-property="outlineColor" value="#ffffff"
+                                           oninput="updateComponentProperty('outlineColor', this.value)" />
+                                    <span class="prop-color-hex" id="highlightHex">#ffffff</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Spacing Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-distribute-vertical"></i> Spacing</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <label class="prop-label">Margin</label>
+                        <div class="prop-spacing-grid">
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">T</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="marginTop" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('marginTop', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">R</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="marginRight" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('marginRight', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">B</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="marginBottom" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('marginBottom', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">L</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="marginLeft" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('marginLeft', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="prop-label mt-2">Padding</label>
+                        <div class="prop-spacing-grid">
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">T</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="paddingTop" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('paddingTop', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">R</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="paddingRight" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('paddingRight', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">B</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="paddingBottom" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('paddingBottom', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="prop-spacing-cell">
+                                <span class="spacing-label">L</span>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="paddingLeft" min="0" max="200" value="0"
+                                           oninput="updateComponentProperty('paddingLeft', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Dimensions Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-aspect-ratio"></i> Dimensions</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row prop-row-third">
+                            <div>
+                                <label class="prop-label">Width</label>
+                                <input type="text" class="prop-input" data-property="width" placeholder="auto"
+                                       oninput="updateComponentProperty('width', this.value)" />
+                            </div>
+                            <div>
+                                <label class="prop-label">Height</label>
+                                <input type="text" class="prop-input" data-property="height" placeholder="auto"
+                                       oninput="updateComponentProperty('height', this.value)" />
+                            </div>
+                            <div>
+                                <label class="prop-label">Max Width</label>
+                                <input type="text" class="prop-input" data-property="maxWidth" placeholder="100%"
+                                       oninput="updateComponentProperty('maxWidth', this.value)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Border Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-border-outer"></i> Border</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Border Width</label>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="borderWidth" min="0" max="20" value="0"
+                                           oninput="updateComponentProperty('borderWidth', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="prop-label">Border Style</label>
+                                <select class="prop-input" data-property="borderStyle" onchange="updateComponentProperty('borderStyle', this.value)">
+                                    <option value="none">None</option>
+                                    <option value="solid">Solid</option>
+                                    <option value="dashed">Dashed</option>
+                                    <option value="dotted">Dotted</option>
+                                    <option value="double">Double</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Border Color</label>
+                                <div class="prop-color-wrap">
+                                    <input type="color" class="prop-color" data-property="borderColor" value="#cccccc"
+                                           oninput="updateComponentProperty('borderColor', this.value)" />
+                                    <span class="prop-color-hex" id="borderColorHex">#cccccc</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="prop-label">Border Radius</label>
+                                <div class="prop-input-unit">
+                                    <input type="number" class="prop-input" data-property="borderRadius" min="0" max="100" value="0"
+                                           oninput="updateComponentProperty('borderRadius', this.value + 'px')" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Layout Group ===== -->
+                <div class="prop-group">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-grid"></i> Layout</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row prop-row-half">
+                            <div>
+                                <label class="prop-label">Display</label>
+                                <select class="prop-input" data-property="display" onchange="updateComponentProperty('display', this.value)">
+                                    <option value="block">Block</option>
+                                    <option value="inline-block">Inline-block</option>
+                                    <option value="flex">Flex</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="prop-label">Visibility</label>
+                                <select class="prop-input" data-property="visibility" onchange="updateComponentProperty('visibility', this.value)">
+                                    <option value="visible">Visible</option>
+                                    <option value="hidden">Hidden</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Question Properties (conditional) ===== -->
+                <div class="prop-group" id="questionPropsGroup" style="display:none;">
+                    <div class="prop-group-header" onclick="togglePropGroup(this)">
+                        <span><i class="bi bi-question-diamond"></i> Question Properties</span>
+                        <i class="bi bi-chevron-down prop-chevron"></i>
+                    </div>
+                    <div class="prop-group-body">
+                        <div class="prop-row">
+                            <label class="prop-label">Question Type</label>
+                            <select class="prop-input" id="propQuestionType" data-property="questionType"
+                                    onchange="updateComponentData('questionType', this.value)">
+                                <option value="short">Short Answer</option>
+                                <option value="long">Long Answer</option>
+                                <option value="mcq">Multiple Choice</option>
+                                <option value="fillBlanks">Fill in Blanks</option>
+                                <option value="trueFalse">True / False</option>
+                                <option value="matchFollowing">Match the Following</option>
+                            </select>
+                        </div>
+                        <div class="prop-row prop-row-third">
+                            <div>
+                                <label class="prop-label">Marks</label>
+                                <input type="number" class="prop-input" id="propMarks" data-property="marks" min="0" max="100" value="1"
+                                       oninput="updateComponentData('marks', this.value)" />
+                            </div>
+                            <div>
+                                <label class="prop-label">Difficulty</label>
+                                <select class="prop-input" id="propDifficulty" data-property="difficulty"
+                                        onchange="updateComponentData('difficulty', this.value)">
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="prop-label">Answer Lines</label>
+                                <input type="number" class="prop-input" id="propAnswerLines" data-property="answerLines" min="0" max="30" value="3"
+                                       oninput="updateComponentData('answerLines', this.value)" />
+                            </div>
+                        </div>
+
+                        <!-- MCQ Options -->
+                        <div class="prop-row" id="mcqOptionsSection" style="display:none;">
+                            <label class="prop-label">MCQ Options</label>
+                            <div class="mcq-options-list" id="mcqOptionsList">
+                                <div class="mcq-option-row" data-index="0">
+                                    <span class="mcq-option-letter">A</span>
+                                    <input type="text" class="prop-input mcq-option-input" placeholder="Option A"
+                                           oninput="updateMcqOption(0, this.value)" />
+                                    <button type="button" class="mcq-option-remove" onclick="removeMcqOption(0)" title="Remove">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div class="mcq-option-row" data-index="1">
+                                    <span class="mcq-option-letter">B</span>
+                                    <input type="text" class="prop-input mcq-option-input" placeholder="Option B"
+                                           oninput="updateMcqOption(1, this.value)" />
+                                    <button type="button" class="mcq-option-remove" onclick="removeMcqOption(1)" title="Remove">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div class="mcq-option-row" data-index="2">
+                                    <span class="mcq-option-letter">C</span>
+                                    <input type="text" class="prop-input mcq-option-input" placeholder="Option C"
+                                           oninput="updateMcqOption(2, this.value)" />
+                                    <button type="button" class="mcq-option-remove" onclick="removeMcqOption(2)" title="Remove">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div class="mcq-option-row" data-index="3">
+                                    <span class="mcq-option-letter">D</span>
+                                    <input type="text" class="prop-input mcq-option-input" placeholder="Option D"
+                                           oninput="updateMcqOption(3, this.value)" />
+                                    <button type="button" class="mcq-option-remove" onclick="removeMcqOption(3)" title="Remove">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-add-mcq-option" onclick="addMcqOption()">
+                                <i class="bi bi-plus-circle"></i> Add Option
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /properties-content -->
+        </div><!-- /panel-body -->
+    </aside>
+
+</div><!-- /builder-workspace -->
+
+
+<!-- ============================================================
+     3. TEMPLATE SELECTION MODAL
+     ============================================================ -->
+<div class="modal fade" id="templateModal" tabindex="-1" aria-labelledby="templateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content builder-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templateModalLabel">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> Choose a Template
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="template-filters">
+                <button type="button" class="template-filter-btn active" data-filter="all" onclick="filterTemplates('all', this)">All</button>
+                <button type="button" class="template-filter-btn" data-filter="ExamPaper" onclick="filterTemplates('ExamPaper', this)">Exam Paper</button>
+                <button type="button" class="template-filter-btn" data-filter="Notice" onclick="filterTemplates('Notice', this)">Notice</button>
+                <button type="button" class="template-filter-btn" data-filter="Circular" onclick="filterTemplates('Circular', this)">Circular</button>
+                <button type="button" class="template-filter-btn" data-filter="Worksheet" onclick="filterTemplates('Worksheet', this)">Worksheet</button>
+                <button type="button" class="template-filter-btn" data-filter="Assignment" onclick="filterTemplates('Assignment', this)">Assignment</button>
+                <button type="button" class="template-filter-btn" data-filter="LetterHead" onclick="filterTemplates('LetterHead', this)">Letter Head</button>
+                <button type="button" class="template-filter-btn" data-filter="Certificate" onclick="filterTemplates('Certificate', this)">Certificate</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="template-grid" id="templateGrid">
+                    @if (Model.Templates != null && Model.Templates.Any())
+                    {
+                        @foreach (var tpl in Model.Templates)
+                        {
+                            var iconClass = tpl.TemplateType switch
+                            {
+                                "ExamPaper" => "bi-file-earmark-text",
+                                "Notice" => "bi-megaphone",
+                                "Circular" => "bi-envelope",
+                                "Worksheet" => "bi-journal-text",
+                                "Assignment" => "bi-clipboard2-data",
+                                "LetterHead" => "bi-envelope-paper",
+                                "Certificate" => "bi-award",
+                                _ => "bi-file-earmark"
+                            };
+
+                            var badgeClass = tpl.TemplateType switch
+                            {
+                                "ExamPaper" => "badge-exam",
+                                "Notice" => "badge-notice",
+                                "Circular" => "badge-circular",
+                                "Worksheet" => "badge-worksheet",
+                                "Assignment" => "badge-assignment",
+                                "LetterHead" => "badge-letterhead",
+                                "Certificate" => "badge-certificate",
+                                _ => "badge-other"
+                            };
+
+                            <div class="template-card" data-template-type="@tpl.TemplateType">
+                                <div class="template-card-thumb">
+                                    @if (!string.IsNullOrEmpty(tpl.ThumbnailUrl))
+                                    {
+                                        <img src="@tpl.ThumbnailUrl" alt="@tpl.TemplateName" />
+                                    }
+                                    else
+                                    {
+                                        <div class="template-card-icon">
+                                            <i class="bi @iconClass"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="template-card-body">
+                                    <h6 class="template-card-name">@tpl.TemplateName</h6>
+                                    <span class="template-badge @badgeClass">@tpl.TemplateType</span>
+                                    @if (!string.IsNullOrEmpty(tpl.Description))
+                                    {
+                                        <p class="template-card-desc">@tpl.Description</p>
+                                    }
+                                    <button type="button" class="btn-use-template" onclick="loadTemplate(@tpl.TemplateId)">
+                                        <i class="bi bi-download"></i> Use Template
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="template-empty">
+                            <i class="bi bi-inbox"></i>
+                            <p>No templates available yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     4. PRINT SETTINGS MODAL
+     ============================================================ -->
+<div class="modal fade" id="printSettingsModal" tabindex="-1" aria-labelledby="printSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content builder-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="printSettingsModalLabel">
+                    <i class="bi bi-gear-fill"></i> Print &amp; Page Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Page Size -->
+                <div class="settings-row">
+                    <label class="settings-label">Page Size</label>
+                    <select class="settings-input" id="settingPageSize">
+                        <option value="A4" selected>A4 (210 × 297 mm)</option>
+                        <option value="Letter">Letter (8.5 × 11 in)</option>
+                        <option value="Legal">Legal (8.5 × 14 in)</option>
+                    </select>
+                </div>
+
+                <!-- Orientation -->
+                <div class="settings-row">
+                    <label class="settings-label">Orientation</label>
+                    <div class="settings-radio-group">
+                        <label class="settings-radio">
+                            <input type="radio" name="settingOrientation" value="portrait" checked />
+                            <span><i class="bi bi-phone"></i> Portrait</span>
+                        </label>
+                        <label class="settings-radio">
+                            <input type="radio" name="settingOrientation" value="landscape" />
+                            <span><i class="bi bi-phone-landscape"></i> Landscape</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Margins -->
+                <div class="settings-row">
+                    <label class="settings-label">Margins (mm)</label>
+                    <div class="settings-margins-grid">
+                        <div class="settings-margin-cell">
+                            <label>Top</label>
+                            <input type="number" class="settings-input" id="settingMarginTop" min="0" max="100" value="20" />
+                        </div>
+                        <div class="settings-margin-cell">
+                            <label>Right</label>
+                            <input type="number" class="settings-input" id="settingMarginRight" min="0" max="100" value="15" />
+                        </div>
+                        <div class="settings-margin-cell">
+                            <label>Bottom</label>
+                            <input type="number" class="settings-input" id="settingMarginBottom" min="0" max="100" value="20" />
+                        </div>
+                        <div class="settings-margin-cell">
+                            <label>Left</label>
+                            <input type="number" class="settings-input" id="settingMarginLeft" min="0" max="100" value="15" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Header -->
+                <div class="settings-row settings-row-toggle">
+                    <div class="settings-toggle-top">
+                        <label class="settings-label">Header</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="settingHeaderToggle" />
+                        </div>
+                    </div>
+                    <input type="text" class="settings-input" id="settingHeaderText" placeholder="Header text…" disabled />
+                </div>
+
+                <!-- Footer -->
+                <div class="settings-row settings-row-toggle">
+                    <div class="settings-toggle-top">
+                        <label class="settings-label">Footer</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="settingFooterToggle" />
+                        </div>
+                    </div>
+                    <input type="text" class="settings-input" id="settingFooterText" placeholder="Footer text…" disabled />
+                </div>
+
+                <!-- Page Numbers -->
+                <div class="settings-row settings-row-inline">
+                    <label class="settings-label">Page Numbers</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="settingPageNumbers" />
+                    </div>
+                </div>
+
+                <!-- Watermark -->
+                <div class="settings-row">
+                    <label class="settings-label">Watermark</label>
+                    <input type="text" class="settings-input" id="settingWatermarkText" placeholder="e.g. DRAFT, CONFIDENTIAL" />
+                    <div class="settings-range-wrap mt-2">
+                        <label class="settings-label-sm">Opacity</label>
+                        <input type="range" class="form-range" id="settingWatermarkOpacity" min="0" max="100" value="15" />
+                        <span class="settings-range-value" id="watermarkOpacityValue">15%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyPrintSettings()">
+                    <i class="bi bi-check2"></i> Apply Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     5. IMAGE UPLOAD MODAL
+     ============================================================ -->
+<div class="modal fade" id="imageUploadModal" tabindex="-1" aria-labelledby="imageUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content builder-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageUploadModalLabel">
+                    <i class="bi bi-cloud-arrow-up-fill"></i> Upload Image
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="image-upload-zone" id="imageDropZone">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <p>Drag &amp; drop an image here or click to browse</p>
+                    <input type="file" class="image-file-input" id="imageFileInput"
+                           accept="image/png,image/jpeg,image/gif,image/svg+xml,image/webp" />
+                </div>
+                <div class="image-preview-area" id="imagePreviewArea" style="display:none;">
+                    <img id="imagePreview" src="" alt="Preview" />
+                    <button type="button" class="btn-remove-preview" onclick="clearImagePreview()">
+                        <i class="bi bi-x-circle"></i> Remove
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnUploadImage" onclick="uploadImage()" disabled>
+                    <i class="bi bi-upload"></i> Insert Image
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     6. CONTEXT MENU (right-click on components)
+     ============================================================ -->
+<div class="builder-context-menu" id="builderContextMenu" style="display:none;">
+    <button type="button" class="ctx-menu-item" onclick="contextAction('duplicate')">
+        <i class="bi bi-copy"></i> Duplicate
+    </button>
+    <button type="button" class="ctx-menu-item" onclick="contextAction('moveUp')">
+        <i class="bi bi-arrow-up"></i> Move Up
+    </button>
+    <button type="button" class="ctx-menu-item" onclick="contextAction('moveDown')">
+        <i class="bi bi-arrow-down"></i> Move Down
+    </button>
+    <div class="ctx-menu-divider"></div>
+    <button type="button" class="ctx-menu-item" onclick="contextAction('copyStyle')">
+        <i class="bi bi-brush"></i> Copy Style
+    </button>
+    <button type="button" class="ctx-menu-item" onclick="contextAction('pasteStyle')">
+        <i class="bi bi-clipboard"></i> Paste Style
+    </button>
+    <div class="ctx-menu-divider"></div>
+    <button type="button" class="ctx-menu-item ctx-menu-danger" onclick="contextAction('delete')">
+        <i class="bi bi-trash3"></i> Delete
+    </button>
+</div>
+
+
+<!-- ============================================================
+     7. TOAST NOTIFICATIONS
+     ============================================================ -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+    <div class="toast align-items-center border-0" id="builderToast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">
+                Operation completed successfully.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     8. SCRIPTS
+     ============================================================ -->
+<!-- Import Question Modal -->
+<div class="modal fade" id="importQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cloud-download"></i> Import from Question Bank</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Filter bar -->
+                <div class="bg-light p-3 border-bottom d-flex gap-2 align-items-center">
+                    <select class="form-select form-select-sm w-auto" id="importFilterType" onchange="loadImportQuestions()">
+                        <option value="">All Types</option>
+                        <option value="question">Standard Question</option>
+                        <option value="mcq">Multiple Choice</option>
+                        <option value="trueFalse">True / False</option>
+                        <option value="fillBlanks">Fill in Blanks</option>
+                    </select>
+                    <select class="form-select form-select-sm w-auto" id="importClassId" onchange="loadImportQuestions()">
+                        <option value="">All Classes</option>
+                        @foreach(var c in Model.Classes)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </select>
+                    <select class="form-select form-select-sm w-auto" id="importSubjectId" onchange="loadImportQuestions()">
+                        <option value="">All Subjects</option>
+                        @foreach(var s in Model.Subjects)
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </select>
+                    <span class="text-muted small ms-auto" id="importQuestionCount">0 questions found</span>
+                </div>
+                <!-- Question List -->
+                <div class="list-group list-group-flush" id="importQuestionList">
+                    <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div> Loading questions...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <span class="text-muted small me-auto"><span id="selectedImportCount">0</span> selected</span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="insertImportedQuestions()" id="btnInsertQuestions" disabled>
+                    <i class="bi bi-plus-circle"></i> Insert Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Global inline helpers invoked by the modals ──
+
+        // Toggle header/footer text inputs based on switch
+        document.getElementById('settingHeaderToggle').addEventListener('change', function () {
+            document.getElementById('settingHeaderText').disabled = !this.checked;
+        });
+        document.getElementById('settingFooterToggle').addEventListener('change', function () {
+            document.getElementById('settingFooterText').disabled = !this.checked;
+        });
+        // Watermark opacity readout
+        document.getElementById('settingWatermarkOpacity').addEventListener('input', function () {
+            document.getElementById('watermarkOpacityValue').textContent = this.value + '%';
+        });
+        // Image drop zone click
+        document.getElementById('imageDropZone').addEventListener('click', function () {
+            document.getElementById('imageFileInput').click();
+        });
+        // Image file preview
+        document.getElementById('imageFileInput').addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreviewArea').style.display = 'block';
+                    document.getElementById('imageDropZone').style.display = 'none';
+                    document.getElementById('btnUploadImage').disabled = false;
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        function clearImagePreview() {
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('imagePreviewArea').style.display = 'none';
+            document.getElementById('imageDropZone').style.display = '';
+            document.getElementById('imageFileInput').value = '';
+            document.getElementById('btnUploadImage').disabled = true;
+        }
+
+        // Color hex readouts
+        document.querySelectorAll('.prop-color').forEach(function (el) {
+            el.addEventListener('input', function () {
+                var hex = this.parentElement.querySelector('.prop-color-hex');
+                if (hex) hex.textContent = this.value;
+            });
+        });
+    </script>
+    <script src="~/js/document-builder.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,65 @@
+﻿@model School_CRM.Models.Employee
+
+<div class="row">
+
+    <!-- LEFT SIDE -->
+    <div class="col-md-6">
+        <table class="table table-sm table-borderless">
+            <tr>
+                <td><strong>Code:</strong></td>
+                <td>@(Model.EmployeeCode ?? "-")</td>
+            </tr>
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>@(Model.Name ?? "-")</td>
+            </tr>
+            <tr>
+                <td><strong>Designation:</strong></td>
+                <td>@(Model.Designation ?? "-")</td>
+            </tr>
+            <tr>
+                <td><strong>Department:</strong></td>
+                <td>@(Model.Department ?? "-")</td>
+            </tr>
+            <tr>
+                <td><strong>Basic Salary:</strong></td>
+                <td>@(Model.BasicSalary.HasValue ? "₹" + Model.BasicSalary.Value.ToString("0.00") : "₹0.00")</td>
+            </tr>
+            <tr>
+                <td><strong>Daily Rate:</strong></td>
+                <td>@(Model.DailyRate.HasValue ? "₹" + Model.DailyRate.Value.ToString("0.00") : "₹0.00")</td>
+            </tr>
+            <tr>
+                <td><strong>OT Rate:</strong></td>
+                <td>@(Model.OvertimeRate.HasValue ? "₹" + Model.OvertimeRate.Value.ToString("0.00") : "₹0.00")</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="col-md-6">
+        <table class="table table-sm table-borderless">
+            <tr>
+                <td><strong>Total Attendance:</strong></td>
+                <td>@(Model.AttendanceMasters?.Count ?? 0)</td>
+            </tr>
+            <tr>
+                <td><strong>Total Leaves:</strong></td>
+                <td>@(Model.EmployeeLeaves?.Count ?? 0)</td>
+            </tr>
+            <tr>
+                <td><strong>Salary Records:</strong></td>
+                <td>@(Model.SalaryMasters?.Count ?? 0)</td>
+            </tr>
+            <tr>
+                <td><strong>Status:</strong></td>
+                <td>
+                    <span class="badge @(Model.IsActive == true ? "bg-success" : "bg-danger")">
+                        @(Model.IsActive == true ? "Active" : "Inactive")
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>

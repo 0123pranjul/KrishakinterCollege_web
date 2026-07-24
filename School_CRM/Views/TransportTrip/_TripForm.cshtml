@@ -1,0 +1,54 @@
+@model School_CRM.Models.TblTrnTrip
+@{
+    bool isNew = Model.TripId == 0;
+    var routes = ViewBag.Routes as List<School_CRM.Models.TblTrnRoute> ?? new();
+    var warning = ViewBag.Warning as string;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title"><i class="fas fa-route me-2 text-primary"></i>@(isNew ? "Add Trip" : "Edit Trip")</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form onsubmit="return saveTrip(this)">
+    <input type="hidden" name="TripId" value="@Model.TripId" />
+    <div class="modal-body">
+        @if (!string.IsNullOrEmpty(warning))
+        {
+            <div class="alert alert-warning py-2 small"><i class="fas fa-exclamation-triangle me-1"></i>@warning</div>
+        }
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label fw-semibold">Route <span class="text-danger">*</span></label>
+                <select class="form-select" name="RouteId" required>
+                    <option value="">-- Select Route --</option>
+                    @foreach (var r in routes)
+                    {
+                        <option value="@r.RouteId" selected="@(Model.RouteId == r.RouteId)">@r.RouteName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Trip Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="TripDate"
+                       value="@Model.TripDate.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Trip Type <span class="text-danger">*</span></label>
+                <select class="form-select" name="TripType" required>
+                    @foreach (var t in new[] { "Morning", "Afternoon", "Evening", "Special" })
+                    {
+                        <option value="@t" selected="@(Model.TripType == t)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Remarks</label>
+                <textarea class="form-control" name="Remarks" rows="2">@Model.Remarks</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Trip</button>
+    </div>
+</form>

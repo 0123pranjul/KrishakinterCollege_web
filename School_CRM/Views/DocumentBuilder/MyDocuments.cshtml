@@ -1,0 +1,250 @@
+@model School_CRM.Models.ViewModels.MyDocumentsVM
+@{
+    ViewData["Title"] = "My Documents";
+}
+
+<div class="container-fluid py-4">
+    <!-- Top Action Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">School Document Builder</h1>
+            <p class="text-muted mb-0 small">Create and manage exam papers, notices, circulars, certificates and letterheads.</p>
+        </div>
+        <div>
+            <a href="/DocumentBuilder" class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 shadow-sm" style="border-radius: 8px;">
+                <i class="bi bi-plus-lg"></i>
+                <span>Create New Document</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Row -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Document Type Filter Pills -->
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/DocumentBuilder/MyDocuments" class="btn btn-sm px-3 py-2 @(string.IsNullOrEmpty(Model.FilterType) ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">All Documents</a>
+                    <a href="/DocumentBuilder/MyDocuments?type=ExamPaper" class="btn btn-sm px-3 py-2 @(Model.FilterType == "ExamPaper" ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">Exam Papers</a>
+                    <a href="/DocumentBuilder/MyDocuments?type=Notice" class="btn btn-sm px-3 py-2 @(Model.FilterType == "Notice" ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">Notices</a>
+                    <a href="/DocumentBuilder/MyDocuments?type=Circular" class="btn btn-sm px-3 py-2 @(Model.FilterType == "Circular" ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">Circulars</a>
+                    <a href="/DocumentBuilder/MyDocuments?type=LetterHead" class="btn btn-sm px-3 py-2 @(Model.FilterType == "LetterHead" ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">Letter Heads</a>
+                    <a href="/DocumentBuilder/MyDocuments?type=Certificate" class="btn btn-sm px-3 py-2 @(Model.FilterType == "Certificate" ? "btn-primary" : "btn-light text-secondary")" style="border-radius: 20px;">Certificates</a>
+                </div>
+
+                <!-- Search Input -->
+                <div class="position-relative" style="min-width: 250px;">
+                    <i class="bi bi-search text-muted position-absolute start-0 top-50 translate-middle-y ms-3"></i>
+                    <input type="text" id="docSearchInput" class="form-control form-control-sm ps-5 py-2" placeholder="Search by name..." style="border-radius: 20px; border-color: #e2e8f0;" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Grid -->
+    @if (Model.Documents == null || Model.Documents.Count == 0)
+    {
+        <div class="card border-0 shadow-sm text-center py-5" style="border-radius: 12px;">
+            <div class="card-body py-5">
+                <div class="mb-4">
+                    <i class="bi bi-file-earmark-plus text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="text-gray-800">No Documents Found</h5>
+                <p class="text-muted small mx-auto" style="max-width: 400px;">Get started by creating your first exam paper, circular, or certificate using our drag-and-drop builder.</p>
+                <a href="/DocumentBuilder" class="btn btn-primary mt-3 px-4 py-2" style="border-radius: 8px;">
+                    <i class="bi bi-plus-lg"></i> Create New
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="documentsContainer">
+            @foreach (var doc in Model.Documents)
+            {
+                <div class="col doc-card-wrapper" data-name="@doc.DocumentName.ToLower()">
+                    <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden hover-card" style="border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s;">
+                        <!-- Top Accent Banner based on type -->
+                        <div class="accent-banner" style="height: 6px; background: @GetDocTypeColor(doc.DocumentType);"></div>
+                        
+                        <div class="card-body d-flex flex-column p-4">
+                            <!-- Type Badge & Status -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge text-white px-2 py-1 small" style="background: @GetDocTypeColor(doc.DocumentType); border-radius: 6px; font-size: 11px;">
+                                    @GetDocTypeLabel(doc.DocumentType)
+                                </span>
+                                <span class="badge @(doc.Status == "Published" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning") px-2 py-1" style="border-radius: 6px; font-size: 11px;">
+                                    @doc.Status
+                                </span>
+                            </div>
+
+                            <!-- Document Name -->
+                            <h5 class="card-title text-gray-900 mb-2 fw-semibold text-truncate" title="@doc.DocumentName">
+                                @doc.DocumentName
+                            </h5>
+                            
+                            <!-- Template Info -->
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-file-earmark-code me-1"></i>
+                                @(string.IsNullOrEmpty(doc.TemplateName) ? "Blank Document" : $"Template: {doc.TemplateName}")
+                            </p>
+
+                            <!-- Date Created / Updated -->
+                            <div class="mt-auto pt-3 border-top border-light text-muted" style="font-size: 11px;">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Created:</span>
+                                    <span>@doc.CreatedAt.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Modified:</span>
+                                    <span>@(doc.UpdatedAt?.ToString("dd-MMM-yyyy hh:mm tt") ?? doc.CreatedAt.ToString("dd-MMM-yyyy hh:mm tt"))</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer actions -->
+                        <div class="card-footer bg-light border-0 d-flex gap-2 p-3">
+                            <a href="/DocumentBuilder?id=@doc.DocumentId" class="btn btn-outline-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius: 6px;">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm px-2 d-flex align-items-center justify-content-center" style="border-radius: 6px;" onclick="confirmDelete(@doc.DocumentId, '@doc.DocumentName')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Anti-forgery Token -->
+@Html.AntiForgeryToken()
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDocModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-gray-900">Delete Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="mb-0 text-gray-700">Are you sure you want to delete <strong id="deleteDocName"></strong>? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" style="border-radius: 8px;">
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let docIdToDelete = null;
+
+        // Search logic
+        document.getElementById('docSearchInput')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.doc-card-wrapper').forEach(card => {
+                const docName = card.getAttribute('data-name');
+                if (docName.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Hover effect helper
+        document.querySelectorAll('.hover-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+                card.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.08)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+                card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.04)';
+            });
+        });
+
+        // Delete handlers
+        function confirmDelete(id, name) {
+            docIdToDelete = id;
+            document.getElementById('deleteDocName').textContent = name;
+            const modal = new bootstrap.Modal(document.getElementById('deleteDocModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', function() {
+            if (!docIdToDelete) return;
+
+            const btn = this;
+            const spinner = btn.querySelector('.spinner-border');
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+
+            // Get anti-forgery token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            fetch(`/DocumentBuilder/DeleteDocument/${docIdToDelete}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete document: ' + data.message);
+                    btn.disabled = false;
+                    spinner.classList.add('d-none');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred during deletion.');
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+            });
+        });
+    </script>
+}
+
+@functions {
+    public string GetDocTypeColor(string type)
+    {
+        return type switch
+        {
+            "ExamPaper" => "#3b82f6", // Blue
+            "Notice" => "#ef4444",    // Red
+            "Circular" => "#f59e0b",  // Amber
+            "LetterHead" => "#10b981",// Emerald
+            "Certificate" => "#8b5cf6",// Violet
+            "Assignment" => "#06b6d4", // Cyan
+            "Worksheet" => "#ec4899",  // Pink
+            _ => "#64748b"            // Slate
+        };
+    }
+
+    public string GetDocTypeLabel(string type)
+    {
+        return type switch
+        {
+            "ExamPaper" => "Exam Paper",
+            "Notice" => "Notice",
+            "Circular" => "Circular",
+            "LetterHead" => "Letter Head",
+            "Certificate" => "Certificate",
+            "Assignment" => "Assignment",
+            "Worksheet" => "Worksheet",
+            _ => type
+        };
+    }
+}

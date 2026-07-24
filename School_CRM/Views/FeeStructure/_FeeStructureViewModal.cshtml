@@ -1,0 +1,97 @@
+@model School_CRM.Models.TblFeeStructure
+
+<div class="row g-3">
+
+    <!-- Main Info Card -->
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Fee Structure Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Structure ID</small>
+                        <span class="fw-semibold">#@Model.FeeStructureId</span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Academic Session</small>
+                        <span class="fw-semibold">@(Model.Session?.SessionName ?? "-")</span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Class</small>
+                        <span class="fw-semibold">@(Model.Class?.ClassName ?? "-")</span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Fee Type</small>
+                        <span class="fw-semibold">@(Model.FeeType?.FeeName ?? "-")</span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Fee Frequency</small>
+                        @if (Model.FeeType?.IsRecurring == true)
+                        {
+                            <span class="badge bg-primary">Monthly (Recurring)</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">One Time</span>
+                        }
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Status</small>
+                        @if (Model.IsActive == true)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactive</span>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Amount Highlight -->
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <small class="text-muted d-block mb-1">Fee Amount</small>
+                <h2 class="text-success fw-bold mb-0">
+                    ₹@(Model.Amount.HasValue ? Model.Amount.Value.ToString("0.00") : "0.00")
+                </h2>
+                <small class="text-muted">
+                    @(Model.FeeType?.IsRecurring == true ? "Per Month" : "One Time Payment")
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timestamps -->
+    <div class="col-md-6">
+        <small class="text-muted d-block">Created Date</small>
+        <span class="fw-semibold">
+            @(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd-MM-yyyy hh:mm tt") : "-")
+        </span>
+    </div>
+    @if (Model.UpdatedDate.HasValue)
+    {
+        <div class="col-md-6">
+            <small class="text-muted d-block">Last Updated</small>
+            <span class="fw-semibold">
+                @Model.UpdatedDate.Value.ToString("dd-MM-yyyy hh:mm tt")
+            </span>
+        </div>
+    }
+
+</div>

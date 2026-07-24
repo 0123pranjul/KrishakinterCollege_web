@@ -1,0 +1,209 @@
+@model List<School_CRM.Models.DTOs.AssetListItemDto>
+@{
+    ViewData["Title"] = "Asset Catalog";
+    int totalCount  = (int)(ViewBag.TotalCount  ?? 0);
+    int currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    int totalPages  = (int)(ViewBag.TotalPages  ?? 1);
+    int pageSize    = 20;
+    int startSno    = (currentPage - 1) * pageSize + 1;
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-boxes text-primary me-2"></i>Asset Catalog</h2>
+            <small class="text-muted">@totalCount assets found</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Add Asset
+            </a>
+            <a asp-controller="AssetSetup" asp-action="Categories" class="btn btn-outline-secondary">
+                <i class="fas fa-tags me-1"></i>Categories
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters — Context.Request.Query is available here in the HTML body -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Search</label>
+                    <input type="text" name="SearchText"
+                           value="@Context.Request.Query["SearchText"]"
+                           class="form-control" placeholder="Name, Code, Brand..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="CategoryId" class="form-select" asp-items="ViewBag.Categories">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="OnlyAvailable" value="true"
+                               @(Context.Request.Query["OnlyAvailable"] == "true" ? "checked" : "")
+                               id="avail" />
+                        <label class="form-check-label" for="avail">Available Only</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Code</th>
+                            <th>Asset Name</th>
+                            <th>Category</th>
+                            <th>Brand</th>
+                            <th>Units</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-5">
+                                    <i class="fas fa-boxes fa-3x mb-3 d-block opacity-25"></i>
+                                    No assets found. <a asp-action="Create">Add one</a>
+                                </td>
+                            </tr>
+                        }
+                        @{ int sno = startSno; }
+                        @foreach (var a in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno</td>
+                                <td><code class="small">@a.AssetCode</code></td>
+                                <td>
+                                    <div class="fw-semibold">@a.AssetName</div>
+                                    @if (!string.IsNullOrEmpty(a.SubCategoryName))
+                                    {
+                                        <small class="text-muted">@a.SubCategoryName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@a.CategoryName</span>
+                                </td>
+                                <td class="text-muted">@(a.Brand ?? "-")</td>
+                                <td>
+                                    <span class="@(a.AvailableUnits == 0 ? "text-danger fw-bold" : "text-success fw-bold")">
+                                        @a.AvailableUnits
+                                    </span>
+                                    <span class="text-muted">/ @a.TotalUnits</span>
+                                </td>
+                                <td>₹@a.UnitPrice.ToString("F2")</td>
+                                <td>
+                                    @if (a.AvailableUnits == 0)
+                                    {
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    }
+                                    else if (!a.IsIssuable)
+                                    {
+                                        <span class="badge bg-secondary">Not Issuable</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Available</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@a.AssetId"
+                                           class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Units" asp-route-id="@a.AssetId"
+                                           class="btn btn-outline-secondary" title="Units & QR">
+                                            <i class="fas fa-qrcode"></i>
+                                        </a>
+                                        <a asp-action="AddUnits" asp-route-id="@a.AssetId"
+                                           class="btn btn-outline-success" title="Add Units">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            sno++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted">
+                    Page @currentPage of @totalPages (@totalCount total)
+                </small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@(currentPage - 1)"
+                                   asp-route-SearchText="@Context.Request.Query["SearchText"]"
+                                   asp-route-CategoryId="@Context.Request.Query["CategoryId"]">«</a>
+                            </li>
+                        }
+                        @for (int n = Math.Max(1, currentPage - 2); n <= Math.Min(totalPages, currentPage + 2); n++)
+                        {
+                            <li class="page-item @(n == currentPage ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@n"
+                                   asp-route-SearchText="@Context.Request.Query["SearchText"]"
+                                   asp-route-CategoryId="@Context.Request.Query["CategoryId"]">@n</a>
+                            </li>
+                        }
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@(currentPage + 1)"
+                                   asp-route-SearchText="@Context.Request.Query["SearchText"]"
+                                   asp-route-CategoryId="@Context.Request.Query["CategoryId"]">»</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

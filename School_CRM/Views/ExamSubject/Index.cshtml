@@ -1,0 +1,160 @@
+@{
+    ViewData["Title"] = "Exam Timetable & Subject Mapping";
+}
+
+<div class="container-fluid">
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-semibold text-dark"><i class="fas fa-calendar-alt me-2 text-primary"></i>Bulk Exam Timetable & Mapping</h5>
+            <small class="text-muted">Select an Exam and Class to quickly map all subjects, set marks, and timetable.</small>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Select Exam <span class="text-danger">*</span></label>
+                    <select id="selExam" class="form-select">
+                        <option value="">-- Select Exam --</option>
+                        @foreach (var e in ViewBag.Exams) { <option value="@e.ExamId">@e.ExamName (@e.Session.SessionName)</option> }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Select Class <span class="text-danger">*</span></label>
+                    <select id="selClass" class="form-select">
+                        <option value="">-- Class --</option>
+                        @foreach (var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassName</option> }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100" onclick="loadSubjects()">
+                        <i class="fas fa-search me-1"></i> Load Subjects
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 d-none" id="mappingCard">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h6 class="mb-0 fw-semibold text-dark">Subject Configuration</h6>
+            <button class="btn btn-success btn-sm px-4" onclick="saveBulkMapping()">
+                <i class="fas fa-save me-1"></i> Save All Changes
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%" class="text-center">#</th>
+                            <th width="15%">Subject</th>
+                            <th width="12%" class="text-center">Max Marks</th>
+                            <th width="12%" class="text-center">Pass Marks</th>
+                            <th width="20%">Exam Date</th>
+                            <th width="15%">Time (e.g. 10:00 AM)</th>
+                            <th width="15%">Room No</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subjectTbody">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        function loadSubjects() {
+            const examId = $('#selExam').val();
+            const classId = $('#selClass').val();
+
+            if (!examId || !classId) {
+                toastr.warning('Please select both Exam and Class');
+                return;
+            }
+
+            $('#subjectTbody').html('<tr><td colspan="7" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary fs-3"></i></td></tr>');
+            $('#mappingCard').removeClass('d-none');
+
+            $.get('@Url.Action("GetSubjectsForBulkMap", "ExamSubject")', { examId, classId }, res => {
+                let html = '';
+                if (!res.data || res.data.length === 0) {
+                    html = '<tr><td colspan="7" class="text-center py-4 text-muted">No subjects found for this class. Please map subjects to class first.</td></tr>';
+                } else {
+                    res.data.forEach((s, i) => {
+                        html += `<tr>
+                            <td class="text-center fw-bold text-muted">${i + 1}
+                                <input type="hidden" class="map-id" value="${s.id}" />
+                                <input type="hidden" class="sub-id" value="${s.subjectId}" />
+                            </td>
+                            <td class="fw-semibold text-primary">${s.subjectName}</td>
+                            <td><input type="number" class="form-control form-control-sm text-center max-marks" value="${s.maxMarks}" step="1" /></td>
+                            <td><input type="number" class="form-control form-control-sm text-center pass-marks" value="${s.passMarks}" step="1" /></td>
+                            <td><input type="date" class="form-control form-control-sm exam-date" value="${s.examDate || ''}" /></td>
+                            <td><input type="text" class="form-control form-control-sm exam-time" placeholder="ex: 10:00 AM - 1:00 PM" value="${s.examTime || ''}" /></td>
+                            <td><input type="text" class="form-control form-control-sm room-no" placeholder="Room" value="${s.roomNo || ''}" /></td>
+                        </tr>`;
+                    });
+                }
+                $('#subjectTbody').html(html);
+            });
+        }
+
+        function saveBulkMapping() {
+            const examId = parseInt($('#selExam').val());
+            const classId = parseInt($('#selClass').val());
+            const entries = [];
+
+            let hasError = false;
+
+            $('#subjectTbody tr').each(function() {
+                let subId = $(this).find('.sub-id').val();
+                if (!subId) return; // skip empty rows
+
+                let maxM = parseFloat($(this).find('.max-marks').val()) || 0;
+                let passM = parseFloat($(this).find('.pass-marks').val()) || 0;
+
+                if (passM > maxM) {
+                    toastr.error('Pass marks cannot be greater than Max marks!');
+                    $(this).find('.pass-marks').addClass('is-invalid');
+                    hasError = true;
+                    return false; // break loop
+                } else {
+                    $(this).find('.pass-marks').removeClass('is-invalid');
+                }
+
+                entries.push({
+                    id: parseInt($(this).find('.map-id').val()) || 0,
+                    examId: examId,
+                    classId: classId,
+                    subjectId: parseInt(subId),
+                    maxMarks: maxM,
+                    passMarks: passM,
+                    examDate: $(this).find('.exam-date').val(),
+                    examTime: $(this).find('.exam-time').val(),
+                    roomNo: $(this).find('.room-no').val()
+                });
+            });
+
+            if (hasError || entries.length === 0) return;
+
+            $.ajax({
+                url: '@Url.Action("SaveBulkMapping", "ExamSubject")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(entries),
+                success: res => {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        loadSubjects(); // Reload to get updated IDs
+                    } else {
+                        toastr.error(res.message);
+                    }
+                }
+            });
+        }
+    </script>
+}

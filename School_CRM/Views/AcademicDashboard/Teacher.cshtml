@@ -1,0 +1,314 @@
+@{
+    ViewData["Title"] = "Teacher Dashboard";
+    var sessions = ViewBag.Sessions as List<School_CRM.Models.TblAcademicSession> ?? new();
+    int teacherId = ViewBag.TeacherId ?? 0;
+}
+
+<style>
+    .stat-card { border-radius: 14px; border: none; transition: transform .18s, box-shadow .18s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .chart-card { border-radius: 14px; border: none; }
+    .section-title { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #9aa5b4; margin-bottom: 10px; }
+    .tbl-sm td, .tbl-sm th { padding: 7px 10px; font-size: .82rem; }
+    .tt-cell { border-radius: 8px; padding: 6px 10px; font-size: .78rem; font-weight: 600; }
+    .tt-subject { background: #eef0fd; color: #4361ee; }
+    .tt-break   { background: #fef3c7; color: #92400e; }
+    .tt-empty   { background: #f3f4f6; color: #9ca3af; font-weight: 400; }
+    .day-header { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+    .today-col  { background: #eef0fd !important; }
+    .overdue-badge { background: #fee2e2; color: #991b1b; border-radius: 6px; padding: 2px 8px; font-size: .72rem; }
+    .filter-bar { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(0,0,0,.06); margin-bottom: 20px; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <!-- ── Welcome ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="fas fa-chalkboard-teacher me-2 text-success"></i>Teacher Dashboard
+            </h4>
+            <small class="text-muted" id="todayLabel">Loading...</small>
+        </div>
+        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-6">
+            <i class="fas fa-user me-1"></i>@ViewBag.UserName
+        </span>
+    </div>
+
+    <!-- ── Filter ── -->
+    <div class="filter-bar d-flex gap-3 align-items-end flex-wrap">
+        <div>
+            <label class="form-label small fw-semibold mb-1">Session</label>
+            <select id="selSession" class="form-select form-select-sm" style="min-width:150px" onchange="loadDashboard()">
+                @foreach (var s in sessions) { <option value="@s.SessionId">@s.SessionName</option> }
+            </select>
+        </div>
+        <button class="btn btn-success btn-sm px-4" onclick="loadDashboard()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- ── Stat Cards ── -->
+    <div class="row g-3 mb-4">
+        @foreach (var c in new[] {
+            new { id="cAssign",   label="My Assignments",   icon="fas fa-clipboard-list", bg="bg-primary-subtle", ic="text-primary" },
+            new { id="cOverdue",  label="Overdue",          icon="fas fa-exclamation-circle", bg="bg-danger-subtle", ic="text-danger" },
+            new { id="cClasses",  label="Classes Assigned", icon="fas fa-layer-group",    bg="bg-success-subtle", ic="text-success" },
+            new { id="cMaterials",label="Study Materials",  icon="fas fa-folder-open",    bg="bg-info-subtle",    ic="text-info"    }
+        }) {
+            <div class="col-6 col-md-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body d-flex align-items-center gap-3 py-3">
+                        <div class="stat-icon @c.bg"><i class="@c.icon @c.ic"></i></div>
+                        <div>
+                            <div class="fw-bold fs-4 mb-0 lh-1" id="@c.id">—</div>
+                            <div class="text-muted small">@c.label</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ── Today's Timetable + Weekly Timetable ── -->
+    <div class="row g-3 mb-4">
+        <!-- Today -->
+        <div class="col-lg-4">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Today's Schedule</div>
+                    <small class="text-muted" id="todayDayLabel"></small>
+                </div>
+                <div class="card-body pt-2" id="todayTT">
+                    <div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+        </div>
+        <!-- Weekly Grid -->
+        <div class="col-lg-8">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Weekly Timetable</div>
+                </div>
+                <div class="card-body p-0 pt-2">
+                    <div class="table-responsive">
+                        <table class="table table-bordered tbl-sm mb-0" id="weeklyTT" style="min-width:700px">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="day-header" style="width:100px">Period</th>
+                                    <th class="day-header text-center">Mon</th>
+                                    <th class="day-header text-center">Tue</th>
+                                    <th class="day-header text-center">Wed</th>
+                                    <th class="day-header text-center">Thu</th>
+                                    <th class="day-header text-center">Fri</th>
+                                    <th class="day-header text-center">Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyTTBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── My Assignments + Attendance Chart ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">My Assignments</div>
+                    <a href="/Assignment" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table tbl-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>Title</th><th>Class</th><th>Subject</th><th>Due</th><th></th></tr>
+                            </thead>
+                            <tbody id="assignmentBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card chart-card shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <div class="section-title mb-0">Today's Attendance by Class</div>
+                </div>
+                <div class="card-body">
+                    <canvas id="attChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Study Materials + Custom Tests ── -->
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Recent Study Materials</div>
+                    <a href="/StudyMaterial" class="btn btn-xs btn-outline-success py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table tbl-sm table-hover mb-0">
+                        <thead class="table-light"><tr><th>Title</th><th>Subject</th><th>Class</th><th>File</th><th>Date</th></tr></thead>
+                        <tbody id="materialsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card chart-card shadow-sm">
+                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                    <div class="section-title mb-0">Recent Custom Tests</div>
+                    <a href="/CustomTest" class="btn btn-xs btn-outline-info py-0 px-2" style="font-size:.75rem">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table tbl-sm table-hover mb-0">
+                        <thead class="table-light"><tr><th>Test Name</th><th>Subject</th><th>Class</th><th>Max</th><th>Date</th></tr></thead>
+                        <tbody id="testsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let attChart;
+    const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const teacherId = @teacherId;
+
+    $(document).ready(() => loadDashboard());
+
+    function loadDashboard() {
+        const sessionId = $('#selSession').val() || 0;
+        $.get('@Url.Action("GetTeacherStats","AcademicDashboard")', { teacherId, sessionId }, data => {
+            if (data.error) { console.error(data.error); return; }
+
+            $('#todayLabel').text(data.todayDate);
+            $('#todayDayLabel').text(data.todayDayName);
+            $('#cAssign').text(data.totalAssignments);
+            $('#cOverdue').text(data.overdueAssignments);
+            $('#cClasses').text(data.totalClasses);
+            $('#cMaterials').text(data.totalMaterials);
+
+            renderTodayTT(data.todayTT);
+            renderWeeklyTT(data.weeklyTT);
+            renderAssignments(data.myAssignments);
+            renderAttChart(data.attSummary);
+            renderMaterials(data.myMaterials);
+            renderTests(data.myTests);
+        });
+    }
+
+    function renderTodayTT(list) {
+        if (!list.length) {
+            $('#todayTT').html('<div class="text-center text-muted py-4"><i class="fas fa-calendar-times fa-2x mb-2 d-block opacity-25"></i>No classes today</div>');
+            return;
+        }
+        $('#todayTT').html(list.map(p =>
+            `<div class="d-flex align-items-center gap-2 mb-2">
+                <div class="text-muted small" style="width:80px;flex-shrink:0">${p.startTime}–${p.endTime}</div>
+                <div class="tt-cell ${p.isBrake ? 'tt-break' : 'tt-subject'} flex-grow-1">
+                    ${p.isBrake ? '☕ Break' : `${p.subjectName} <span class="fw-normal text-muted">· ${p.className}-${p.sectionName}</span>`}
+                </div>
+            </div>`
+        ).join(''));
+    }
+
+    function renderWeeklyTT(list) {
+        // Build period list
+        const periods = [...new Map(list.map(t => [t.periodName, { name: t.periodName, seq: t.seqNo, start: t.startTime, end: t.endTime }])).values()]
+            .sort((a, b) => a.seq - b.seq);
+
+        const todayDow = new Date().getDay() || 7; // 1=Mon..6=Sat
+
+        const rows = periods.map(p => {
+            let row = `<tr><td class="fw-semibold small">${p.name}<br><span class="text-muted fw-normal" style="font-size:.7rem">${p.start}–${p.end}</span></td>`;
+            for (let d = 1; d <= 6; d++) {
+                const entry = list.find(t => t.dayOfWeek === d && t.periodName === p.name);
+                const isToday = d === todayDow;
+                if (!entry) {
+                    row += `<td class="${isToday ? 'today-col' : ''}"><span class="tt-cell tt-empty">—</span></td>`;
+                } else if (entry.isBrake) {
+                    row += `<td class="${isToday ? 'today-col' : ''}"><span class="tt-cell tt-break">Break</span></td>`;
+                } else {
+                    row += `<td class="${isToday ? 'today-col' : ''}">
+                        <span class="tt-cell tt-subject">${entry.subjectName}</span>
+                        <div class="text-muted mt-1" style="font-size:.7rem">${entry.className}-${entry.sectionName}</div>
+                    </td>`;
+                }
+            }
+            return row + '</tr>';
+        });
+
+        $('#weeklyTTBody').html(rows.join(''));
+    }
+
+    function renderAssignments(list) {
+        if (!list.length) { $('#assignmentBody').html('<tr><td colspan="5" class="text-center text-muted py-3">No assignments</td></tr>'); return; }
+        $('#assignmentBody').html(list.map(a =>
+            `<tr>
+                <td class="fw-semibold">${a.title}</td>
+                <td><span class="badge bg-primary-subtle text-primary">${a.className}-${a.sectionName}</span></td>
+                <td>${a.subjectName}</td>
+                <td><span class="badge bg-warning-subtle text-warning">${a.dueDate}</span></td>
+                <td>${a.isOverdue ? '<span class="overdue-badge">Overdue</span>' : ''}</td>
+            </tr>`
+        ).join(''));
+    }
+
+    function renderAttChart(summary) {
+        const ctx = document.getElementById('attChart').getContext('2d');
+        if (attChart) attChart.destroy();
+        const classes = [...new Set(summary.map(s => s.className))];
+        const present = classes.map(c => summary.find(s => s.className === c && s.status === 'Present')?.count || 0);
+        const absent  = classes.map(c => summary.find(s => s.className === c && s.status === 'Absent')?.count  || 0);
+        attChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: classes,
+                datasets: [
+                    { label: 'Present', data: present, backgroundColor: '#2ec4b6', borderRadius: 4 },
+                    { label: 'Absent',  data: absent,  backgroundColor: '#e63946', borderRadius: 4 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, stacked: false } } }
+        });
+    }
+
+    function renderMaterials(list) {
+        if (!list.length) { $('#materialsBody').html('<tr><td colspan="5" class="text-center text-muted py-3">No materials</td></tr>'); return; }
+        $('#materialsBody').html(list.map(m =>
+            `<tr>
+                <td class="fw-semibold">${m.title}</td>
+                <td>${m.subjectName}</td>
+                <td>${m.className}</td>
+                <td>${m.hasFile ? '<span class="badge bg-success-subtle text-success"><i class="fas fa-paperclip"></i></span>' : '<span class="text-muted">—</span>'}</td>
+                <td class="text-muted">${m.date}</td>
+            </tr>`
+        ).join(''));
+    }
+
+    function renderTests(list) {
+        if (!list.length) { $('#testsBody').html('<tr><td colspan="5" class="text-center text-muted py-3">No tests</td></tr>'); return; }
+        $('#testsBody').html(list.map(t =>
+            `<tr>
+                <td class="fw-semibold">${t.testName}</td>
+                <td>${t.subjectName}</td>
+                <td>${t.className}</td>
+                <td class="text-center fw-semibold">${t.maxMarks}</td>
+                <td class="text-muted">${t.testDate}</td>
+            </tr>`
+        ).join(''));
+    }
+</script>
+}

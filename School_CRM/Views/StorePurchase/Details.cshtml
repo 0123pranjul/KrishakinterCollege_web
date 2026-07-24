@@ -1,0 +1,82 @@
+@model School_CRM.Models.InvPurchaseOrder
+@{ ViewData["Title"] = "PO Details — " + Model.Ponumber; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-file-alt text-primary me-2"></i>@Model.Ponumber</h2>
+            <small class="text-muted">@Model.Supplier?.SupplierName — @Model.OrderDate.ToString("dd/MM/yyyy")</small>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == "Draft")
+            {
+                <form asp-action="Send" asp-route-id="@Model.Poid" method="post" onsubmit="return confirm('Send this PO to supplier?')">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane me-1"></i>Send to Supplier</button>
+                </form>
+                <form asp-action="Cancel" asp-route-id="@Model.Poid" method="post" onsubmit="return confirm('Cancel this PO?')">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger"><i class="fas fa-times me-1"></i>Cancel</button>
+                </form>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <!-- Header Info -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3"><label class="text-muted small">PO Number</label><div class="fw-bold"><code>@Model.Ponumber</code></div></div>
+                <div class="col-md-3"><label class="text-muted small">Supplier</label><div class="fw-semibold">@Model.Supplier?.SupplierName</div></div>
+                <div class="col-md-2"><label class="text-muted small">Order Date</label><div>@Model.OrderDate.ToString("dd/MM/yyyy")</div></div>
+                <div class="col-md-2"><label class="text-muted small">Expected Date</label><div>@(Model.ExpectedDate?.ToString("dd/MM/yyyy") ?? "-")</div></div>
+                <div class="col-md-2"><label class="text-muted small">Status</label>
+                    <div><span class="badge @(Model.Status == "Received" ? "bg-success" : Model.Status == "Sent" ? "bg-primary" : Model.Status == "PartialReceived" ? "bg-warning text-dark" : Model.Status == "Cancelled" ? "bg-danger" : "bg-secondary")">@Model.Status</span></div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Remarks)) { <div class="col-12"><label class="text-muted small">Remarks</label><div class="text-muted">@Model.Remarks</div></div> }
+            </div>
+        </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold mb-0">Order Items</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Product</th><th class="text-center">Ordered Qty</th><th class="text-center">Received Qty</th><th class="text-end">Unit Price</th><th class="text-end">Total</th></tr>
+                    </thead>
+                    <tbody>
+                        @{ int sno = 1; }
+                        @foreach (var item in Model.InvPurchaseOrderItems)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno++</td>
+                                <td>
+                                    <div class="fw-semibold">@item.Product?.ProductName</div>
+                                    <small class="text-muted">@item.Product?.Unit?.UnitShort</small>
+                                </td>
+                                <td class="text-center">@item.OrderQty</td>
+                                <td class="text-center @(item.ReceivedQty >= item.OrderQty ? "text-success fw-bold" : item.ReceivedQty > 0 ? "text-warning fw-bold" : "")">@item.ReceivedQty</td>
+                                <td class="text-end">₹@item.UnitCostPrice.ToString("F2")</td>
+                                <td class="text-end fw-semibold">₹@((item.OrderQty * item.UnitCostPrice).ToString("F2"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">Total Amount</td>
+                            <td class="text-end fw-bold text-primary">₹@Model.TotalAmount.ToString("F2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

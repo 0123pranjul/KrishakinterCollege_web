@@ -1,0 +1,44 @@
+@model List<School_CRM.Models.AsmLocation>
+@{ ViewData["Title"] = "Asset Locations"; }
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-map-marker-alt text-primary me-2"></i>Asset Locations</h2>
+            <small class="text-muted">@Model.Count locations</small>
+        </div>
+        <a asp-action="LocationCreate" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Location</a>
+    </div>
+
+    @if (TempData["Success"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Location Name</th><th>Type</th><th>Floor</th><th>Building</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any()) { <tr><td colspan="7" class="text-center text-muted py-4">No locations found.</td></tr> }
+                        @{ int sno = 1; }
+                        @foreach (var loc in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@sno++</td>
+                                <td class="fw-semibold">@loc.LocationName</td>
+                                <td><span class="badge bg-light text-dark border">@loc.LocationType</span></td>
+                                <td class="text-muted">@(loc.Floor ?? "-")</td>
+                                <td class="text-muted">@(loc.Building ?? "-")</td>
+                                <td><span class="badge @(loc.IsActive ? "bg-success" : "bg-secondary")">@(loc.IsActive ? "Active" : "Inactive")</span></td>
+                                <td>
+                                    <a asp-action="LocationEdit" asp-route-id="@loc.LocationId" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

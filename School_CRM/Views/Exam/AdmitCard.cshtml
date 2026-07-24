@@ -1,0 +1,184 @@
+@model IEnumerable<School_CRM.Models.TblStudentSession>
+@{
+    Layout = null;
+    var exam = ViewBag.Exam as School_CRM.Models.TblExam;
+    var examSubjects = ViewBag.ExamSubjects as IEnumerable<School_CRM.Models.TblExamSubject>;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admit Card - @exam?.ExamName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        .admit-card-container {
+            background: white;
+            width: 210mm; /* A4 Width */
+            min-height: 297mm; /* A4 Height */
+            margin: 20px auto;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .admit-card {
+            border: 2px solid #1e3c72;
+            padding: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            page-break-inside: avoid;
+        }
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.05;
+            width: 300px;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .ac-header {
+            border-bottom: 2px solid #1e3c72;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        .ac-content { position: relative; z-index: 1; }
+        .photo-box {
+            width: 100px;
+            height: 120px;
+            border: 2px solid #ddd;
+            padding: 3px;
+        }
+        .tt-table th { background-color: #f4f6f9 !important; border-color: #1e3c72 !important; }
+        .tt-table td, .tt-table th { border-color: #1e3c72 !important; }
+        .instructions { font-size: 0.8rem; color: #555; }
+        
+        @@media print {
+            body { background: none; margin: 0; padding: 0; }
+            .admit-card-container { box-shadow: none; margin: 0; padding: 0; width: 100%; }
+            .btn-print { display: none; }
+            .tt-table th { background-color: #f4f6f9 !important; -webkit-print-color-adjust: exact; }
+            @@page { margin: 10mm; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center mt-3 btn-print">
+        <button class="btn btn-primary px-4" onclick="window.print()">
+            <i class="fas fa-print me-2"></i> Print Admit Cards
+        </button>
+    </div>
+
+    <div class="admit-card-container">
+        @if(!Model.Any()) {
+            <div class="alert alert-warning m-4 text-center">No students found for the selected criteria.</div>
+        }
+        
+        @foreach(var ss in Model)
+        {
+            <div class="admit-card">
+                <img src="/kic_logo.png" class="watermark" alt="Watermark" />
+                
+                <div class="ac-header row align-items-center">
+                    <div class="col-2 text-center">
+                        <img src="/kic_logo.png" alt="Logo" style="width: 70px;" />
+                    </div>
+                    <div class="col-10 text-center">
+                        <h3 class="fw-bold text-uppercase mb-1" style="color: #1e3c72;">Krishak Inter College</h3>
+                        <p class="mb-1 fw-bold">ADMIT CARD / HALL TICKET</p>
+                        <p class="mb-0 text-muted">@exam?.ExamName (Session: @exam?.Session?.SessionName)</p>
+                    </div>
+                </div>
+
+                <div class="ac-content row mb-3">
+                    <div class="col-9">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <th width="30%">Student Name</th>
+                                <td class="fw-bold">: @ss.Student?.StudentName</td>
+                            </tr>
+                            <tr>
+                                <th>Roll Number</th>
+                                <td class="fw-bold text-danger">: @ss.Student?.RollNo</td>
+                            </tr>
+                            <tr>
+                                <th>Class & Section</th>
+                                <td>: @ss.Class?.ClassName - @ss.Section?.SectionName</td>
+                            </tr>
+                            <tr>
+                                <th>Date of Birth</th>
+                                <td>: @ss.Student?.DateOfBirth?.ToString("dd-MMM-yyyy")</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-3 text-end">
+                        @if (!string.IsNullOrEmpty(ss.Student?.PhotoUrl))
+                        {
+                            <img src="@ss.Student.PhotoUrl" class="photo-box" alt="Photo" />
+                        }
+                        else
+                        {
+                            <div class="photo-box d-inline-flex align-items-center justify-content-center bg-light text-muted">
+                                <small>No Photo</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-uppercase border-bottom border-dark pb-1">Exam Timetable</h6>
+                <table class="table table-bordered table-sm tt-table text-center align-middle mb-4">
+                    <thead>
+                        <tr>
+                            <th width="15%">Date</th>
+                            <th width="35%">Subject</th>
+                            <th width="30%">Timing</th>
+                            <th width="20%">Room No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(examSubjects != null && examSubjects.Any())
+                        {
+                            foreach(var sub in examSubjects)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@(sub.ExamDate.HasValue ? sub.ExamDate.Value.ToString("dd/MM/yyyy") : "TBA")</td>
+                                    <td class="fw-semibold">@sub.Subject?.SubjectName</td>
+                                    <td>@(string.IsNullOrEmpty(sub.ExamTime) ? "Regular Timing" : sub.ExamTime)</td>
+                                    <td>@(string.IsNullOrEmpty(sub.RoomNo) ? "As per seating" : sub.RoomNo)</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="4" class="text-muted">Timetable not generated yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="row align-items-end mt-4 pt-3">
+                    <div class="col-7">
+                        <div class="instructions">
+                            <strong>Important Instructions:</strong>
+                            <ol class="ps-3 mb-0 mt-1">
+                                <li>Carry this Admit Card daily during examinations.</li>
+                                <li>Electronic devices (mobiles, smartwatches) are strictly prohibited.</li>
+                                <li>Report to the examination hall 15 minutes before time.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="col-5 text-center">
+                        <div style="border-top: 1px dashed #000; padding-top: 5px; margin: 0 20px; font-weight: bold;">
+                            Controller of Examinations
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+</body>
+</html>
