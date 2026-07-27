@@ -11,7 +11,7 @@
     <!-- Links of CSS files -->
     <link rel="stylesheet" href="~/collage/collage_project/assets/css/aos.css">
     <link rel="stylesheet" href="~/collage/collage_project/assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="~/collage/collage_project/assets/css/boxicons.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/collage/collage_project/assets/css/owl.carousel.min.css">
     <link rel="stylesheet" href="~/collage/collage_project/assets/css/flaticon.css">
     <link rel="stylesheet" href="~/collage/collage_project/assets/css/magnific-popup.min.css">
@@ -370,45 +370,63 @@
             </div>
 
             <div class="row justify-content-center popup-gallery">
-                @for (int i = 1; i <= 43; i++)
-                {
-                    string category = "campus";
-                    string categoryTitle = "Campus Facilities";
-                    
-                    if (i > 10 && i <= 20) 
-                    { 
-                        category = "classrooms"; 
-                        categoryTitle = "Smart Classrooms"; 
-                    }
-                    else if (i > 20 && i <= 30) 
-                    { 
-                        category = "sports"; 
-                        categoryTitle = "Sports & Athletics"; 
-                    }
-                    else if (i > 30) 
-                    { 
-                        category = "events"; 
-                        categoryTitle = "School Events"; 
-                    }
+                @{
+                    var availableImages = new List<(string Path, string Category, string Title)>
+                    {
+                        ("/krasha_photo/img1.jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/imag2.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/imag3.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/img4.jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/img5.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/img6.jpeg", "events", "School Events"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.26.27 PM.jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.26.28 PM.jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.26.28 PM (1).jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.26.47 PM.jpeg", "campus", "Campus Facilities"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.26.48 PM.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.27.21 PM.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.27.21 PM (1).jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.27.22 PM.jpeg", "classrooms", "Smart Classrooms"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.27.22 PM (1).jpeg", "sports", "Sports & Athletics"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 4.27.23 PM.jpeg", "sports", "Sports & Athletics"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.22 AM.jpeg", "sports", "Sports & Athletics"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.22 AM (1).jpeg", "sports", "Sports & Athletics"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.22 AM (2).jpeg", "events", "School Events"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.23 AM.jpeg", "events", "School Events"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.23 AM (1).jpeg", "events", "School Events"),
+                        ("/krasha_photo/WhatsApp Image 2026-07-23 at 5.51.23 AM (2).jpeg", "events", "School Events"),
+                        ("/krasha_photo/bus1.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/bus2.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/bus3.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/bus4.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/bus5.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/bus7.jpeg", "campus", "School Transport"),
+                        ("/krasha_photo/land_pic1.png", "campus", "Main Campus"),
+                        ("/krasha_photo/land_pic2.png", "campus", "Main Campus"),
+                        ("/krasha_photo/land_pic3.png", "campus", "Main Campus")
+                    };
 
-                    string imgPath = $"/Gprp/image/g{i}.jpeg";
-
-                    <div class="col-lg-3 col-md-4 col-sm-6 gallery-item" data-category="@category" data-aos="fade-up" data-aos-delay="@((i % 4) * 80)">
-                        <div class="gallery-card">
-                            <div class="gallery-image-box">
-                                <img src="@imgPath" alt="Krishak Inter College Gallery Image @i" loading="lazy" />
-                                <a href="@imgPath" title="Krishak Inter College Gallery - @categoryTitle" class="gallery-overlay">
-                                    <div class="zoom-icon">
-                                        <i class="bx bx-plus"></i>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="gallery-info">
-                                <h4>Photo @i</h4>
-                                <span>@categoryTitle</span>
+                    int index = 0;
+                    foreach (var img in availableImages)
+                    {
+                        index++;
+                        <div class="col-lg-3 col-md-4 col-sm-6 gallery-item" data-category="@img.Category" data-aos="fade-up" data-aos-delay="@((index % 4) * 80)">
+                            <div class="gallery-card">
+                                <div class="gallery-image-box">
+                                    <img src="@img.Path" alt="Krishak Inter College Gallery Image @index" loading="lazy" />
+                                    <a href="@img.Path" title="Krishak Inter College Gallery - @img.Title" class="gallery-overlay">
+                                        <div class="zoom-icon">
+                                            <i class="bx bx-plus"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="gallery-info">
+                                    <h4>Photo @index</h4>
+                                    <span>@img.Title</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    }
                 }
             </div>
         </div>

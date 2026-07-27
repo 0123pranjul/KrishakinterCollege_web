@@ -3,140 +3,367 @@
 }
 
 <div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-chart-bar me-2"></i>Attendance Report
-                    </h3>
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
-                        <label class="mb-0">From:</label>
-                        <input type="date" id="fromDate" class="form-control form-control-sm"
-                               value="@ViewBag.FromDate" style="width:150px">
-                        <label class="mb-0">To:</label>
-                        <input type="date" id="toDate" class="form-control form-control-sm"
-                               value="@ViewBag.ToDate" style="width:150px">
-                        <button class="btn btn-primary btn-sm" onclick="loadReport()">
-                            <i class="fas fa-search"></i> Generate
-                        </button>
-                    </div>
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
+            <div>
+                <h4 class="card-title mb-0 fw-bold">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>Attendance Report
+                </h4>
+                <small class="text-muted">Click Detail on any row to see day-wise entry &amp; exit times</small>
+            </div>
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <div class="input-group input-group-sm" style="width:180px">
+                    <span class="input-group-text">From</span>
+                    <input type="date" id="fromDate" class="form-control" value="@ViewBag.FromDate">
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="reportTable" class="table table-bordered table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Employee</th>
-                                    <th>Present</th>
-                                    <th>Half Day</th>
-                                    <th>Leave</th>
-                                    <th>Holiday</th>
-                                    <th>Absent</th>
-                                    <th>Total Hrs</th>
-                                    <th>OT Hrs</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                            <tfoot>
-                                <tr class="table-secondary fw-bold">
-                                    <td colspan="2">Total</td>
-                                    <td id="totalPresent"></td>
-                                    <td id="totalHalf"></td>
-                                    <td id="totalLeave"></td>
-                                    <td id="totalHoliday"></td>
-                                    <td id="totalAbsent"></td>
-                                    <td id="totalHours"></td>
-                                    <td id="totalOT"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                <div class="input-group input-group-sm" style="width:180px">
+                    <span class="input-group-text">To</span>
+                    <input type="date" id="toDate" class="form-control" value="@ViewBag.ToDate">
                 </div>
+                <button class="btn btn-primary btn-sm px-3" onclick="loadReport()">
+                    <i class="fas fa-search me-1"></i>Generate
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="reportTable" class="table table-bordered table-hover table-sm align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:100px">Code</th>
+                            <th>Employee</th>
+                            <th class="text-center" style="width:80px">Present</th>
+                            <th class="text-center" style="width:80px">Half Day</th>
+                            <th class="text-center" style="width:70px">Leave</th>
+                            <th class="text-center" style="width:80px">Holiday</th>
+                            <th class="text-center" style="width:70px">Absent</th>
+                            <th class="text-center" style="width:90px">Total Hrs</th>
+                            <th class="text-center" style="width:80px">OT Hrs</th>
+                            <th class="text-center" style="width:80px">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportBody">
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                Select date range and click Generate
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-secondary fw-bold">
+                            <td colspan="2" class="text-end pe-3">Totals</td>
+                            <td class="text-center" id="totalPresent">—</td>
+                            <td class="text-center" id="totalHalf">—</td>
+                            <td class="text-center" id="totalLeave">—</td>
+                            <td class="text-center" id="totalHoliday">—</td>
+                            <td class="text-center" id="totalAbsent">—</td>
+                            <td class="text-center" id="totalHours">—</td>
+                            <td class="text-center" id="totalOT">—</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Modal: no aria-hidden on the element itself; Bootstrap manages it -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title mb-0 fs-6">
+                    <i class="fas fa-clock me-2"></i>
+                    Day-wise Attendance &mdash; <span id="modalEmpName"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="d-flex gap-2 flex-wrap p-3 pb-2 border-bottom" id="detailSummary"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover mb-0" id="detailTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width:45px" class="text-center">#</th>
+                                <th style="width:120px">Date</th>
+                                <th style="width:60px" class="text-center">Day</th>
+                                <th style="width:100px" class="text-center">Status</th>
+                                <th style="width:110px" class="text-center">
+                                    <i class="fas fa-sign-in-alt text-success me-1"></i>Entry Time
+                                </th>
+                                <th style="width:110px" class="text-center">
+                                    <i class="fas fa-sign-out-alt text-danger me-1"></i>Exit Time
+                                </th>
+                                <th style="width:90px" class="text-center">Hours Worked</th>
+                                <th style="width:80px" class="text-center">OT Hrs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
+    <style>
+        #reportTable thead th  { font-size: 0.82rem; white-space: nowrap; }
+        #reportTable tbody td  { font-size: 0.85rem; }
+
+        #detailTable thead th  { font-size: 0.8rem; white-space: nowrap; }
+        #detailTable tbody td  { font-size: 0.83rem; vertical-align: middle; }
+
+        .s-badge   { font-size:0.75rem; padding:3px 9px; border-radius:20px; font-weight:600; }
+        .s-Present { background:#d4edda; color:#155724; }
+        .s-Absent  { background:#f8d7da; color:#721c24; }
+        .s-HalfDay { background:#fff3cd; color:#856404; }
+        .s-Leave   { background:#cce5ff; color:#004085; }
+        .s-Holiday { background:#e2e3e5; color:#383d41; }
+
+        .time-val {
+            font-family: 'Courier New', monospace; font-size: 0.88rem;
+            background: #f8f9fa; padding: 2px 8px; border-radius: 6px;
+            border: 1px solid #dee2e6; display: inline-block;
+            min-width: 60px; text-align: center; color: #333;
+        }
+        .time-missing { color:#bbb; font-size:0.8rem; font-style:italic; }
+
+        tr.row-Absent  { background:#fff5f5 !important; }
+        tr.row-HalfDay { background:#fffef0 !important; }
+        tr.row-Leave   { background:#f0f8ff !important; }
+        tr.row-Holiday { background:#f5f5f5 !important; }
+    </style>
+
     <script>
-        let reportTable;
+        let summaryData = [];
+        let detailModalInstance = null;
 
-        $(document).ready(function () { loadReport(); });
+        toastr.options = { positionClass: 'toast-top-right', timeOut: 2500, progressBar: true };
 
+        $(document).ready(function () {
+            // Create modal instance once — Bootstrap manages aria-hidden internally
+            detailModalInstance = new bootstrap.Modal(document.getElementById('detailModal'), {
+                keyboard: true,
+                backdrop: true
+            });
+
+            // Return focus to the triggering button when modal closes (fixes aria-hidden warning)
+            document.getElementById('detailModal').addEventListener('hidden.bs.modal', function () {
+                if (window._lastDetailTrigger) {
+                    window._lastDetailTrigger.focus();
+                    window._lastDetailTrigger = null;
+                }
+            });
+
+            loadReport();
+        });
+
+        /* ── SUMMARY REPORT ─────────────────────────────── */
         function loadReport() {
             const from = $('#fromDate').val();
             const to   = $('#toDate').val();
-
             if (!from || !to) { toastr.warning('Select date range!'); return; }
             if (from > to)    { toastr.warning('From date must be before To date!'); return; }
 
-            if ($.fn.DataTable.isDataTable('#reportTable'))
-                $('#reportTable').DataTable().destroy();
+            $('#reportBody').html(`<tr><td colspan="10" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</td></tr>`);
+            resetTotals();
 
-            reportTable = $('#reportTable').DataTable({
-                destroy: true,
-                processing: true,
-                ajax: {
-                    url: '@Url.Action("GetAttendanceReport", "Attendance")',
-                    type: 'GET',
-                    data: { fromDate: from, toDate: to },
-                    dataSrc: function (json) { return json.data || []; },
-                    error: function () { toastr.error('Error loading report!'); }
-                },
-                columns: [
-                    { data: 'employeeCode', width: '10%' },
-                    { data: 'employeeName', width: '20%' },
-                    {
-                        data: 'presentDays', width: '10%', className: 'text-center',
-                        render: d => `<span class="badge bg-success">${d}</span>`
-                    },
-                    {
-                        data: 'halfDays', width: '10%', className: 'text-center',
-                        render: d => `<span class="badge bg-warning text-dark">${d}</span>`
-                    },
-                    {
-                        data: 'leaveDays', width: '10%', className: 'text-center',
-                        render: d => `<span class="badge bg-secondary">${d}</span>`
-                    },
-                    {
-                        data: 'holidayDays', width: '10%', className: 'text-center',
-                        render: d => `<span class="badge bg-info">${d}</span>`
-                    },
-                    {
-                        data: 'absentDays', width: '10%', className: 'text-center',
-                        render: d => `<span class="badge bg-danger">${d}</span>`
-                    },
-                    {
-                        data: 'totalHours', width: '10%', className: 'text-center fw-bold',
-                        render: d => `${parseFloat(d).toFixed(1)} hrs`
-                    },
-                    {
-                        data: 'totalOT', width: '10%', className: 'text-center fw-bold text-danger',
-                        render: d => parseFloat(d) > 0 ? `${parseFloat(d).toFixed(1)} hrs` : '-'
-                    }
-                ],
-                pageLength: 25,
-                order: [[1, 'asc']],
-                language: { emptyTable: "No data found", search: "Search:" },
-                footerCallback: function (row, data) {
-                    const sum = col => data.reduce((a, r) => a + (parseFloat(r[col]) || 0), 0);
-                    $('#totalPresent').text(sum('presentDays'));
-                    $('#totalHalf').text(sum('halfDays'));
-                    $('#totalLeave').text(sum('leaveDays'));
-                    $('#totalHoliday').text(sum('holidayDays'));
-                    $('#totalAbsent').text(sum('absentDays'));
-                    $('#totalHours').text(sum('totalHours').toFixed(1) + ' hrs');
-                    $('#totalOT').text(sum('totalOT').toFixed(1) + ' hrs');
-                }
+            $.get('@Url.Action("GetAttendanceReport","Attendance")', { fromDate: from, toDate: to })
+             .done(function (res) {
+                 summaryData = res.data || [];
+                 renderSummary();
+             })
+             .fail(function () { toastr.error('Error loading report!'); });
+        }
+
+        function renderSummary() {
+            if (!summaryData.length) {
+                $('#reportBody').html('<tr><td colspan="10" class="text-center text-muted py-4">No attendance data found.</td></tr>');
+                resetTotals();
+                return;
+            }
+
+            let html = '';
+            let totPresent=0, totHalf=0, totLeave=0, totHoliday=0, totAbsent=0, totHrs=0, totOT=0;
+
+            summaryData.forEach(function (r) {
+                totPresent  += r.presentDays  || 0;
+                totHalf     += r.halfDays     || 0;
+                totLeave    += r.leaveDays    || 0;
+                totHoliday  += r.holidayDays  || 0;
+                totAbsent   += r.absentDays   || 0;
+                totHrs      += parseFloat(r.totalHours) || 0;
+                totOT       += parseFloat(r.totalOT)    || 0;
+
+                const otCell = parseFloat(r.totalOT) > 0
+                    ? `<span class="badge bg-danger">${parseFloat(r.totalOT).toFixed(1)}</span>`
+                    : '<span class="text-muted">—</span>';
+
+                html += `<tr>
+                    <td class="fw-semibold text-primary">${r.employeeCode || '—'}</td>
+                    <td>${r.employeeName || '—'}</td>
+                    <td class="text-center"><span class="badge bg-success">${r.presentDays}</span></td>
+                    <td class="text-center"><span class="badge bg-warning text-dark">${r.halfDays}</span></td>
+                    <td class="text-center"><span class="badge bg-secondary">${r.leaveDays}</span></td>
+                    <td class="text-center"><span class="badge bg-info text-dark">${r.holidayDays}</span></td>
+                    <td class="text-center"><span class="badge bg-danger">${r.absentDays}</span></td>
+                    <td class="text-center fw-semibold">${parseFloat(r.totalHours).toFixed(1)} <small class="text-muted">h</small></td>
+                    <td class="text-center">${otCell}</td>
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm py-0 px-2 detail-btn"
+                                data-empid="${r.employeeId}"
+                                data-empname="${r.employeeName} (${r.employeeCode})"
+                                title="View day-wise entry/exit">
+                            <i class="fas fa-eye fa-xs me-1"></i>Detail
+                        </button>
+                    </td>
+                </tr>`;
             });
+
+            $('#reportBody').html(html);
+            $('#totalPresent').text(totPresent);
+            $('#totalHalf'   ).text(totHalf);
+            $('#totalLeave'  ).text(totLeave);
+            $('#totalHoliday').text(totHoliday);
+            $('#totalAbsent' ).text(totAbsent);
+            $('#totalHours'  ).html(`${totHrs.toFixed(1)} <small class="text-muted">h</small>`);
+            $('#totalOT'     ).html(totOT > 0 ? `${totOT.toFixed(1)} <small class="text-muted">h</small>` : '—');
+        }
+
+        function resetTotals() {
+            ['#totalPresent','#totalHalf','#totalLeave','#totalHoliday','#totalAbsent','#totalHours','#totalOT']
+                .forEach(id => $(id).text('—'));
+        }
+
+        /* ── OPEN DETAIL MODAL ──────────────────────────── */
+        $(document).on('click', '.detail-btn', function () {
+            const empId   = $(this).data('empid');
+            const empName = $(this).data('empname');
+            if (!empId) return;
+
+            // Store reference so focus returns here after modal closes
+            window._lastDetailTrigger = this;
+
+            const from = $('#fromDate').val();
+            const to   = $('#toDate').val();
+
+            $('#modalEmpName').text(empName);
+            $('#detailSummary').html('');
+            $('#detailBody').html(`<tr><td colspan="8" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</td></tr>`);
+
+            detailModalInstance.show();
+
+            $.get('@Url.Action("GetAttendanceDetail","Attendance")',
+                  { employeeId: empId, fromDate: from, toDate: to })
+             .done(function (res) { renderDetail(res.data || []); })
+             .fail(function ()    {
+                 $('#detailBody').html('<tr><td colspan="8" class="text-center text-danger py-3">Error loading detail!</td></tr>');
+             });
+        });
+
+        /* ── RENDER DETAIL TABLE ────────────────────────── */
+        function renderDetail(rows) {
+            if (!rows.length) {
+                $('#detailBody').html('<tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr>');
+                $('#detailSummary').html('');
+                return;
+            }
+
+            // Status field from controller comes as lowercase key "status" (camelCase JSON)
+            const statusOf = r => r.status || r.Status || '';
+
+            // Summary badges
+            const counts = { Present:0, HalfDay:0, Absent:0, Leave:0, Holiday:0 };
+            rows.forEach(r => {
+                const s = statusOf(r);
+                if (counts[s] !== undefined) counts[s]++;
+            });
+
+            const badgeMap = {
+                Present: ['bg-success',           'Present'],
+                HalfDay: ['bg-warning text-dark',  'Half Day'],
+                Absent:  ['bg-danger',             'Absent'],
+                Leave:   ['bg-primary',            'Leave'],
+                Holiday: ['bg-secondary',          'Holiday']
+            };
+
+            let summaryHtml = '';
+            Object.entries(badgeMap).forEach(([k, [cls, label]]) => {
+                if (counts[k] > 0)
+                    summaryHtml += `<span class="badge ${cls} px-3 py-2" style="font-size:0.82rem">${label}: ${counts[k]}</span>`;
+            });
+
+            const totalHrs = rows.reduce((a, r) => a + (parseFloat(r.hoursWorked)   || 0), 0);
+            const totalOT  = rows.reduce((a, r) => a + (parseFloat(r.overtimeHours) || 0), 0);
+            summaryHtml += `<span class="badge bg-dark px-3 py-2" style="font-size:0.82rem">Total Hours: ${totalHrs.toFixed(1)}h</span>`;
+            if (totalOT > 0)
+                summaryHtml += `<span class="badge bg-danger px-3 py-2" style="font-size:0.82rem">OT: ${totalOT.toFixed(1)}h</span>`;
+            $('#detailSummary').html(summaryHtml);
+
+            // Table rows
+            const styleMap = {
+                'Present' : ['s-Present', 'Present',  'row-Present'],
+                'Absent'  : ['s-Absent',  'Absent',   'row-Absent'],
+                'HalfDay' : ['s-HalfDay', 'Half Day', 'row-HalfDay'],
+                'Leave'   : ['s-Leave',   'Leave',    'row-Leave'],
+                'Holiday' : ['s-Holiday', 'Holiday',  'row-Holiday']
+            };
+
+            let html = '';
+            rows.forEach(function (r, i) {
+                const s = statusOf(r);
+                const [badgeCls, badgeLabel, rowCls] = styleMap[s] || ['s-Absent', s || 'Unknown', ''];
+
+                const entryCell = r.entryTime
+                    ? `<span class="time-val" style="color:#198754;border-color:#198754">${r.entryTime}</span>`
+                    : `<span class="time-missing">— not set —</span>`;
+
+                const exitCell = r.exitTime
+                    ? `<span class="time-val" style="color:#dc3545;border-color:#dc3545">${r.exitTime}</span>`
+                    : `<span class="time-missing">— not set —</span>`;
+
+                const hrs = parseFloat(r.hoursWorked) || 0;
+                const hrCls = hrs >= 8 ? 'text-success fw-bold'
+                            : hrs >= 4 ? 'text-warning fw-bold'
+                            : hrs >  0 ? 'text-secondary'
+                            : 'text-muted';
+
+                const otCell = parseFloat(r.overtimeHours) > 0
+                    ? `<span class="badge bg-danger">${parseFloat(r.overtimeHours).toFixed(1)}h</span>`
+                    : '<span class="text-muted">—</span>';
+
+                html += `<tr class="${rowCls}">
+                    <td class="text-center text-muted">${i + 1}</td>
+                    <td class="fw-semibold">${r.date    || ''}</td>
+                    <td class="text-center text-muted">${r.dayName || ''}</td>
+                    <td class="text-center"><span class="s-badge ${badgeCls}">${badgeLabel}</span></td>
+                    <td class="text-center">${entryCell}</td>
+                    <td class="text-center">${exitCell}</td>
+                    <td class="text-center ${hrCls}">${hrs > 0 ? hrs.toFixed(2) + 'h' : '—'}</td>
+                    <td class="text-center">${otCell}</td>
+                </tr>`;
+            });
+
+            $('#detailBody').html(html);
         }
     </script>
 }

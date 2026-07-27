@@ -6,36 +6,92 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-calendar-day me-2"></i>Daily Attendance
-                    </h3>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <input type="date" id="attendanceDate" class="form-control form-control-sm"
-                               value="@selectedDate.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd")"
-                               style="width:160px">
-                        <button class="btn btn-outline-primary btn-sm" onclick="loadAttendance()">
-                            <i class="fas fa-sync"></i> Load
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
+                    <div>
+                        <h4 class="card-title mb-0 fw-bold">
+                            <i class="fas fa-calendar-check me-2 text-primary"></i>Manual Attendance Entry
+                        </h4>
+                        <small class="text-muted">Face attendance fallback — mark or correct entry / exit anytime</small>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <div class="input-group input-group-sm" style="width:200px">
+                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                            <input type="date" id="attendanceDate" class="form-control"
+                                   value="@selectedDate.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd")">
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm px-3" onclick="loadAttendance()">
+                            <i class="fas fa-sync me-1"></i>Load
                         </button>
-                        <button class="btn btn-success btn-sm" onclick="saveAllAttendance()">
-                            <i class="fas fa-save"></i> Save All
+                        <button class="btn btn-success btn-sm px-3" onclick="saveAllAttendance()">
+                            <i class="fas fa-save me-1"></i>Save All
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
+
+             
+                <div class="card-body pb-0">
+                    <div id="summaryBar" class="row g-2 mb-3" style="display:none!important">
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center bg-light">
+                                <div class="fw-bold text-dark fs-5" id="cntTotal">0</div>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center" style="background:#d4edda">
+                                <div class="fw-bold text-success fs-5" id="cntPresent">0</div>
+                                <small class="text-muted">Present</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center" style="background:#fff3cd">
+                                <div class="fw-bold text-warning fs-5" id="cntHalfDay">0</div>
+                                <small class="text-muted">Half Day</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center" style="background:#f8d7da">
+                                <div class="fw-bold text-danger fs-5" id="cntAbsent">0</div>
+                                <small class="text-muted">Absent</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center" style="background:#cce5ff">
+                                <div class="fw-bold text-info fs-5" id="cntLeave">0</div>
+                                <small class="text-muted">On Leave</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4 col-md-2">
+                            <div class="border rounded p-2 text-center" style="background:#e2e3e5">
+                                <div class="fw-bold text-secondary fs-5" id="cntHoliday">0</div>
+                                <small class="text-muted">Holiday</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body pt-2">
                     <div class="table-responsive">
-                        <table id="attendanceTable" class="table table-hover table-striped">
+                        <table id="attendanceTable" class="table table-hover table-bordered table-sm align-middle">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Employee</th>
-                                    <th>Status</th>
-                                    <th>Hours</th>
-                                    <th>Overtime</th>
-                                    <th>Action</th>
+                                    <th style="width:180px">Employee</th>
+                                    <th style="width:130px">Status</th>
+                                    <th style="width:110px" class="text-center">Entry Time</th>
+                                    <th style="width:110px" class="text-center">Exit Time</th>
+                                    <th style="width:90px" class="text-center">Hours</th>
+                                    <th style="width:90px" class="text-center">OT (hrs)</th>
+                                    <th style="width:70px" class="text-center">Edit</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody id="attendanceBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-arrow-up me-1"></i>Select a date and click Load
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -45,188 +101,319 @@
 </div>
 
 @section Scripts {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <style>
-        .table th {
-            font-size: 0.9rem;
-        }
+        #attendanceTable thead th { font-size: 0.82rem; white-space: nowrap; }
+        #attendanceTable tbody td { font-size: 0.85rem; vertical-align: middle; }
 
-        .badge {
-            font-size: 0.75rem;
-        }
+        .status-badge { font-size: 0.78rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+        .s-Present  { background:#d4edda; color:#155724; }
+        .s-Absent   { background:#f8d7da; color:#721c24; }
+        .s-HalfDay  { background:#fff3cd; color:#856404; }
+        .s-Leave    { background:#cce5ff; color:#004085; }
+        .s-Holiday  { background:#e2e3e5; color:#383d41; }
+
+        .time-cell { font-family: monospace; font-size: 0.85rem; color:#333; }
+        .time-cell.empty { color:#bbb; font-style: italic; font-size:0.78rem; }
+
+        .hours-badge { font-size: 0.78rem; padding: 3px 8px; border-radius: 12px; }
+
+        /* quick-edit row highlight */
+        tr.editing-row { background: #fffbe6 !important; }
+
+        /* inline quick-status dropdown in each row */
+        .status-select { font-size:0.8rem; padding:2px 6px; border-radius:6px; border:1px solid #ccc; }
     </style>
 
     <script>
-        let table;
+        let attendanceData = [];   // master array
         let currentDate = '@selectedDate.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd")';
+
+        toastr.options = { positionClass:'toast-top-right', timeOut:2500, progressBar:true };
 
         $(document).ready(function () {
             $('#attendanceDate').val(currentDate);
             loadAttendance();
-            $('#attendanceDate').on('change', function () { loadAttendance(); });
+            $('#attendanceDate').on('change', function () {
+                currentDate = this.value;
+                loadAttendance();
+            });
         });
 
+        /* ── LOAD ─────────────────────────────────────────── */
         function loadAttendance() {
             currentDate = $('#attendanceDate').val();
             if (!currentDate) { toastr.warning('Please select a date!'); return; }
 
-            if ($.fn.DataTable.isDataTable('#attendanceTable'))
-                $('#attendanceTable').DataTable().destroy();
+            $('#attendanceBody').html(`<tr><td colspan="7" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading…</td></tr>`);
 
-            table = $('#attendanceTable').DataTable({
-                destroy: true,
-                processing: true,
-                ajax: {
-                    url: '@Url.Action("GetTodayAttendance", "Attendance")',
-                    type: 'GET',
-                    data: { date: currentDate },
-                    dataSrc: function (json) { return json.data || []; },
-                    error: function () { toastr.error('Error loading data!'); }
-                },
-                columns: [
-                    {
-                        data: null, width: '35%',
-                        render: function (d) {
-                            return `<div><strong>${d.employeeCode||'N/A'}</strong><br>
-                                    <small class="text-muted">${d.employeeName||'Unknown'}</small></div>`;
-                        }
-                    },
-                    {
-                        data: 'status', width: '20%',
-                        render: function (d) {
-                            const map = {
-                                'Present': ['bg-success','Present'],
-                                'Absent':  ['bg-danger','Absent'],
-                                'HalfDay': ['bg-warning text-dark','Half Day'],
-                                'Holiday': ['bg-info','Holiday'],
-                                'Leave':   ['bg-secondary','On Leave']
-                            };
-                            const c = map[d] || map['Absent'];
-                            return `<span class="badge ${c[0]} px-2 py-1">${c[1]}</span>`;
-                        }
-                    },
-                    {
-                        data: 'hoursWorked', width: '15%', className: 'text-center',
-                        render: function (d) {
-                            const h = parseFloat(d)||0;
-                            const cls = h>=8?'bg-success':h>=4?'bg-warning':'bg-danger';
-                            return `<span class="badge ${cls}">${h} hrs</span>`;
-                        }
-                    },
-                    {
-                        data: 'overtimeHours', width: '15%', className: 'text-center',
-                        render: function (d) {
-                            const ot = parseFloat(d)||0;
-                            return ot>0 ? `<span class="badge bg-danger">${ot} hrs</span>`
-                                        : '<span class="text-muted">-</span>';
-                        }
-                    },
-                    {
-                        data: null, width: '15%', orderable: false, className: 'text-center',
-                        render: function (d, t, row) {
-                            return `<button class="btn btn-outline-primary btn-sm edit-attendance"
-                                        data-id="${row.id||0}" data-emp="${row.employeeId}">
-                                        <i class="fas fa-edit"></i></button>`;
-                        }
-                    }
-                ],
-                pageLength: 50, lengthChange: false, order: [[0,'asc']],
-                language: { emptyTable: "No data found", processing: "Loading...", search: "Search:" }
-            });
+            $.get('@Url.Action("GetTodayAttendance","Attendance")', { date: currentDate })
+             .done(function (res) {
+                 attendanceData = res.data || [];
+                 renderTable();
+                 updateSummary();
+             })
+             .fail(function () { toastr.error('Error loading attendance!'); });
         }
 
-        function saveAllAttendance() {
-            if (!table) { toastr.warning('Load attendance first!'); return; }
+        /* ── RENDER TABLE ─────────────────────────────────── */
+        function renderTable() {
+            if (!attendanceData.length) {
+                $('#attendanceBody').html('<tr><td colspan="7" class="text-center text-muted py-4">No employees found.</td></tr>');
+                return;
+            }
 
-            const rows = table.rows().data().toArray();
-            if (!rows.length) { toastr.warning('No data!'); return; }
+            let html = '';
+            attendanceData.forEach(function (r, i) {
+                const statusBadge = makeStatusBadge(r.status);
+                const hours  = parseFloat(r.hoursWorked)   || 0;
+                const ot     = parseFloat(r.overtimeHours) || 0;
 
-            const data = rows.filter(r => r.employeeId > 0).map(r => ({
-                id: r.id || 0,
-                employeeId: r.employeeId,
-                attendanceDate: currentDate,
-                status: r.status || 'Absent',
-                hoursWorked: parseFloat(r.hoursWorked) || 0,
-                overtimeHours: parseFloat(r.overtimeHours) || 0
-            }));
+                const hrBadgeCls = hours >= 8 ? 'bg-success text-white'
+                                 : hours >= 4 ? 'bg-warning text-dark'
+                                 : hours  > 0 ? 'bg-secondary text-white'
+                                 : '';
+                const hrBadge = hours > 0
+                    ? `<span class="hours-badge ${hrBadgeCls}">${hours}h</span>`
+                    : `<span class="text-muted">—</span>`;
+                const otBadge = ot > 0
+                    ? `<span class="hours-badge bg-danger text-white">${ot}h</span>`
+                    : `<span class="text-muted">—</span>`;
 
-            Swal.fire({
-                title: 'Save Attendance?',
-                text: `${data.length} records for ${currentDate}`,
-                icon: 'question', showCancelButton: true,
-                confirmButtonColor: '#28a745', confirmButtonText: 'Yes, Save!'
-            }).then(res => {
-                if (!res.isConfirmed) return;
-                $.ajax({
-                    url: '@Url.Action("SaveAttendance", "Attendance")',
-                    type: 'POST', contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    success: function (r) {
-                        toastr.success(r.message);
-                        table.ajax.reload();
-                    },
-                    error: function (xhr) {
-                        toastr.error(xhr.responseJSON?.message || 'Error!');
-                    }
-                });
+                const entryDisplay = r.entryTime
+                    ? `<span class="time-cell">${r.entryTime}</span>`
+                    : `<span class="time-cell empty">—</span>`;
+                const exitDisplay  = r.exitTime
+                    ? `<span class="time-cell">${r.exitTime}</span>`
+                    : `<span class="time-cell empty">—</span>`;
+
+                html += `<tr data-idx="${i}">
+                    <td>
+                        <strong class="text-primary">${r.employeeCode || '—'}</strong><br>
+                        <small class="text-muted">${r.employeeName || '—'}</small>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td class="text-center">${entryDisplay}</td>
+                    <td class="text-center">${exitDisplay}</td>
+                    <td class="text-center">${hrBadge}</td>
+                    <td class="text-center">${otBadge}</td>
+                    <td class="text-center">
+                        <button class="btn btn-outline-primary btn-sm py-0 px-2 edit-btn" data-idx="${i}" title="Edit">
+                            <i class="fas fa-pen fa-xs"></i>
+                        </button>
+                    </td>
+                </tr>`;
             });
+            $('#attendanceBody').html(html);
         }
 
-        $(document).on('click', '.edit-attendance', function () {
-            const row = table.row($(this).closest('tr')).data();
-            if (!row) return;
-            const empId = $(this).data('emp');
-            const recId = $(this).data('id');
+        function makeStatusBadge(status) {
+            const map = {
+                'Present' : ['s-Present',  'Present'],
+                'Absent'  : ['s-Absent',   'Absent'],
+                'HalfDay' : ['s-HalfDay',  'Half Day'],
+                'Leave'   : ['s-Leave',    'On Leave'],
+                'Holiday' : ['s-Holiday',  'Holiday']
+            };
+            const [cls, label] = map[status] || map['Absent'];
+            return `<span class="status-badge ${cls}">${label}</span>`;
+        }
+
+        /* ── SUMMARY COUNTS ───────────────────────────────── */
+        function updateSummary() {
+            if (!attendanceData.length) {
+                $('#summaryBar').hide(); return;
+            }
+            $('#summaryBar').css('display','flex').show();
+            $('#cntTotal'  ).text(attendanceData.length);
+            $('#cntPresent').text(attendanceData.filter(r => r.status === 'Present').length);
+            $('#cntHalfDay').text(attendanceData.filter(r => r.status === 'HalfDay').length);
+            $('#cntAbsent' ).text(attendanceData.filter(r => r.status === 'Absent' ).length);
+            $('#cntLeave'  ).text(attendanceData.filter(r => r.status === 'Leave'  ).length);
+            $('#cntHoliday').text(attendanceData.filter(r => r.status === 'Holiday').length);
+        }
+
+        /* ── EDIT MODAL ───────────────────────────────────── */
+        $(document).on('click', '.edit-btn', function () {
+            const idx = parseInt($(this).data('idx'));
+            const r   = attendanceData[idx];
 
             Swal.fire({
-                title: `Edit - ${row.employeeName}`,
-                html: `<div class="row g-3 text-start">
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Status</label>
-                        <select id="swal-status" class="form-select">
-                            <option value="Present"  ${row.status==='Present' ?'selected':''}>Present</option>
-                            <option value="HalfDay"  ${row.status==='HalfDay' ?'selected':''}>Half Day</option>
-                            <option value="Absent"   ${row.status==='Absent'  ?'selected':''}>Absent</option>
-                            <option value="Holiday"  ${row.status==='Holiday' ?'selected':''}>Holiday</option>
-                            <option value="Leave"    ${row.status==='Leave'   ?'selected':''}>On Leave</option>
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Hours Worked</label>
-                        <input type="number" id="swal-hours" class="form-control"
-                               value="${row.hoursWorked||0}" step="0.5" min="0" max="12">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Overtime (hrs)</label>
-                        <input type="number" id="swal-ot" class="form-control"
-                               value="${row.overtimeHours||0}" step="0.5" min="0" max="8">
-                    </div>
+                title: `<span class="fs-6 fw-bold">${r.employeeCode} — ${r.employeeName}</span>`,
+                html: `
+                <div class="row g-3 text-start mt-1">
+
+                  <div class="col-12">
+                    <label class="form-label fw-semibold mb-1">Status</label>
+                    <select id="sw-status" class="form-select form-select-sm">
+                      <option value="Present"  ${r.status==='Present' ?'selected':''}>✅ Present</option>
+                      <option value="HalfDay"  ${r.status==='HalfDay' ?'selected':''}>🌗 Half Day</option>
+                      <option value="Absent"   ${r.status==='Absent'  ?'selected':''}>❌ Absent</option>
+                      <option value="Leave"    ${r.status==='Leave'   ?'selected':''}>🏖️ On Leave</option>
+                      <option value="Holiday"  ${r.status==='Holiday' ?'selected':''}>🎉 Holiday</option>
+                    </select>
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label fw-semibold mb-1">
+                      <i class="fas fa-sign-in-alt text-success me-1"></i>Entry Time
+                    </label>
+                    <input type="time" id="sw-entry" class="form-control form-control-sm"
+                           value="${r.entryTime || ''}">
+                    <div class="form-text">Leave blank if unknown</div>
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label fw-semibold mb-1">
+                      <i class="fas fa-sign-out-alt text-danger me-1"></i>Exit Time
+                    </label>
+                    <input type="time" id="sw-exit" class="form-control form-control-sm"
+                           value="${r.exitTime || ''}">
+                    <div class="form-text">Leave blank if unknown</div>
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label fw-semibold mb-1">
+                      <i class="fas fa-clock text-primary me-1"></i>Hours Worked
+                    </label>
+                    <input type="number" id="sw-hours" class="form-control form-control-sm"
+                           value="${r.hoursWorked || 0}" step="0.5" min="0" max="14"
+                           placeholder="0 = auto from times">
+                    <div class="form-text">Auto-calculated if Entry/Exit set</div>
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label fw-semibold mb-1">
+                      <i class="fas fa-plus-circle text-warning me-1"></i>Overtime (hrs)
+                    </label>
+                    <input type="number" id="sw-ot" class="form-control form-control-sm"
+                           value="${r.overtimeHours || 0}" step="0.5" min="0" max="10">
+                  </div>
+
                 </div>`,
-                showCancelButton: true, confirmButtonText: 'Update',
-                confirmButtonColor: '#0d6efd', width: '480px',
-                preConfirm: () => ({
-                    id: recId, employeeId: empId,
-                    attendanceDate: currentDate,
-                    status: document.getElementById('swal-status').value,
-                    hoursWorked: parseFloat(document.getElementById('swal-hours').value)||0,
-                    overtimeHours: parseFloat(document.getElementById('swal-ot').value)||0
-                })
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-save me-1"></i>Save',
+                cancelButtonText:  'Cancel',
+                confirmButtonColor: '#0d6efd',
+                width: '480px',
+                didOpen: () => {
+                    // Auto-calc hours when entry/exit change
+                    const autoCalc = () => {
+                        const entry = document.getElementById('sw-entry').value;
+                        const exit  = document.getElementById('sw-exit').value;
+                        if (entry && exit) {
+                            const [eh,em] = entry.split(':').map(Number);
+                            const [xh,xm] = exit.split(':').map(Number);
+                            let diffMins = (xh*60+xm) - (eh*60+em);
+                            if (diffMins > 0) {
+                                document.getElementById('sw-hours').value = (diffMins/60).toFixed(2);
+                            }
+                        }
+                    };
+                    document.getElementById('sw-entry').addEventListener('change', autoCalc);
+                    document.getElementById('sw-exit') .addEventListener('change', autoCalc);
+                },
+                preConfirm: () => {
+                    return {
+                        id:            r.id || 0,
+                        employeeId:    r.employeeId,
+                        attendanceDate: currentDate,
+                        status:        document.getElementById('sw-status').value,
+                        entryTime:     document.getElementById('sw-entry').value,
+                        exitTime:      document.getElementById('sw-exit').value,
+                        hoursWorked:   parseFloat(document.getElementById('sw-hours').value) || 0,
+                        overtimeHours: parseFloat(document.getElementById('sw-ot').value)    || 0
+                    };
+                }
             }).then(res => {
                 if (!res.isConfirmed) return;
+                const payload = res.value;
+
+                // Update local array immediately for responsive feel
+                attendanceData[idx] = {
+                    ...attendanceData[idx],
+                    status:        payload.status,
+                    entryTime:     payload.entryTime,
+                    exitTime:      payload.exitTime,
+                    hoursWorked:   payload.hoursWorked,
+                    overtimeHours: payload.overtimeHours
+                };
+                renderTable();
+                updateSummary();
+
+                // Save to server
                 $.ajax({
-                    url: '@Url.Action("SaveAttendance", "Attendance")',
+                    url: '@Url.Action("SaveAttendance","Attendance")',
                     type: 'POST', contentType: 'application/json',
-                    data: JSON.stringify([res.value]),
-                    success: function () { toastr.success('Updated!'); table.ajax.reload(); },
-                    error: function () { toastr.error('Error updating!'); }
+                    data: JSON.stringify([payload]),
+                    success: function (r) {
+                        if (r.success) {
+                            toastr.success(`${attendanceData[idx].employeeName} — saved!`);
+                            // Reload to get server-assigned ID if new record
+                            if (!payload.id) loadAttendance();
+                        } else {
+                            toastr.error(r.message || 'Error!');
+                        }
+                    },
+                    error: function () { toastr.error('Server error!'); }
                 });
             });
         });
+
+        /* ── SAVE ALL ─────────────────────────────────────── */
+        function saveAllAttendance() {
+            if (!attendanceData.length) { toastr.warning('Load attendance first!'); return; }
+
+            const data = attendanceData
+                .filter(r => r.employeeId > 0)
+                .map(r => ({
+                    id:            r.id || 0,
+                    employeeId:    r.employeeId,
+                    attendanceDate: currentDate,
+                    status:        r.status || 'Absent',
+                    entryTime:     r.entryTime  || '',
+                    exitTime:      r.exitTime   || '',
+                    hoursWorked:   parseFloat(r.hoursWorked)   || 0,
+                    overtimeHours: parseFloat(r.overtimeHours) || 0
+                }));
+
+            const present = data.filter(r => r.status === 'Present').length;
+            const absent  = data.filter(r => r.status === 'Absent').length;
+
+            Swal.fire({
+                title: 'Save All Attendance?',
+                html:  `<div class="text-start">
+                            <p class="mb-2">Date: <strong>${currentDate}</strong></p>
+                            <p class="mb-0">Total: <strong>${data.length}</strong> &nbsp;|&nbsp;
+                               Present: <span class="text-success fw-bold">${present}</span> &nbsp;|&nbsp;
+                               Absent: <span class="text-danger fw-bold">${absent}</span></p>
+                        </div>`,
+                icon: 'question', showCancelButton: true,
+                confirmButtonColor: '#28a745', confirmButtonText: '<i class="fas fa-save me-1"></i>Yes, Save!'
+            }).then(res => {
+                if (!res.isConfirmed) return;
+
+                $.ajax({
+                    url: '@Url.Action("SaveAttendance","Attendance")',
+                    type: 'POST', contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function (r) {
+                        if (r.success) {
+                            toastr.success(r.message);
+                            loadAttendance(); // Reload to sync IDs
+                        } else {
+                            toastr.error(r.message || 'Error saving!');
+                        }
+                    },
+                    error: function (xhr) {
+                        toastr.error(xhr.responseJSON?.message || 'Server error!');
+                    }
+                });
+            });
+        }
     </script>
 }
