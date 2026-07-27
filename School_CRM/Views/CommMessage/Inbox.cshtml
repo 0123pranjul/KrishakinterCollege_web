@@ -2,50 +2,90 @@
 @{
     ViewData["Title"] = "Messages";
     var unreadCounts = ViewBag.UnreadCounts as Dictionary<int, int> ?? new();
-    string myType = ViewBag.MyType ?? "";
-    int myId = ViewBag.MyId;
+    var otherNames   = ViewBag.OtherNames   as Dictionary<int, string> ?? new();
+    string myType    = ViewBag.MyType ?? "";
+    int    myId      = ViewBag.MyId;
 }
 
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0"><i class="fas fa-envelope text-primary me-2"></i>Messages</h2>
-        <a asp-action="Compose" class="btn btn-primary"><i class="fas fa-pen me-1"></i>New Message</a>
-    </div>
+<style>
+    .inbox-wrap    { max-width: 680px; margin: 0 auto; }
+    .thread-item   { display:flex; align-items:center; gap:12px; padding:14px 16px;
+                     border-bottom:1px solid #f0f0f0; text-decoration:none; color:inherit;
+                     transition:background .15s; }
+    .thread-item:hover { background:#f7f9ff; }
+    .thread-item.unread { background:#eef4ff; }
+    .thread-avatar { width:46px; height:46px; border-radius:50%; flex-shrink:0;
+                     display:flex; align-items:center; justify-content:center;
+                     font-size:1.1rem; color:#fff; font-weight:700; }
+    .av-Teacher    { background: linear-gradient(135deg,#4f8ef7,#6a5af9); }
+    .av-Student    { background: linear-gradient(135deg,#43c6ac,#191654); }
+    .av-Admin      { background: linear-gradient(135deg,#f7971e,#ffd200); }
+    .thread-body   { flex:1; min-width:0; }
+    .thread-name   { font-weight:600; font-size:.95rem; }
+    .thread-sub    { font-size:.82rem; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .thread-meta   { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+    .thread-time   { font-size:.75rem; color:#aaa; }
+    .unread-badge  { background:#25d366; color:#fff; border-radius:50%; width:20px; height:20px;
+                     display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; }
+    .empty-state   { text-align:center; padding:60px 20px; color:#bbb; }
+    .empty-state i { font-size:3rem; display:block; margin-bottom:12px; }
+</style>
 
-    @if (!Model.Any())
-    {
-        <div class="text-center py-5 text-muted">
-            <i class="fas fa-envelope-open fa-3x mb-3 opacity-25"></i>
-            <p>No messages yet. <a asp-action="Compose">Start a conversation</a></p>
+<div class="container-fluid py-3">
+    <div class="inbox-wrap">
+        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+            <h5 class="fw-bold mb-0"><i class="fas fa-comments me-2 text-primary"></i>Messages</h5>
+            <a asp-action="Compose" class="btn btn-primary btn-sm px-3">
+                <i class="fas fa-pen me-1"></i>New
+            </a>
         </div>
-    }
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            @foreach (var thread in Model)
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            @if (!Model.Any())
             {
-                var unread = unreadCounts.GetValueOrDefault(thread.ThreadId, 0);
-                var otherType = thread.InitiatorType == myType ? thread.RecipientType : thread.InitiatorType;
-                var otherId   = thread.InitiatorType == myType ? thread.RecipientId   : thread.InitiatorId;
+                <div class="empty-state">
+                    <i class="fas fa-comment-dots"></i>
+                    <p class="mb-2">No conversations yet</p>
+                    <a asp-action="Compose" class="btn btn-outline-primary btn-sm">Start a chat</a>
+                </div>
+            }
+            else
+            {
+                foreach (var thread in Model)
+                {
+                    var unread    = unreadCounts.GetValueOrDefault(thread.ThreadId, 0);
+                    var otherType = (thread.InitiatorType == myType && thread.InitiatorId == myId)
+                                    ? thread.RecipientType : thread.InitiatorType;
+                    var name      = otherNames.GetValueOrDefault(thread.ThreadId, $"{otherType}");
+                    var initials  = string.Join("", name.Split(' ').Take(2).Select(w => w[0])).ToUpper();
+                    var now       = DateTime.Now;
+                    var diff      = now - thread.LastMessageAt;
+                    var timeStr   = diff.TotalMinutes < 1   ? "just now"
+                                  : diff.TotalHours  < 1   ? $"{(int)diff.TotalMinutes}m ago"
+                                  : diff.TotalDays   < 1   ? thread.LastMessageAt.ToString("hh:mm tt")
+                                  : diff.TotalDays   < 7   ? thread.LastMessageAt.ToString("ddd")
+                                  : thread.LastMessageAt.ToString("dd/MM/yy");
 
-                <a asp-action="Thread" asp-route-threadId="@thread.ThreadId"
-                   class="d-flex align-items-center p-3 border-bottom text-decoration-none text-dark @(unread > 0 ? "bg-light" : "")">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                         style="width:42px;height:42px;font-size:1.1rem;flex-shrink:0;">
-                        <i class="fas @(otherType == "Student" ? "fa-user-graduate" : otherType == "Teacher" ? "fa-chalkboard-teacher" : "fa-user-shield")"></i>
-                    </div>
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-@(unread > 0 ? "bold" : "semibold")">@otherType #@otherId</span>
-                            <small class="text-muted">@thread.LastMessageAt.ToString("dd/MM HH:mm")</small>
+                    <a asp-action="Thread" asp-route-threadId="@thread.ThreadId"
+                       class="thread-item @(unread > 0 ? "unread" : "")">
+                        <div class="thread-avatar av-@otherType">@initials</div>
+                        <div class="thread-body">
+                            <div class="d-flex justify-content-between">
+                                <span class="thread-name @(unread > 0 ? "text-dark" : "text-secondary")">@name</span>
+                                <span class="thread-time">@timeStr</span>
+                            </div>
+                            <div class="thread-sub">
+                                @(unread > 0 ? "🔵 " : "")@(thread.Subject ?? "Tap to open conversation")
+                            </div>
                         </div>
-                        <div class="text-muted small text-truncate">@(thread.Subject ?? "No subject")</div>
-                    </div>
-                    @if (unread > 0)
-                    {
-                        <span class="badge bg-primary rounded-pill ms-2">@unread</span>
-                    }
-                </a>
+                        @if (unread > 0)
+                        {
+                            <div class="thread-meta">
+                                <span class="unread-badge">@unread</span>
+                            </div>
+                        }
+                    </a>
+                }
             }
         </div>
     </div>

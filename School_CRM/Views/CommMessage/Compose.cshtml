@@ -1,71 +1,145 @@
-@{ ViewData["Title"] = "New Message"; }
+@{
+    ViewData["Title"] = "New Message";
+    string myType = ViewBag.MyType ?? "";
+}
 
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0"><i class="fas fa-pen text-primary me-2"></i>New Message</h2>
-        <a asp-action="Inbox" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Inbox</a>
-    </div>
+<style>
+    .compose-wrap  { max-width: 580px; margin: 0 auto; }
+    .type-cards    { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+    .type-card     { flex: 1; min-width: 90px; border: 2px solid #e0e0e0; border-radius: 12px;
+                     padding: 10px 8px; text-align: center; cursor: pointer;
+                     transition: all .18s; background: #fff; user-select: none; }
+    .type-card:hover     { border-color: #a0b4f0; background: #f0f4ff; }
+    .type-card.selected  { border-color: #4f8ef7; background: #eef4ff; }
+    .type-card i         { display: block; font-size: 1.4rem; margin-bottom: 4px; }
+    .type-card.Teacher i { color: #4f8ef7; }
+    .type-card.Student i { color: #43c6ac; }
+    .type-card.Admin   i { color: #f7971e; }
+    .recipient-search  { position: relative; }
+    .recipient-results { position: absolute; top: 100%; left: 0; right: 0; z-index: 99;
+                         background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+                         box-shadow: 0 4px 16px rgba(0,0,0,.1); max-height: 220px;
+                         overflow-y: auto; display: none; }
+    .recipient-results.open  { display: block; }
+    .rec-item    { padding: 10px 14px; cursor: pointer; font-size: .9rem;
+                   border-bottom: 1px solid #f5f5f5; }
+    .rec-item:hover  { background: #f0f4ff; }
+    .rec-item .code  { font-size: .75rem; color: #aaa; margin-left: 6px; }
+    .selected-tag    { display: inline-flex; align-items: center; gap: 6px;
+                       background: #e8f0fe; padding: 5px 12px; border-radius: 20px;
+                       font-size: .85rem; color: #3d6fcc; margin-top: 6px; }
+    .selected-tag button { background: none; border: none; color: #999;
+                           cursor: pointer; padding: 0; font-size: .8rem; }
+    .msg-area    { border: 1px solid #e0e0e0; border-radius: 12px; padding: 10px 14px;
+                   font-size: .9rem; resize: none; width: 100%; outline: none;
+                   transition: border-color .15s; min-height: 100px; }
+    .msg-area:focus { border-color: #4f8ef7; }
+    .attach-strip  { display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+                     background: #f8f9fa; border-radius: 10px; font-size: .83rem;
+                     display: none; }
+    .attach-strip.show { display: flex; }
+</style>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold mb-0">Compose Message</h6>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Compose" method="post" enctype="multipart/form-data">
-                        @Html.AntiForgeryToken()
+<div class="container-fluid py-3">
+    <div class="compose-wrap">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <a href="/Communication/Messages" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h5 class="fw-bold mb-0">New Message</h5>
+        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Recipient Type <span class="text-danger">*</span></label>
-                            <select name="recipientType" class="form-select" id="recipientTypeSelect"
-                                    onchange="loadRecipients()">
-                                <option value="">Select Type</option>
-                                <option value="Teacher">Teacher</option>
-                                <option value="Student">Student</option>
-                                <option value="Admin">Admin</option>
-                            </select>
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger py-2">@ViewBag.Error</div>
+        }
+
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <form method="post" asp-action="Compose" enctype="multipart/form-data" id="composeForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="recipientType" id="hRecipientType">
+                    <input type="hidden" name="recipientId"   id="hRecipientId">
+
+                    <!-- Recipient type selector -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-2">Send to</label>
+                        <div class="type-cards">
+                            @if (myType != "Teacher")
+                            {
+                                <div class="type-card Teacher" onclick="selectType('Teacher')">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                    <span style="font-size:.82rem;font-weight:600">Teacher</span>
+                                </div>
+                            }
+                            @if (myType != "Admin")
+                            {
+                                <div class="type-card Admin" onclick="selectType('Admin')">
+                                    <i class="fas fa-user-shield"></i>
+                                    <span style="font-size:.82rem;font-weight:600">Admin</span>
+                                </div>
+                            }
+                            @if (myType != "Student")
+                            {
+                                <div class="type-card Student" onclick="selectType('Student')">
+                                    <i class="fas fa-user-graduate"></i>
+                                    <span style="font-size:.82rem;font-weight:600">Student</span>
+                                </div>
+                            }
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Search Recipient</label>
-                            <input type="text" id="recipientSearch" class="form-control"
-                                   placeholder="Type name to search..." oninput="searchRecipients()" />
-                        </div>
+                    <!-- Recipient search -->
+                    <div class="mb-3 recipient-search" id="recipientSection" style="display:none">
+                        <label class="form-label fw-semibold">
+                            Search <span id="typeLabel"></span>
+                        </label>
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Type name to search…"
+                               autocomplete="off"
+                               oninput="searchRecipients(this.value)" />
+                        <div class="recipient-results" id="recipientResults"></div>
+                        <div id="selectedTag"></div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Select Recipient <span class="text-danger">*</span></label>
-                            <select name="recipientId" class="form-select" id="recipientSelect" required>
-                                <option value="">Select Recipient</option>
-                            </select>
-                        </div>
+                    <!-- Subject -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="subject" class="form-control"
+                               placeholder="e.g. Regarding homework…" />
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Subject</label>
-                            <input type="text" name="subject" class="form-control"
-                                   placeholder="Optional subject..." />
-                        </div>
+                    <!-- Message -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Message</label>
+                        <textarea name="messageBody" id="messageBody" class="msg-area"
+                                  placeholder="Write your message here…"></textarea>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
-                            <textarea name="messageBody" class="form-control" rows="5"
-                                      placeholder="Write your message here..." required></textarea>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Attachment</label>
-                            <input type="file" name="attachment" class="form-control" />
-                            <small class="text-muted">Optional. Max 2 MB.</small>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                    <!-- Attachment -->
+                    <div class="mb-4">
+                        <input type="file" id="fileInput" name="attachment" style="display:none"
+                               accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                               onchange="previewFile(this)" />
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-paperclip me-1"></i>Attach file
+                        </button>
+                        <small class="text-muted ms-2">Image, PDF, Word, Excel — max 5 MB</small>
+                        <div class="attach-strip mt-2" id="attachStrip">
+                            <i class="fas fa-file text-primary"></i>
+                            <span id="attachName"></span>
+                            <button type="button" onclick="clearFile()"
+                                    style="background:none;border:none;color:#aaa;cursor:pointer;margin-left:auto">
+                                <i class="fas fa-times"></i>
                             </button>
-                            <a asp-action="Inbox" class="btn btn-outline-secondary">Cancel</a>
                         </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary px-4" onclick="submitCompose()">
+                        <i class="fas fa-paper-plane me-2"></i>Send Message
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -73,32 +147,93 @@
 
 @section Scripts {
 <script>
-    async function loadRecipients() {
-        const type = document.getElementById('recipientTypeSelect').value;
-        const sel  = document.getElementById('recipientSelect');
-        sel.innerHTML = '<option value="">Loading...</option>';
-        if (!type) { sel.innerHTML = '<option value="">Select Recipient</option>'; return; }
-
-        const resp = await fetch(`/Store/Sale/GetPersonList?type=${type}`);
-        const data = await resp.json();
-        sel.innerHTML = '<option value="">Select Recipient</option>';
-        data.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.code})</option>`);
-    }
-
+    let selectedType = '';
+    let selectedId   = 0;
     let searchTimer;
-    function searchRecipients() {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(async () => {
-            const type   = document.getElementById('recipientTypeSelect').value;
-            const search = document.getElementById('recipientSearch').value;
-            if (!type || search.length < 2) return;
 
-            const resp = await fetch(`/Store/Sale/GetPersonList?type=${type}&search=${encodeURIComponent(search)}`);
-            const data = await resp.json();
-            const sel  = document.getElementById('recipientSelect');
-            sel.innerHTML = '<option value="">Select Recipient</option>';
-            data.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.code})</option>`);
-        }, 300);
+    function selectType(t) {
+        selectedType = t;
+        selectedId   = 0;
+        document.getElementById('hRecipientType').value = t;
+        document.getElementById('hRecipientId').value   = '';
+        document.getElementById('typeLabel').textContent = t;
+        document.getElementById('searchInput').value     = '';
+        document.getElementById('selectedTag').innerHTML = '';
+        document.getElementById('recipientResults').classList.remove('open');
+        document.getElementById('recipientSection').style.display = 'block';
+        document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`.type-card.${t}`)?.classList.add('selected');
     }
+
+    function searchRecipients(q) {
+        clearTimeout(searchTimer);
+        if (q.length < 1) { document.getElementById('recipientResults').classList.remove('open'); return; }
+        searchTimer = setTimeout(async () => {
+            const res  = await fetch(`/Communication/Message/GetRecipients?type=${selectedType}&search=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            const box  = document.getElementById('recipientResults');
+            if (!data.length) {
+                box.innerHTML = '<div class="rec-item text-muted">No results</div>';
+            } else {
+                box.innerHTML = data.map(p =>
+                    `<div class="rec-item" onclick="pickRecipient(${p.id},'${escJs(p.name)}','${escJs(p.code)}')">
+                        ${escHtml(p.name)} <span class="code">${escHtml(p.code)}</span>
+                    </div>`
+                ).join('');
+            }
+            box.classList.add('open');
+        }, 280);
+    }
+
+    function pickRecipient(id, name, code) {
+        selectedId = id;
+        document.getElementById('hRecipientId').value = id;
+        document.getElementById('searchInput').value  = '';
+        document.getElementById('recipientResults').classList.remove('open');
+        document.getElementById('selectedTag').innerHTML =
+            `<div class="selected-tag">
+                <i class="fas fa-user-check"></i>${escHtml(name)}
+                ${code ? `<span style="opacity:.6">(${escHtml(code)})</span>` : ''}
+                <button onclick="clearRecipient()"><i class="fas fa-times"></i></button>
+            </div>`;
+    }
+
+    function clearRecipient() {
+        selectedId = 0;
+        document.getElementById('hRecipientId').value = '';
+        document.getElementById('selectedTag').innerHTML = '';
+    }
+
+    function previewFile(input) {
+        if (!input.files.length) return;
+        const f = input.files[0];
+        if (f.size > 5 * 1024 * 1024) { alert('Max 5 MB!'); input.value=''; return; }
+        document.getElementById('attachName').textContent = f.name;
+        document.getElementById('attachStrip').classList.add('show');
+    }
+    function clearFile() {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('attachStrip').classList.remove('show');
+    }
+
+    function submitCompose() {
+        if (!selectedType) { alert('Please select recipient type.'); return; }
+        if (!selectedId)   { alert('Please select a recipient.');    return; }
+        const body = document.getElementById('messageBody').value.trim();
+        const file = document.getElementById('fileInput').files.length;
+        if (!body && !file) { alert('Please write a message or attach a file.'); return; }
+        document.getElementById('composeForm').submit();
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.recipient-search'))
+            document.getElementById('recipientResults')?.classList.remove('open');
+    });
+
+    function escHtml(t) {
+        const d = document.createElement('div'); d.textContent = t; return d.innerHTML;
+    }
+    function escJs(s) { return (s||'').replace(/'/g,"\\'"); }
 </script>
 }
