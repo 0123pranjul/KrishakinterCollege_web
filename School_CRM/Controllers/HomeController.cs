@@ -94,6 +94,10 @@ namespace School_CRM.Controllers
         {
             return View();
         }
+        public IActionResult DirectorMessage()
+        {
+            return View();
+        }
 
         // ============================================================
         // CONTACT QUERIES & SUBMISSION

@@ -774,11 +774,14 @@
 
                        
                         <li class="nav-item">
-                            <a class='nav-link' asp-controller="Home" asp-action="Gallery">Gallery</a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class='nav-link' asp-controller="Home" asp-action="about">About Us</a>
+                            <a href="javascript:void(0)" class="dropdown-toggle nav-link">
+                                About & Gallery
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item"><a class='nav-link' asp-controller="Home" asp-action="about">About Us</a></li>
+                                <li class="nav-item"><a class='nav-link' asp-controller="Home" asp-action="DirectorMessage">Director's Message</a></li>
+                                <li class="nav-item"><a class='nav-link' asp-controller="Home" asp-action="Gallery">Gallery</a></li>
+                            </ul>
                         </li>
                       
                         <li class="nav-item">
@@ -828,16 +831,19 @@
                         Home 
                     </a>
                 </div>
-                <div class="accordion-item">
-                    <a class='accordion-link' asp-controller="Home" asp-action="about">
-                        About Us
-                    </a>
-                </div>
-              
-                <div class="accordion-item">
-                    <a class='accordion-link' asp-controller="Home" asp-action="Gallery">
-                        Gallery
-                    </a>
+                 <div class="accordion-item">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        About & Gallery
+                    </button>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#navbarAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><a asp-controller="Home" asp-action="about">About Us</a></li>
+                                <li><a asp-controller="Home" asp-action="DirectorMessage">Director's Message</a></li>
+                                <li><a asp-controller="Home" asp-action="Gallery">Gallery</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                
                 <div class="accordion-item">
@@ -949,12 +955,12 @@
         <div class="container position-relative" style="z-index: 3;">
             <div class="banner-content-2">
                 <div class="content">
-                    <span data-aos="fade-zoom-in" data-aos-delay="300">उत्तर प्रदेश माध्यमिक शिक्षा परिषद् (UP Board) | हिंदी माध्यम विद्यालय</span>
+                    <span data-aos="fade-zoom-in" data-aos-delay="300">माध्यमिक शिक्षा परिषद, उत्तर प्रदेश (यूपी बोर्ड) | हिंदी माध्यम विद्यालय</span>
                     <h1 data-aos="fade-up" data-aos-delay="200">कृषक इण्टर कॉलेज <br>Krishak Inter College</h1>
-                    <p data-aos="fade-up" data-aos-delay="300">बिजौली, फतेहपुर (उत्तर प्रदेश) - हिंदी माध्यम में शिक्षा, अनुशासन एवं सर्वांगीण विकास का प्रमुख केंद्र। कक्षा नर्सरी से 12वीं तक उत्तम शिक्षा, सुसज्जित प्रयोगशालाएं एवं सुरक्षित वातावरण।</p>
+                    <p data-aos="fade-up" data-aos-delay="300">बिजौली, फतेहपुर (उत्तर प्रदेश) - हिंदी माध्यम शिक्षा, अनुशासन और सर्वांगीण विकास का एक अग्रणी केंद्र। नर्सरी से कक्षा 12 तक गुणवत्तापूर्ण शिक्षा, सुसज्जित प्रयोगशालाएं और सुरक्षित शिक्षण वातावरण।</p>
                     <div class="buttons-action" data-aos="fade-up" data-aos-delay="100">
-                        <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">प्रवेश हेतु पूछताछ करें</a>
-                        <a class='default-btn btn-style-2' asp-controller="Home" asp-action="contacts">संपर्क करें</a>
+                        <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">प्रवेश हेतु पूछताछ</a>
+                        <a class='default-btn btn-style-2' asp-controller="Home" asp-action="contacts">सम्पर्क करें</a>
                     </div>
                     <div class="vertical-lr" data-aos="fade-zoom-in" data-aos-delay="100">
                         <p>कृषक इण्टर कॉलेज <span>kic.in</span></p>
@@ -974,21 +980,16 @@
         <div class="container-fluid p-0">
             <div class="ticker-wrapper">
                 <div class="ticker-title">
-                    <i class='bx bxs-bell-ring'></i> Latest Updates:
+                    <i class='bx bxs-bell-ring'></i> नवीनतम अपडेट:
                 </div>
                 <div class="ticker-content-wrap">
                     <div class="ticker-content">
-                        <span>ðŸ“¢ Admissions Open for Academic Session 2026-27 | Play Group (PG) to Class XII | Enroll Now!</span>
-
-                        <span>ðŸŽ“ Limited Seats Available | Smart Classrooms | Experienced Faculty | Secure Your Child's Future Today.</span>
-
-                        <span>ðŸ« UPBoard Curriculum | Well-Equipped Science & Computer Labs | Library | Sports & Co-Curricular Activities.</span>
-
-                        <span>ðŸšŒ Safe & Reliable Transport Facility Available Across Major Routes.</span>
-
-                        <span>ðŸ‘¨â€ðŸ« Experienced & Dedicated Teachers | Individual Attention for Every Student.</span>
-
-                        <span>ðŸ“ž Visit the School Campus or Contact the Admission Office for Registration & Enquiries.</span>
+                        <span>* शैक्षणिक सत्र 2026-27 के लिए प्रवेश प्रारंभ | प्ले ग्रुप (PG) से कक्षा XII तक | अभी पंजीकरण करें!</span>
+                        <span>* सीमित सीटें उपलब्ध | स्मार्ट क्लासरूम | अनुभवी शिक्षक | आज ही अपने बच्चे का भविष्य सुरक्षित करें।</span>
+                        <span>* यूपी बोर्ड पाठ्यक्रम | सुसज्जित विज्ञान और कंप्यूटर प्रयोगशालाएं | पुस्तकालय | खेलकूद और सह-पाठ्यचर्या गतिविधियां।</span>
+                        <span>* प्रमुख मार्गों पर सुरक्षित एवं विश्वसनीय वाहन सुविधा उपलब्ध।</span>
+                        <span>* अनुभवी एवं समर्पित शिक्षक | प्रत्येक छात्र पर व्यक्तिगत ध्यान।</span>
+                        <span>* पंजीकरण और पूछताछ के लिए स्कूल परिसर में आएं या प्रवेश कार्यालय से संपर्क करें।</span>
                     </div>
                 </div>
             </div>
@@ -1000,8 +1001,8 @@
     <div id="about" class="about-us-area-2 ptb-100">
         <div class="container">
             <div class="section-title" data-aos="fade-up" data-aos-delay="100">
-                <h2>कृषक इण्टर कॉलेज के बारे में</h2>
-                <p>हम गुणवत्तापूर्ण हिंदी माध्यम शिक्षा, सुदृढ़ अनुशासन और नैतिक मूल्यों के माध्यम से छात्रों के स्वर्णिम भविष्य के निर्माण के लिए प्रतिबद्ध हैं।</p>
+                <h2>विद्यालय का संक्षिप्त इतिहास</h2>
+                <p>ईश्वर की असीम अनुकम्पा एवं पूर्वजों के आशीर्वाद से क्षेत्र की गरीब जनता के लिए बालक एवं बालिकाओं की शिक्षा हेतु इस विद्यालय की स्थापना जुलाई 1968 में तत्कालीन शिक्षाविद् ग्राम वासियों के द्वारा की गयी थी।</p>
             </div>
             <div class="about-content-courser owl-carousel owl-theme">
                  <div class="content-items" data-dot="<button>01</button>">
@@ -1009,9 +1010,9 @@
                           style="background-image:url('/krasha_photo/img1.jpeg'); background-size:cover; background-position:center;">
                     </div>
                     <div class="content" data-aos="fade-up" data-aos-delay="200">
-                        <span>हमारा परिसर (Our Campus)</span>
-                        <h2>सीखने और बढ़ने के लिए अनुकूल वातावरण</h2>
-                        <p>कृषक इण्टर कॉलेज बिजौली का परिसर आधुनिक क्लासरूम, सुसज्जित विज्ञान प्रयोगशालाओं, विशाल खेल के मैदान और पुस्तकालय से युक्त है, जो छात्रों को अपनी क्षमता विकसित करने के लिए प्रेरित करता है।</p>
+                        <span>हमारा परिसर</span>
+                        <h2>सीखने और बढ़ने के लिए निर्मित परिसर</h2>
+                        <p>वर्तमान समय में कक्षा 01 से 12 तक लगभग 800 छात्र एवं छात्राएँ शिक्षा अर्जित कर रहे हैं। यहाँ सुयोग्य एवं प्रशिक्षित शिक्षकों के माध्यम से शिक्षा दी जाती है।</p>
                         <a class='default-btn' asp-controller="Home" asp-action="about">अधिक जानें</a>
                     </div>
                 </div>
@@ -1020,9 +1021,9 @@
                           style="background-image:url('/krasha_photo/imag2.jpeg'); background-size:cover; background-position:center;">
                     </div>
                     <div class="content" data-aos="fade-up" data-aos-delay="200">
-                        <span>अनुभवी शिक्षक (Our Faculty)</span>
-                        <h2>श्रेष्ठ मार्गदर्शन और व्यक्तिगत ध्यान</h2>
-                        <p>हमारे योग्य और अनुभवी शिक्षक छात्रों को उत्कृष्ट मार्गदर्शन प्रदान करते हैं। वे केवल पढ़ाते नहीं हैं, बल्कि छात्रों के चरित्र निर्माण और नैतिक मूल्यों पर भी विशेष बल देते हैं।</p>
+                        <span>सुयोग्य शिक्षक</span>
+                        <h2>अनुभवी एवं समर्पित शिक्षक</h2>
+                        <p>शिक्षकों के अथक प्रयास के कारण ही इस विद्यालय का परीक्षा परिणाम शत प्रतिशत रहता है, विज्ञान के छात्रों को प्रयोगात्मक कार्य हेतु प्रयोगशाला (लैब) उपलब्ध कराये गये है।</p>
                         <a class='default-btn' asp-controller="Home" asp-action="about">अधिक जानें</a>
                     </div>
                 </div>
@@ -1031,9 +1032,9 @@
                           style="background-image:url('/krasha_photo/imag3.jpeg'); background-size:cover; background-position:center;">
                     </div>
                     <div class="content" data-aos="fade-up" data-aos-delay="200">
-                        <span>अकादमिक श्रेष्ठता (Academic Excellence)</span>
-                        <h2>बोर्ड परीक्षाओं में उत्कृष्ट परिणाम</h2>
-                        <p>कृषक इण्टर कॉलेज का बोर्ड परीक्षाओं में शत-प्रतिशत परीक्षा परिणाम रहा है। हमारे छात्र उत्तर प्रदेश माध्यमिक शिक्षा परिषद् (UP Board) की परीक्षाओं में उत्कृष्ट प्रदर्शन करते आ रहे हैं।</p>
+                        <span>उज्ज्वल भविष्य</span>
+                        <h2>लक्ष्य और उद्देश्य की प्राप्ति</h2>
+                        <p>आशा है कि हम अपने लक्ष्य प्राप्ति में सफल रहेंगे जिससे हम अपने छात्र/छात्राओं को आगे बढ़ा सकें जिससे केवल छात्रों को ही नहीं, बल्कि सम्पूर्ण राष्ट्र को भी लाभ होगा।</p>
                         <a class='default-btn' asp-controller="Home" asp-action="about">अधिक जानें</a>
                     </div>
                 </div>
@@ -1042,9 +1043,9 @@
                           style="background-image:url('/krasha_photo/img4.jpeg'); background-size:cover; background-position:center;">
                     </div>
                     <div class="content" data-aos="fade-up" data-aos-delay="200">
-                        <span>सर्वांगीण विकास (Holistic Development)</span>
-                        <h2>शिक्षा के साथ-साथ संस्कार और खेलकूद</h2>
-                        <p>हम खेलकूद, स्काउट-गाइड, सांस्कृतिक गतिविधियों और अनुशासन के माध्यम से विद्यार्थियों का सर्वांगीण विकास करते हैं, ताकि वे देश के जिम्मेदार नागरिक बन सकें।</p>
+                        <span>सर्वांगीण विकास</span>
+                        <h2>अकादमिक और खेलकूद विकास</h2>
+                        <p>हम पुस्तकीय ज्ञान से परे भी बच्चों के विकास पर ध्यान देते हैं। खेलकूद एवं सांस्कृतिक कार्यक्रमों के माध्यम से हम छात्रों का मनोबल बढ़ाते हैं।</p>
                         <a class='default-btn' asp-controller="Home" asp-action="about">अधिक जानें</a>
                     </div>
                 </div>
@@ -1058,42 +1059,42 @@
         <div class="container">
             <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
                 <div class="sub-title">
-                    <p>Our Leadership</p>
+                    <p>हमारा नेतृत्व</p>
                 </div>
-                <h2>Meet The Pillars of Our Institution</h2>
+                <h2>हमारे संस्थान के मुख्य स्तंभ</h2>
             </div>
 
             <div class="row justify-content-center">
-                <!-- Leader 1: Manager -->
+                <!-- Leader 1: Director -->
                 <div class="col-lg-3 col-md-6 col-sm-12" data-aos="fade-up" data-aos-delay="100">
                     <div class="leader-card">
                         <div>
                             <div class="leader-image-wrapper">
-                                <img src="/krasha_photo/manager_Saurabhsachan.jpeg" alt="SAURABH SACHAN" class="leader-image" />
+                                <img src="/krasha_photo/director_Sudama_Prashad.jpeg" alt="सुदामा प्रसाद सचान" class="leader-image" />
                             </div>
-                            <span class="leader-role-badge">Manager</span>
-                            <h3 class="leader-name">SAURABH SACHAN</h3>
-                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Inter College</span>
+                            <span class="leader-role-badge">संचालक</span>
+                            <h3 class="leader-name">सुदामा प्रसाद सचान</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">कृषक इण्टर कॉलेज</span>
                         </div>
                         <div class="leader-institution">
-                            ADMINISTRATION &amp; GOVERNANCE
+                            कार्यकारी दिशा निर्देश एवं योजना
                         </div>
                     </div>
                 </div>
 
-                <!-- Leader 2: Director -->
+                <!-- Leader 2: Manager -->
                 <div class="col-lg-3 col-md-6 col-sm-12" data-aos="fade-up" data-aos-delay="200">
                     <div class="leader-card">
                         <div>
                             <div class="leader-image-wrapper">
-                                <img src="/krasha_photo/director_Sudama_Prashad.jpeg" alt="SUDAMA PRASHAD" class="leader-image" />
+                                <img src="/krasha_photo/manager_Saurabhsachan.jpeg" alt="सौरभ सचान" class="leader-image" />
                             </div>
-                            <span class="leader-role-badge">Director</span>
-                            <h3 class="leader-name">SUDAMA PRASHAD</h3>
-                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Inter College</span>
+                            <span class="leader-role-badge">प्रबंधक</span>
+                            <h3 class="leader-name">सौरभ सचान</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">कृषक इण्टर कॉलेज</span>
                         </div>
                         <div class="leader-institution">
-                            EXECUTIVE DIRECTION &amp; PLANNING
+                            प्रशासन एवं शासन व्यवस्था
                         </div>
                     </div>
                 </div>
@@ -1103,14 +1104,14 @@
                     <div class="leader-card">
                         <div>
                             <div class="leader-image-wrapper">
-                                <img src="/krasha_photo/principale_mohit_sachan.jpeg" alt="MOHIT SACHAN" class="leader-image" />
+                                <img src="/krasha_photo/principale_mohit_sachan.jpeg" alt="मोहित सचान" class="leader-image" />
                             </div>
-                            <span class="leader-role-badge">Principal</span>
-                            <h3 class="leader-name">MOHIT SACHAN</h3>
-                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Inter College</span>
+                            <span class="leader-role-badge">प्रधानाचार्य</span>
+                            <h3 class="leader-name">मोहित सचान</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">कृषक इण्टर कॉलेज</span>
                         </div>
                         <div class="leader-institution">
-                            ACADEMIC LEADERSHIP
+                            शैक्षणिक नेतृत्व
                         </div>
                     </div>
                 </div>
@@ -1120,14 +1121,14 @@
                     <div class="leader-card">
                         <div>
                             <div class="leader-image-wrapper">
-                                <img src="/krasha_photo/Samitapatel_KrishakjuniorhighschoolPrinciple.jpeg" alt="SAMITA PATEL" class="leader-image" />
+                                <img src="/krasha_photo/Samitapatel_KrishakjuniorhighschoolPrinciple.jpeg" alt="समिता पटेल" class="leader-image" />
                             </div>
-                            <span class="leader-role-badge">Principal (J.H.S.)</span>
-                            <h3 class="leader-name">SAMITA PATEL</h3>
-                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">Krishak Junior High School</span>
+                            <span class="leader-role-badge">प्रधानाचार्य (J.H.S.)</span>
+                            <h3 class="leader-name">समिता पटेल</h3>
+                            <span class="leader-title-sub" style="font-weight: 600; color: var(--paragraphColor);">कृषक जूनियर हाईस्कूल</span>
                         </div>
                         <div class="leader-institution">
-                            JUNIOR ACADEMIC LEADERSHIP
+                            कनिष्ठ शैक्षणिक नेतृत्व
                         </div>
                     </div>
                 </div>
@@ -1143,17 +1144,17 @@
                 <div class="row">
                     <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
                         <div class="sub-title">
-                            <p>कृषक इण्टर कॉलेज को क्यों चुनें?</p>
+                            <p>विद्यालय की विशेषतायें</p>
                         </div>
                         <div class="content">
-                            <h2>प्रत्येक छात्र को सफलता के शिखर पर पहुँचाने के लिए प्रतिबद्ध</h2>
+                            <h2>भारतीय संस्कृति पर आधारित सर्वांगीण विकास हेतु आधुनिक शिक्षा की व्यवस्था।</h2>
                             <div class="item">
                                 <div class="item-content">
                                     <div class="icon d-flex align-items-center justify-content-center">
                                         <i class="bx bxs-graduation" style="font-size: 28px; color: var(--mainColor);"></i>
                                     </div>
-                                    <h3>गुणवत्तापूर्ण शिक्षा</h3>
-                                    <p>अनुभवी एवं समर्पित शिक्षकों द्वारा उत्तर प्रदेश बोर्ड (UP Board) के पाठ्यक्रम पर आधारित गुणवत्तापूर्ण शिक्षा, नियमित मूल्यांकन एवं छात्रों के सर्वांगीण विकास पर विशेष बल।</p>
+                                    <h3>सीसीटीवी कैमरा निगरानी</h3>
+                                    <p>प्रत्येक कक्ष में दोनों ओर कैमरों के माध्यम से निगरानी कर प्रशिक्षित अध्यापकों द्वारा शिक्षण कार्य किया जाता है।</p>
                                 </div>
                             </div>
                             <div class="item">
@@ -1161,11 +1162,11 @@
                                     <div class="icon d-flex align-items-center justify-content-center">
                                         <i class="bx bxs-book-open" style="font-size: 28px; color: var(--mainColor);"></i>
                                     </div>
-                                    <h3>स्मार्ट क्लासेज एवं आधुनिक तकनीक</h3>
-                                    <p>स्मार्ट क्लासेज, कंप्यूटर लैब, सुसज्जित प्रयोगशालाएं और एक समृद्ध पुस्तकालय प्रत्येक छात्र को सीखने और उत्कृष्टता प्राप्त करने के श्रेष्ठ साधन प्रदान करते हैं।</p>
+                                    <h3>वैज्ञानिक वर्ग की शिक्षा</h3>
+                                    <p>इण्टरमीडिएट तक विज्ञान एवं तकनीकी विकास हेतु वैज्ञानिक वर्ग की शिक्षा की सुचारू व्यवस्था है।</p>
                                 </div>
                             </div>
-                            <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">प्रवेश हेतु पूछताछ करें</a>
+                            <a class='default-btn' asp-controller="Enquiry" asp-action="PublicForm">प्रवेश हेतु पूछताछ</a>
 
                             <div class="arrow-icon">
                                 <img src="/collage/collage_project/assets/img/icon/shape-1.png" alt="image">
@@ -1184,8 +1185,8 @@
                                             </div>
                                         </div>
                                         <div class="content">
-                                            <h4>स्मार्ट क्लासेज</h4>
-                                            <a class='btn' href='#'>अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
+                                            <h4>सीसीटीवी एवं पंखे युक्त कक्षाएं</h4>
+                                            <a class='btn' asp-controller="Home" asp-action="about">अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -1199,7 +1200,7 @@
                                         </div>
                                         <div class="content">
                                             <h4>हाईस्कूल एवं इण्टरमीडिएट</h4>
-                                            <a class='btn' href='#'>अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
+                                            <a class='btn' asp-controller="Home" asp-action="about">अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -1212,8 +1213,8 @@
                                             </div>
                                         </div>
                                         <div class="content">
-                                            <h4>खेलकूद एवं स्काउट गाइड</h4>
-                                            <a class='btn' href='#'>अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
+                                            <h4>खेलकूद एवं सांस्कृतिक कार्यक्रम</h4>
+                                            <a class='btn' asp-controller="Home" asp-action="about">अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -1226,8 +1227,8 @@
                                             </div>
                                         </div>
                                         <div class="content">
-                                            <h4>प्रयोगशालाएं एवं पुस्तकालय</h4>
-                                            <a class='btn' href='#'>अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
+                                            <h4>सुसज्जित प्रयोगशालायें एवं पुस्तकालय</h4>
+                                            <a class='btn' asp-controller="Home" asp-action="about">अधिक जानें <i class='bx bx-right-arrow-alt'></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -1242,9 +1243,9 @@
         <div class="container-fluid">
             <div class="section-title text-center" style="margin-bottom: 40px;" data-aos="fade-up" data-aos-delay="100">
                 <div class="sub-title">
-                    <p><i class='bx bxs-image'></i> Campus Gallery</p>
+                    <p><i class='bx bxs-image'></i> परिसर गैलरी</p>
                 </div>
-                <h2>Life At Krishak Inter College</h2>
+                <h2>कृषक इण्टर कॉलेज परिसर जीवन</h2>
             </div>
             <div class="marquee-wrapper">
                 <div class="marquee-track">
@@ -1275,7 +1276,7 @@
         <div class="container">
             <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
                 <div class="sub-title">
-                    <p>सफल छात्र (Student Success Stories)</p>
+                    <p>हमारे मेधावी छात्र</p>
                 </div>
                 <h2>हमारे छात्र - हमारा गौरव</h2>
             </div>
@@ -1327,13 +1328,13 @@
         <div class="container">
             <div class="section-title section-title-2" data-aos="fade-up" data-aos-delay="100">
                 <div class="sub-title">
-                    <p>Stay Connected with Krishak Inter College</p>
+                    <p>कृषक इण्टर कॉलेज से जुड़े रहें</p>
                 </div>
-                <h2>Get the Latest Krishak Inter College News &amp; Admissions Updates in Your Inbox</h2>
+                <h2>नवीनतम सूचनाएं एवं प्रवेश सम्बन्धी अपडेट प्राप्त करें</h2>
             </div>
 
             <div class="subscribe-btn text-center" data-aos="fade-up" data-aos-delay="200">
-                <a class="default-btn" href="#">Subscribe Now</a>
+                <a class="default-btn" asp-controller="Home" asp-action="contacts">सम्पर्क करें</a>
             </div>
         </div>
     </div>
@@ -1379,7 +1380,7 @@
                 <div class="row align-items-center">
                     <div class="col-lg-4">
                         <div class="cpr-left">
-                            <p>CopyrightÂ© <a href="https://kic.in">Krishak Inter College</a>. All rights reserved.</p>
+                            <p>Copyright© <a href="https://kic.in">Krishak Inter College</a>. All rights reserved. | Designed & Developed by <a href="https://corevista.tech/" target="_blank">Corevista</a></p>
                         </div>
                     </div>
                     <div class="col-lg-8">
